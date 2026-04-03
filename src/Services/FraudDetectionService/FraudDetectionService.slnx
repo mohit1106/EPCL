@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FraudDetectionService.API/FraudDetectionService.API.csproj" />
+    <Project Path="src/FraudDetectionService.Application/FraudDetectionService.Application.csproj" />
+    <Project Path="src/FraudDetectionService.Domain/FraudDetectionService.Domain.csproj" />
+    <Project Path="src/FraudDetectionService.Infrastructure/FraudDetectionService.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FraudDetectionService.IntegrationTests/FraudDetectionService.IntegrationTests.csproj" />
+    <Project Path="tests/FraudDetectionService.UnitTests/FraudDetectionService.UnitTests.csproj" />
+  </Folder>
+</Solution>

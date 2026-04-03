@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LoyaltyService.API/LoyaltyService.API.csproj" />
+    <Project Path="src/LoyaltyService.Application/LoyaltyService.Application.csproj" />
+    <Project Path="src/LoyaltyService.Domain/LoyaltyService.Domain.csproj" />
+    <Project Path="src/LoyaltyService.Infrastructure/LoyaltyService.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/LoyaltyService.IntegrationTests/LoyaltyService.IntegrationTests.csproj" />
+    <Project Path="tests/LoyaltyService.UnitTests/LoyaltyService.UnitTests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,157 @@
+# ==============================================================================
+# EPCL — Eleven Petroleum Corporation Limited
+# .gitignore
+# ==============================================================================
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Environment & Secrets
+# ──────────────────────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.local
+
+# ──────────────────────────────────────────────────────────────────────────────
+# .NET / C#
+# ──────────────────────────────────────────────────────────────────────────────
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.cache
+*.vspscc
+*.vssscc
+.ntvs_analysis.dat
+[Tt]est[Rr]esult*/
+[Dd]ebug*/
+[Rr]elease*/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# NuGet
+*.nupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+# Visual Studio
+.vs/
+*.rsuser
+*.sln.docstates
+*_i.c
+*_p.c
+*_h.h
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.pdb
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*_wpftmp.csproj
+*.log
+*.tlog
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+*.dbmdl
+*.dbproj.schemaview
+*.jfm
+*.pfx
+*.publishsettings
+*.DotSettings.user
+*.suo
+
+# Rider
+.idea/
+*.sln.iml
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Node.js / Angular
+# ──────────────────────────────────────────────────────────────────────────────
+node_modules/
+dist/
+.angular/
+.sass-cache/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.npm
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Angular testing
+coverage/
+e2e/results/
+cypress/screenshots/
+cypress/videos/
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Docker
+# ──────────────────────────────────────────────────────────────────────────────
+docker-compose.override.yml
+
+# ──────────────────────────────────────────────────────────────────────────────
+# OS Files
+# ──────────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Misc
+# ──────────────────────────────────────────────────────────────────────────────
+*.swp
+*.swo
+*~
+.vscode/settings.json
+.vscode/launch.json
+
+# -----------------------------------------------------------------------
+/AGENT_START_HERE.md
+/EPCL_ADDONS_PLAN.md
+/IFMS_AGENT_IMPLEMENTATION_PLAN.md
+/IFMS_Implementation_Guide.docx
+/ifms-prd.docx
+/stitch-frontend-ui/
