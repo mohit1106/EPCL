@@ -1,0 +1,2 @@
+namespace FraudDetectionService.Application;
+public class ApplicationAssemblyMarker;
