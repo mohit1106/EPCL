@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Low Stock Alert</title></head>
+<body style="margin:0;padding:0;background-color:#0F172A;font-family:'Helvetica Neue',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0F172A;padding:40px 20px;">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+      <tr><td style="background:linear-gradient(135deg,#1B3A6B 0%,#2563EB 100%);padding:30px 40px;border-radius:16px 16px 0 0;text-align:center;">
+        <span style="font-size:36px;font-weight:900;color:#FFF;letter-spacing:-1px;">EPCL</span>
+        <div style="font-size:11px;color:#93C5FD;letter-spacing:3px;text-transform:uppercase;margin-top:4px;">Eleven Petroleum Corporation Limited</div>
+      </td></tr>
+      <tr><td style="background:#FFFFFF;padding:0;">
+        <div style="background:#DC2626;padding:16px 40px;text-align:center;">
+          <span style="font-size:18px;font-weight:700;color:#FFF;">⚠ Low Stock Alert</span>
+        </div>
+        <div style="padding:40px;">
+          <h1 style="margin:0 0 8px;font-size:22px;color:#0F172A;">Stock Running Low</h1>
+          <p style="margin:0 0 24px;font-size:15px;color:#64748B;line-height:1.6;">
+            Tank <strong>{{TankName}}</strong> at station <strong>{{StationName}}</strong> has dropped below the alert threshold.
+          </p>
+          <table width="100%" cellpadding="8" cellspacing="0" style="border:1px solid #E2E8F0;border-radius:8px;margin-bottom:24px;">
+            <tr style="background:#F8FAFC;"><td style="font-size:13px;color:#64748B;font-weight:600;">Current Stock</td><td style="font-size:15px;color:#0F172A;font-weight:700;">{{CurrentStock}} L</td></tr>
+            <tr><td style="font-size:13px;color:#64748B;font-weight:600;">Alert Threshold</td><td style="font-size:15px;color:#DC2626;font-weight:700;">{{Threshold}} L</td></tr>
+            <tr style="background:#F8FAFC;"><td style="font-size:13px;color:#64748B;font-weight:600;">Tank Capacity</td><td style="font-size:15px;color:#0F172A;font-weight:700;">{{Capacity}} L</td></tr>
+          </table>
+          <div style="background:#FEF2F2;border-left:4px solid #DC2626;padding:16px 20px;border-radius:0 8px 8px 0;margin-bottom:24px;">
+            <p style="margin:0;font-size:13px;color:#991B1B;"><strong>Action required:</strong> Please arrange for replenishment to avoid stockout.</p>
+          </div>
+          <div style="text-align:center;">
+            <a href="{{DashboardUrl}}" style="display:inline-block;background:#2563EB;color:#FFF;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Request Replenishment</a>
+          </div>
+        </div>
+      </td></tr>
+      <tr><td style="border-radius:0 0 16px 16px;overflow:hidden;"></td></tr>
+      <tr><td style="padding:24px 0;text-align:center;">
+        <p style="margin:0;font-size:12px;color:#475569;">© 2025 Eleven Petroleum Corporation Limited. All rights reserved.</p>
+        <p style="margin:4px 0 0;font-size:12px;color:#64748B;">This is an automated alert. Do not reply to this email.</p>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>
