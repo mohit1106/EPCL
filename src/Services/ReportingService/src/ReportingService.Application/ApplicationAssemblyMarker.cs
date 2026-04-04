@@ -1,0 +1,2 @@
+namespace ReportingService.Application;
+public class ApplicationAssemblyMarker;
