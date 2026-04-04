@@ -23,6 +23,7 @@ public static class DependencyInjection
         services.AddScoped<IProcessedEventRepository, ProcessedEventRepository>();
 
         services.AddHostedService<ReportingConsumerHostedService>();
+        services.AddHostedService<SignalRBridgeConsumerHostedService>();
 
         return services;
     }

@@ -4,9 +4,12 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using ReportingService.API.Hubs;
 using ReportingService.API.Middleware;
+using ReportingService.API.Services;
 using ReportingService.Application;
 using ReportingService.Infrastructure;
+using ReportingService.Infrastructure.Messaging;
 using Serilog;
 using Serilog.Sinks.Elasticsearch;
 
@@ -58,7 +61,20 @@ try
     builder.Services.AddValidatorsFromAssemblyContaining<ApplicationAssemblyMarker>();
     builder.Services.AddFluentValidationAutoValidation();
 
+    // SignalR
+    builder.Services.AddSignalR(opt =>
+    {
+        opt.EnableDetailedErrors = builder.Environment.IsDevelopment();
+        opt.KeepAliveInterval = TimeSpan.FromSeconds(15);
+        opt.ClientTimeoutInterval = TimeSpan.FromSeconds(60);
+    });
+
+    // Register SignalR notification service (bridges Infrastructure → API hubs)
+    builder.Services.AddScoped<ISignalRNotificationService, SignalRNotificationService>();
+
     var jwtSecret = builder.Configuration["JWT_SECRET_KEY"] ?? "EPCL-SuperSecret-JWT-Key-For-Development-Only-2024!@#";
+    var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
+
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         .AddJwtBearer(opt =>
         {
@@ -68,8 +84,23 @@ try
                 ValidateIssuerSigningKey = true,
                 ValidIssuer = builder.Configuration["JWT_ISSUER"] ?? "EPCL",
                 ValidAudience = builder.Configuration["JWT_AUDIENCE"] ?? "EPCL-Users",
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+                IssuerSigningKey = signingKey,
                 ClockSkew = TimeSpan.FromSeconds(30)
+            };
+
+            // SignalR sends JWT via query string — extract it for hub auth
+            opt.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = context =>
+                {
+                    var accessToken = context.Request.Query["access_token"];
+                    var path = context.HttpContext.Request.Path;
+                    if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                    {
+                        context.Token = accessToken;
+                    }
+                    return Task.CompletedTask;
+                }
             };
         });
     builder.Services.AddAuthorization();
@@ -117,7 +148,11 @@ try
     app.MapControllers();
     app.MapHealthChecks("/health");
 
-    Log.Information("EPCL Reporting Service starting on {Urls}", string.Join(", ", app.Urls));
+    // SignalR Hub endpoints
+    app.MapHub<AdminHub>("/hubs/admin");
+    app.MapHub<DealerHub>("/hubs/dealer");
+
+    Log.Information("EPCL Reporting Service starting with SignalR hubs: /hubs/admin, /hubs/dealer");
     app.Run();
 }
 catch (Exception ex) { Log.Fatal(ex, "Reporting Service terminated unexpectedly"); }
