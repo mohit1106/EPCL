@@ -56,7 +56,8 @@ public class NotificationConsumerHostedService : BackgroundService
             "sales.completed", "fraud.alert.triggered", "inventory.stock.low",
             "inventory.stock.critical", "inventory.replenishment.requested",
             "inventory.replenishment.approved", "inventory.dip.variance",
-            "sales.price.updated", "identity.account.locked", "sales.voided"
+            "sales.price.updated", "identity.account.locked", "sales.voided",
+            "reporting.stock.prediction.alert", "document.expiring.alert"
         };
         foreach (var key in bindings)
             await _channel.QueueBindAsync(QueueName, ExchangeName, key, cancellationToken: stoppingToken);
@@ -114,8 +115,14 @@ public class NotificationConsumerHostedService : BackgroundService
                     case nameof(UserAccountLockedEvent):
                         await HandleAccountLocked(mediator, body, jsonOpts);
                         break;
+                    case nameof(PredictedStockDepletionEvent):
+                        await HandlePredictedStockDepletion(mediator, templateService, body, jsonOpts);
+                        break;
+                    case "DocumentExpiringEvent":
+                        await HandleDocumentExpiring(mediator, templateService, body, jsonOpts);
+                        break;
                     default:
-                        _logger.LogWarning("Unhandled event type in notification consumer: {EventType}", eventType);
+                        _logger.LogWarning("Unknown event type: {type}", eventType);
                         break;
                 }
 
@@ -271,6 +278,39 @@ public class NotificationConsumerHostedService : BackgroundService
             NotificationChannel.InApp, "Account Locked",
             $"Account for {evt.FullName} ({evt.Email}) has been locked. Reason: {evt.Reason}",
             nameof(UserAccountLockedEvent)));
+    }
+
+    // ── Handler: PredictedStockDepletion → Notification to Dealer ──
+    private async Task HandlePredictedStockDepletion(IMediator m, IEmailTemplateService tpl, string body, JsonSerializerOptions opts)
+    {
+        var evt = JsonSerializer.Deserialize<PredictedStockDepletionEvent>(body, opts)!;
+        var html = tpl.Render("stock-prediction", new Dictionary<string, string>
+        {
+            ["TankName"] = evt.TankId.ToString()[..8],
+            ["StationName"] = evt.StationId.ToString()[..8],
+            ["CurrentStock"] = evt.CurrentStockLitres.ToString("F0"),
+            ["AvgDailyConsumption"] = evt.AvgDailyConsumption.ToString("F0"),
+            ["DaysUntilEmpty"] = evt.DaysUntilEmpty.ToString("F1"),
+            ["PredictedEmptyAt"] = evt.PredictedEmptyAt.ToString("dd MMM yyyy"),
+            ["DashboardUrl"] = "http://localhost:4200/dealer/replenishment" // Or reports dashboard
+        });
+        // We do not have a direct route to UserID for a specific station here unless we fetch from IdentityService
+        // But for this example we send to System Admin or assume DealerUserId logic can be extracted via user lookup.
+        // We will push as an InApp notification without targeted UserId, relying on global admin roles or similar.
+        await m.Send(new SendNotificationCommand(null, null, null,
+            NotificationChannel.InApp, $"📈 Stock Prediction Alert: Tank {evt.TankId.ToString()[..8]} empty in {evt.DaysUntilEmpty:F1} days",
+            html, nameof(PredictedStockDepletionEvent)));
+    }
+
+    // ── Handler: DocumentExpiring → Notification to Admin ─────────
+    private async Task HandleDocumentExpiring(IMediator m, IEmailTemplateService tpl, string body, JsonSerializerOptions opts)
+    {
+        var evt = JsonSerializer.Deserialize<DocumentExpiringEvent>(body, opts)!;
+        var msg = $"Document {evt.FileName} ({evt.DocumentType}) is expiring on {evt.ExpiryDate:d}. Days remaining: {evt.DaysUntilExpiry}.";
+        
+        await m.Send(new SendNotificationCommand(null, null, null,
+            NotificationChannel.InApp, $"📄 Document Expiring: {evt.FileName}",
+            msg, "DocumentExpiringEvent"));
     }
 
     public override async Task StopAsync(CancellationToken ct)

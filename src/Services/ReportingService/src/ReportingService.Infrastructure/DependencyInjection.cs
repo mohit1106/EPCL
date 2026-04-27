@@ -21,9 +21,17 @@ public static class DependencyInjection
         services.AddScoped<IGeneratedReportRepository, GeneratedReportRepository>();
         services.AddScoped<IScheduledReportRepository, ScheduledReportRepository>();
         services.AddScoped<IProcessedEventRepository, ProcessedEventRepository>();
+        services.AddScoped<IStockPredictionRepository, StockPredictionRepository>();
+        services.AddSingleton<IEventPublisher, RabbitMqEventPublisher>();
+
+        services.AddHttpClient("GatewayClient", client =>
+        {
+            client.BaseAddress = new Uri(config["GatewayUrl"] ?? "http://localhost:5000");
+        });
 
         services.AddHostedService<ReportingConsumerHostedService>();
         services.AddHostedService<SignalRBridgeConsumerHostedService>();
+        services.AddHostedService<ReportingService.Infrastructure.Services.StockPredictionHostedService>();
 
         return services;
     }

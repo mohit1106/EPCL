@@ -1,0 +1,86 @@
+<div class="page-content">
+  <h1 class="page-title">Live Fuel Markets</h1>
+  <p class="page-subtitle mono">Real-time benchmarking and volatility tracking</p>
+
+  <!-- Fuel Price Cards -->
+  <div class="price-cards">
+    <div class="price-card" *ngFor="let fuel of fuelCards" [attr.data-color]="fuel.color">
+      <div class="price-card-header">
+        <span class="fuel-name">{{ fuel.name }}</span>
+        <span class="fuel-change" [class.up]="fuel.direction === 'up'" [class.down]="fuel.direction === 'down'" [class.stable]="fuel.direction === 'stable'">
+          <span *ngIf="fuel.direction === 'up'">↗ +{{ fuel.change }}%</span>
+          <span *ngIf="fuel.direction === 'down'">↘ {{ fuel.change }}%</span>
+          <span *ngIf="fuel.direction === 'stable'">— STABLE</span>
+        </span>
+      </div>
+      <div class="price-card-value">
+        ${{ fuel.price | number:'1.2-2' }} <small>/L</small>
+      </div>
+      <span class="price-meta">Last 24h</span>
+      <div class="mini-chart">
+        <div class="mini-bar" *ngFor="let h of [30,45,40,55,50,60,65,70,75,80]" [style.height.%]="h"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 30-Day Chart -->
+  <div class="chart-section">
+    <div class="chart-header">
+      <div>
+        <h2>30-Day Global Price Index</h2>
+        <p class="mono">Aggregated Market Data — Refreshed Every 5M</p>
+      </div>
+      <div class="period-tabs">
+        <button *ngFor="let p of periods" [class.active]="p === selectedPeriod" (click)="selectedPeriod = p">{{ p }}</button>
+      </div>
+    </div>
+    <div class="chart-container" *ngIf="priceHistory.length > 0">
+      <svg class="price-chart-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <!-- Render a polyline, mapping prices to Y coordinates (0-100) -->
+        <!-- We approximate min/max for the Y axis scaling -->
+        <polyline
+          fill="none"
+          stroke="var(--color-primary)"
+          stroke-width="2"
+          [attr.points]="getChartPoints()"
+        />
+      </svg>
+      <div class="chart-labels" *ngIf="getFilteredHistory() as history">
+        <span *ngIf="history.length > 0">{{ history[0].date | date:'MMM dd' }}</span>
+        <span *ngIf="history.length > 0">{{ history[history.length - 1].date | date:'MMM dd' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alert Config -->
+  <div class="alert-section">
+    <div class="alert-info">
+      <span class="alert-badge mono">Market Intelligence</span>
+      <h2>Strategic Price Optimization</h2>
+      <p>Configure autonomous alerts to capture price dips and optimize your procurement cycles. Our engine monitors global benchmarks across 48 regions.</p>
+    </div>
+
+    <div class="alert-config">
+      <div class="config-field">
+        <label class="config-label">Fuel Category</label>
+        <select class="config-select" [(ngModel)]="selectedCategory">
+          <option *ngFor="let cat of fuelCategories" [value]="cat">{{ cat }}</option>
+        </select>
+      </div>
+      <div class="config-field">
+        <label class="config-label">Alert Threshold ($/L)</label>
+        <input type="text" class="config-input mono" [(ngModel)]="alertThreshold" />
+      </div>
+      <div class="config-field">
+        <label class="config-label">Notification Channels</label>
+        <div class="channel-grid">
+          <div class="channel" *ngFor="let ch of notificationChannels" [class.active]="ch.active" (click)="ch.active = !ch.active">
+            <span class="channel-icon">{{ ch.icon }}</span>
+            <span class="channel-name">{{ ch.name }}</span>
+          </div>
+        </div>
+      </div>
+      <button class="btn-alert mono">Alert Me When Prices Drop</button>
+    </div>
+  </div>
+</div>

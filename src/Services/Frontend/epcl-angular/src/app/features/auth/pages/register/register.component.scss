@@ -1,0 +1,196 @@
+// EPCL Register Page - Inherits from Login's Split-Panel Design
+@import '../../pages/login/login.component.scss';
+
+// -------------------------------------------------------
+// Register-specific overrides
+// -------------------------------------------------------
+
+// Register form panel needs slightly more width for the wizard
+.register-form-panel {
+  flex: 0 0 560px;
+  min-width: 480px;
+  max-width: 600px;
+  padding: 36px 44px;
+  overflow-y: auto;
+}
+
+// -------------------------------------------------------
+// Step Navigator
+// -------------------------------------------------------
+.step-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+
+.step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.step-number {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  background: #F1F5F9;
+  color: #94A3B8;
+  border: 2px solid #E2E8F0;
+  transition: all 0.3s ease;
+
+  .active & {
+    background: #1E40AF;
+    color: white;
+    border-color: #1E40AF;
+    box-shadow: 0 2px 8px rgba(30, 64, 175, 0.3);
+  }
+
+  .complete & {
+    background: #10B981;
+    color: white;
+    border-color: #10B981;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  }
+
+  svg {
+    color: white;
+  }
+}
+
+.step-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: #94A3B8;
+
+  .active & { color: #1E40AF; }
+  .complete & { color: #10B981; }
+}
+
+.step-line {
+  width: 60px;
+  height: 2px;
+  background: #E2E8F0;
+  margin: 0 12px;
+  margin-bottom: 20px;
+  transition: background 0.3s ease;
+
+  &.active {
+    background: linear-gradient(90deg, #10B981, #1E40AF);
+  }
+}
+
+.step-content {
+  animation: fadeIn 0.3s ease;
+}
+
+// -------------------------------------------------------
+// Step Actions
+// -------------------------------------------------------
+.step-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.btn-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid #E2E8F0;
+  color: #64748B;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: #CBD5E1;
+    color: #1E293B;
+    background: #F8FAFC;
+  }
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+// -------------------------------------------------------
+// Optional label
+// -------------------------------------------------------
+.form-label-optional {
+  font-weight: 400;
+  color: #94A3B8;
+  font-size: 12px;
+}
+
+// -------------------------------------------------------
+// Legal footer
+// -------------------------------------------------------
+.auth-footer-legal {
+  text-align: center;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #F1F5F9;
+
+  p {
+    font-size: 12px;
+    color: #94A3B8;
+    line-height: 1.6;
+  }
+}
+
+// -------------------------------------------------------
+// Responsive overrides
+// -------------------------------------------------------
+@media (max-width: 1100px) {
+  .register-form-panel {
+    flex: 0 0 480px;
+    min-width: 400px;
+    padding: 32px 36px;
+  }
+}
+
+@media (max-width: 900px) {
+  .register-form-panel {
+    flex: 1;
+    min-width: 100%;
+    max-width: 100%;
+    padding: 32px;
+  }
+
+  .auth-form-container {
+    max-width: 480px;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .register-form-panel {
+    padding: 24px 20px 32px;
+  }
+
+  .step-line {
+    width: 40px;
+    margin: 0 8px;
+  }
+
+  .role-selector {
+    flex-direction: column;
+    gap: 6px;
+  }
+}

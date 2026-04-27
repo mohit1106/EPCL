@@ -1,0 +1,65 @@
+<div class="page-content">
+  <h1 class="page-title">Referral Program</h1>
+  <p class="page-subtitle">Expand the EPCL intelligence network. Transmit your secure code to logistics partners and terminal managers.</p>
+
+  <!-- Stats Row -->
+  <div class="ref-stats">
+    <div class="ref-code-card">
+      <span class="ref-label mono">Secure Transmission Code</span>
+      <div class="ref-code-display">
+        <span class="ref-code-text mono">{{ referralCode }}</span>
+        <button class="copy-btn" (click)="copyCode()">📋 Copy</button>
+      </div>
+      <div class="share-buttons">
+        <button class="share-btn">↗ LinkedIn</button>
+        <button class="share-btn">✉ Email</button>
+      </div>
+    </div>
+    <div class="ref-kpi"><span class="ref-kpi-label">Total Referrals</span><span class="ref-kpi-value mono">{{ totalReferrals }}</span><span class="ref-kpi-trend">↗ +12.4%</span></div>
+    <div class="ref-kpi"><span class="ref-kpi-label">Onboards</span><span class="ref-kpi-value mono">{{ onboards }}</span><span class="ref-kpi-sub">Verification Phase Complete</span></div>
+    <div class="ref-kpi accent"><span class="ref-kpi-label">Pending Credits</span><span class="ref-kpi-value mono">{{ pendingCredits | number:'1.1-1' }}k</span><span class="ref-kpi-sub">Est. Value (USD)</span></div>
+  </div>
+
+  <!-- Tier Progression -->
+  <div class="tier-section">
+    <div class="tier-header"><h2>Tier Progression</h2><p>Accumulate verified transmissions to unlock operational hardware.</p></div>
+    <span class="next-reward mono">Next Reward: Silver II</span>
+    <div class="tier-grid">
+      <div class="tier-card" *ngFor="let tier of tiers" [class.active]="tier.active">
+        <div class="tier-card-icon">{{ tier.active ? '🌐' : '🛡' }} <span class="active-tag" *ngIf="tier.active">Active Tier</span></div>
+        <h3 class="tier-name">{{ tier.name }}</h3>
+        <p class="tier-range mono">{{ tier.range }}</p>
+        <ul class="tier-perks">
+          <li *ngFor="let p of tier.perks">+ {{ p }}</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="activity-section">
+    <div class="activity-header"><h2>Recent Activity</h2><a class="export-link mono">Export Logs ↓</a></div>
+    <table>
+      <thead><tr><th>Entity Name</th><th>Industry Role</th><th>Transmission Date</th><th>Network Status</th><th></th></tr></thead>
+      <tbody>
+        <tr *ngFor="let a of recentActivity">
+          <td><span class="avatar-badge" [style.background]="a.status === 'JOINED' ? 'var(--color-success)' : a.status === 'INVITED' ? 'var(--color-primary)' : '#f6bc75'">{{ a.initials }}</span> {{ a.name }}</td>
+          <td>{{ a.role }}</td>
+          <td class="mono">{{ a.date }}</td>
+          <td><span class="status-chip" [ngClass]="a.status.toLowerCase()">{{ a.status }}</span></td>
+          <td><button class="action-dots">⋮</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CTA Banner -->
+  <div class="cta-banner">
+    <h2>Build Your Energy Alliance</h2>
+    <p>High-volume referrers receive invitations to the annual EPCL Global Summit in Singapore.</p>
+    <div class="cta-buttons">
+      <button class="cta-btn primary">📱 Generate QR Code</button>
+      <button class="cta-btn secondary">View Partner Kit</button>
+    </div>
+  </div>
+</div>

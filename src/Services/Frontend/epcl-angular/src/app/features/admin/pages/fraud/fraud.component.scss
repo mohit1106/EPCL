@@ -1,0 +1,411 @@
+// EPCL Fraud Intelligence Page — Light Theme
+
+.fraud-page {
+  animation: fadeIn 0.4s ease;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.page-header__title {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.page-header__subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+// Filter Tabs
+.filter-tabs {
+  display: flex;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  gap: 2px;
+}
+
+.filter-tab {
+  padding: 7px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  transition: all 0.2s ease;
+
+  &.active {
+    background: var(--color-primary);
+    color: white;
+    font-weight: 600;
+  }
+
+  &:hover:not(.active) {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+  }
+}
+
+// KPI Row
+.fraud-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.fraud-kpi {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+}
+
+.fraud-kpi-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.fraud-kpi-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-top: 4px;
+}
+
+.fraud-kpi-unit {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.fraud-kpi-trend {
+  font-size: 12px;
+  font-weight: 700;
+  margin-left: 8px;
+
+  &.up {
+    color: var(--color-danger);
+  }
+}
+
+.fraud-kpi-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  display: block;
+}
+
+.fraud-kpi-total {
+  border-color: rgba(30, 64, 175, 0.2);
+  background: var(--color-primary-light);
+}
+
+// AI Insight Banner
+.ai-insight-banner {
+  display: flex;
+  gap: 16px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, rgba(30, 64, 175, 0.04), rgba(59, 130, 246, 0.06));
+  border: 1px solid rgba(30, 64, 175, 0.12);
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.ai-banner-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(30, 64, 175, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+
+.ai-action {
+  margin-top: 6px;
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+// Bulk Bar
+.bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: var(--radius-sm);
+  margin-bottom: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-warning);
+}
+
+// Table Card
+.fraud-table-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 0;
+  overflow: hidden;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border-subtle);
+    text-align: left;
+    background: var(--bg-surface);
+  }
+
+  td {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  tr {
+    transition: background 0.15s ease;
+
+    &:hover td {
+      background: rgba(30, 64, 175, 0.02);
+    }
+
+    &.selected td {
+      background: rgba(30, 64, 175, 0.04);
+    }
+  }
+}
+
+.fraud-row {
+  cursor: pointer;
+}
+
+.fraud-time-cell {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.fraud-station-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.station-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+
+  &.status-up {
+    background: var(--color-success);
+  }
+
+  &.status-down {
+    background: var(--color-danger);
+  }
+}
+
+// Severity badges
+.severity-high {
+  background: rgba(239, 68, 68, 0.1) !important;
+  color: var(--color-danger) !important;
+}
+
+.severity-medium {
+  background: rgba(245, 158, 11, 0.1) !important;
+  color: var(--color-warning) !important;
+}
+
+.severity-low {
+  background: rgba(59, 130, 246, 0.1) !important;
+  color: var(--color-info) !important;
+}
+
+// Action buttons
+.fraud-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.action-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: var(--bg-surface);
+    color: var(--color-primary);
+  }
+
+  &.action-dismiss:hover {
+    background: rgba(239, 68, 68, 0.08);
+    color: var(--color-danger);
+  }
+}
+
+// Pagination
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.page-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.15s ease;
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.page-info {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+// Detail Panel
+.detail-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.3);
+  z-index: 200;
+  display: flex;
+  justify-content: flex-end;
+  animation: fadeIn 0.2s ease;
+}
+
+.detail-panel {
+  width: 420px;
+  max-width: 100vw;
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  animation: slideInRight 0.3s ease;
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+
+  h3 {
+    font-size: 18px;
+    font-weight: 700;
+  }
+}
+
+.detail-body {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 13px;
+  gap: 16px;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.detail-label {
+  font-weight: 600;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.detail-actions {
+  display: flex;
+  gap: 8px;
+  padding: 20px 24px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .fraud-kpi-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .detail-panel {
+    width: 100%;
+  }
+
+  .page-header {
+    flex-direction: column;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}

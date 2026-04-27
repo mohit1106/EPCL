@@ -1,0 +1,27 @@
+<div class="page-content">
+  <div class="page-header-row">
+    <div><h1 class="page-title">Fleet Registry</h1><p class="page-subtitle">Manage your operational vehicles and refueling configurations.</p></div>
+    <button class="btn-primary" (click)="showAddModal = true">+ Register Vehicle</button>
+  </div>
+
+  <div class="vehicle-grid">
+    <div class="vehicle-card" *ngFor="let v of vehicles">
+      <div class="vehicle-card-top">
+        <div class="vehicle-icon">🚛</div>
+        <span class="vehicle-status" [class.active]="v.status === 'Active'" [class.maintenance]="v.status === 'Maintenance'">{{ v.status }}</span>
+      </div>
+      <h3 class="vehicle-name">{{ v.name }}</h3>
+      <p class="vehicle-plate mono">{{ v.plate }}</p>
+      <div class="vehicle-details">
+        <div class="detail-row"><span class="detail-label">Type</span><span class="detail-value">{{ v.type }}</span></div>
+        <div class="detail-row"><span class="detail-label">Fuel</span><span class="detail-value">{{ v.fuel }}</span></div>
+        <div class="detail-row"><span class="detail-label">Capacity</span><span class="detail-value mono">{{ v.capacity }}</span></div>
+        <div class="detail-row"><span class="detail-label">Last Refuel</span><span class="detail-value mono">{{ v.lastRefuel }}</span></div>
+      </div>
+      <div class="vehicle-actions">
+        <button class="btn-outline-sm">Edit</button>
+        <button class="btn-outline-sm danger">Remove</button>
+      </div>
+    </div>
+  </div>
+</div>

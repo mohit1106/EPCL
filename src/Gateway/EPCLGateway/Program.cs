@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
+using Ocelot.Provider.Polly;
 using Ocelot.Cache.CacheManager;
 using Serilog;
 using Serilog.Events;
@@ -101,6 +102,7 @@ try
     // ── Ocelot services with CacheManager ────────────────────────
     builder.Services
         .AddOcelot(builder.Configuration)
+        .AddPolly()
         .AddCacheManager(x => x.WithDictionaryHandle());
 
     // ── CORS ─────────────────────────────────────────────────────

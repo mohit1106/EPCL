@@ -39,6 +39,14 @@ public static class DependencyInjection
         services.AddScoped<IFraudRule, NewDealerRule>();
         services.AddScoped<IFraudRule, VoidPatternRule>();
 
+        // Register 4 Time-Based rules
+        services.AddScoped<ITimeBasedFraudRule, IdlePumpRule>();
+        services.AddScoped<ITimeBasedFraudRule, RevenueDropRule>();
+        services.AddScoped<ITimeBasedFraudRule, StationSilenceRule>();
+        services.AddScoped<ITimeBasedFraudRule, PriceDiscrepancyRule>();
+        
+        services.AddHostedService<FraudDetectionService.Infrastructure.BackgroundServices.TimeBasedAnomalyService>();
+
         return services;
     }
 }

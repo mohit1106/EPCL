@@ -1,15 +1,36 @@
 {
   "Routes": [
     {
+      "UpstreamPathTemplate": "/gateway/documents/{everything}",
+      "UpstreamHttpMethod": [ "POST", "GET", "PUT", "DELETE" ],
+      "DownstreamPathTemplate": "/api/documents/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5180 }],
+      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
+      "UpstreamHeaderTransform": {},
+      "MaxRequestBodySize": 26214400,
+      "RateLimitOptions": {
+        "EnableRateLimiting": false,
+        "Period": "1s",
+        "PeriodTimespan": 1,
+        "Limit": 50
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 5,
+        "DurationOfBreak": 30000,
+        "TimeoutValue": 15000
+      }
+    },
+    {
       "UpstreamPathTemplate": "/gateway/auth/{everything}",
       "UpstreamHttpMethod": [ "POST", "GET", "PUT", "DELETE" ],
       "DownstreamPathTemplate": "/api/auth/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5217 }],
       "RateLimitOptions": {
-        "EnableRateLimiting": true,
-        "Period": "1m",
-        "PeriodTimespan": 60,
+        "EnableRateLimiting": false,
+        "Period": "1s",
+        "PeriodTimespan": 1,
         "Limit": 10,
         "ClientIdHeader": "X-Client-Id"
       },
@@ -27,9 +48,9 @@
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5217 }],
       "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
       "RateLimitOptions": {
-        "EnableRateLimiting": true,
-        "Period": "1m",
-        "PeriodTimespan": 60,
+        "EnableRateLimiting": false,
+        "Period": "1s",
+        "PeriodTimespan": 1,
         "Limit": 100
       },
       "QoSOptions": {
@@ -46,9 +67,9 @@
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5217 }],
       "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
       "RateLimitOptions": {
-        "EnableRateLimiting": true,
-        "Period": "1m",
-        "PeriodTimespan": 60,
+        "EnableRateLimiting": false,
+        "Period": "1s",
+        "PeriodTimespan": 1,
         "Limit": 100
       },
       "QoSOptions": {
@@ -104,9 +125,9 @@
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5143 }],
       "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
       "RateLimitOptions": {
-        "EnableRateLimiting": true,
-        "Period": "1m",
-        "PeriodTimespan": 60,
+        "EnableRateLimiting": false,
+        "Period": "1s",
+        "PeriodTimespan": 1,
         "Limit": 100
       },
       "QoSOptions": {
@@ -123,9 +144,9 @@
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5143 }],
       "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
       "RateLimitOptions": {
-        "EnableRateLimiting": true,
-        "Period": "1m",
-        "PeriodTimespan": 60,
+        "EnableRateLimiting": false,
+        "Period": "1s",
+        "PeriodTimespan": 1,
         "Limit": 100
       },
       "QoSOptions": {
@@ -143,9 +164,9 @@
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5134 }],
       "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
       "RateLimitOptions": {
-        "EnableRateLimiting": true,
-        "Period": "1m",
-        "PeriodTimespan": 60,
+        "EnableRateLimiting": false,
+        "Period": "1s",
+        "PeriodTimespan": 1,
         "Limit": 100
       },
       "QoSOptions": {
@@ -176,9 +197,28 @@
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5167 }],
       "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
       "RateLimitOptions": {
-        "EnableRateLimiting": true,
-        "Period": "1m",
-        "PeriodTimespan": 60,
+        "EnableRateLimiting": false,
+        "Period": "1s",
+        "PeriodTimespan": 1,
+        "Limit": 100
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 5,
+        "DurationOfBreak": 30000,
+        "TimeoutValue": 10000
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/gateway/driver/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
+      "DownstreamPathTemplate": "/api/driver/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5167 }],
+      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
+      "RateLimitOptions": {
+        "EnableRateLimiting": false,
+        "Period": "1s",
+        "PeriodTimespan": 1,
         "Limit": 100
       },
       "QoSOptions": {
@@ -196,9 +236,9 @@
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5062 }],
       "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
       "RateLimitOptions": {
-        "EnableRateLimiting": true,
-        "Period": "1m",
-        "PeriodTimespan": 60,
+        "EnableRateLimiting": false,
+        "Period": "1s",
+        "PeriodTimespan": 1,
         "Limit": 100
       },
       "QoSOptions": {
@@ -216,9 +256,9 @@
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5237 }],
       "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
       "RateLimitOptions": {
-        "EnableRateLimiting": true,
-        "Period": "1m",
-        "PeriodTimespan": 60,
+        "EnableRateLimiting": false,
+        "Period": "1s",
+        "PeriodTimespan": 1,
         "Limit": 100
       },
       "QoSOptions": {
@@ -236,9 +276,9 @@
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5037 }],
       "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
       "RateLimitOptions": {
-        "EnableRateLimiting": true,
-        "Period": "1m",
-        "PeriodTimespan": 60,
+        "EnableRateLimiting": false,
+        "Period": "1s",
+        "PeriodTimespan": 1,
         "Limit": 100
       },
       "QoSOptions": {
@@ -256,9 +296,9 @@
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5268 }],
       "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
       "RateLimitOptions": {
-        "EnableRateLimiting": true,
-        "Period": "1m",
-        "PeriodTimespan": 60,
+        "EnableRateLimiting": false,
+        "Period": "1s",
+        "PeriodTimespan": 1,
         "Limit": 100
       },
       "QoSOptions": {
@@ -276,9 +316,9 @@
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5192 }],
       "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
       "RateLimitOptions": {
-        "EnableRateLimiting": true,
-        "Period": "1m",
-        "PeriodTimespan": 60,
+        "EnableRateLimiting": false,
+        "Period": "1s",
+        "PeriodTimespan": 1,
         "Limit": 100
       },
       "QoSOptions": {
@@ -296,9 +336,9 @@
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5167 }],
       "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
       "RateLimitOptions": {
-        "EnableRateLimiting": true,
-        "Period": "1m",
-        "PeriodTimespan": 60,
+        "EnableRateLimiting": false,
+        "Period": "1s",
+        "PeriodTimespan": 1,
         "Limit": 100
       },
       "QoSOptions": {
@@ -306,18 +346,74 @@
         "DurationOfBreak": 30000,
         "TimeoutValue": 10000
       }
+    },
+
+    {
+      "UpstreamPathTemplate": "/gateway/payments/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
+      "DownstreamPathTemplate": "/api/payments/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5167 }],
+      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 5,
+        "DurationOfBreak": 30000,
+        "TimeoutValue": 10000
+      }
+    },
+
+    {
+      "UpstreamPathTemplate": "/gateway/vehicles/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "DELETE" ],
+      "DownstreamPathTemplate": "/api/vehicles/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5167 }],
+      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 5,
+        "DurationOfBreak": 30000,
+        "TimeoutValue": 10000
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/gateway/vehicles",
+      "UpstreamHttpMethod": [ "GET", "POST" ],
+      "DownstreamPathTemplate": "/api/vehicles",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5167 }],
+      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 5,
+        "DurationOfBreak": 30000,
+        "TimeoutValue": 10000
+      }
+    },
+
+    {
+      "UpstreamPathTemplate": "/gateway/ai/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "DELETE" ],
+      "DownstreamPathTemplate": "/api/ai/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5010 }],
+      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
+      "RateLimitOptions": {
+        "EnableRateLimiting": true,
+        "Period": "1s",
+        "PeriodTimespan": 1,
+        "Limit": 20,
+        "ClientIdHeader": "X-Client-Id"
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 3,
+        "DurationOfBreak": 30000,
+        "TimeoutValue": 30000
+      }
     }
   ],
 
   "GlobalConfiguration": {
     "BaseUrl": "http://localhost:5000",
     "RequestIdKey": "X-Correlation-ID",
-    "RateLimitOptions": {
-      "DisableRateLimitHeaders": false,
-      "QuotaExceededMessage": "Rate limit exceeded. Please try again later.",
-      "HttpStatusCode": 429,
-      "ClientIdHeader": "X-Client-Id"
-    },
     "QoSOptions": {
       "ExceptionsAllowedBeforeBreaking": 5,
       "DurationOfBreak": 30000,

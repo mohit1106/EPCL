@@ -1,0 +1,68 @@
+<div class="page-content">
+  <div class="page-top">
+    <div><span class="page-label mono">CORE ASSET MANAGEMENT</span><h1 class="page-title">Inventory Matrix</h1></div>
+    <div class="capacity-kpi">
+      <div class="cap-item"><span class="cap-label mono">TOTAL FLEET CAPACITY</span><span class="cap-value mono">{{ totalCapacity | number }} L</span></div>
+      <div class="cap-item accent"><span class="cap-label mono">CURRENT LOADOUT</span><span class="cap-value mono">{{ currentLoadout | number }} L</span></div>
+    </div>
+  </div>
+
+  <!-- Tank Cards -->
+  <div class="tank-grid">
+    <div class="tank-card" *ngFor="let t of tanks" [class.low]="t.statusClass === 'low'">
+      <div class="tank-header">
+        <span class="tank-tag" [class.diesel]="t.tag.includes('DIESEL')" [class.cng]="t.tag.includes('CNG')">{{ t.tag }}</span>
+        <span class="tank-status mono" [ngClass]="t.statusClass">{{ t.status }}</span>
+      </div>
+      <h3 class="tank-name">{{ t.name }}</h3>
+      <div class="tank-level-row">
+        <span class="level-label">{{ t.isCng ? 'AVAILABLE MASS' : 'CURRENT LEVEL' }}</span>
+        <span class="level-value mono" [class.warn]="t.statusClass === 'low'">{{ t.current | number }} {{ t.unit }}</span>
+      </div>
+      <div class="tank-bar-container">
+        <div class="tank-bar-fill" [style.width.%]="t.pct" [style.background]="t.color"></div>
+      </div>
+      <div class="tank-bar-labels mono">
+        <span>CAP: {{ t.capacity | number }} {{ t.unit }}</span>
+        <span>{{ t.pct }}% FILL</span>
+      </div>
+      <div class="tank-actions">
+        <button class="btn-tank mono" *ngIf="!t.isCng">LOG DIP READING</button>
+        <button class="btn-tank mono" *ngIf="!t.isCng" [class.accent]="t.statusClass === 'low'">{{ t.statusClass === 'low' ? 'ORDER NOW' : 'ADJUST CALIB' }}</button>
+        <button class="btn-tank mono" *ngIf="t.isCng">SENSOR DIAGNOSTICS</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Grid: Replenish Intake + Loading Log -->
+  <div class="bottom-grid">
+    <!-- Replenish Intake -->
+    <div class="card">
+      <h3 class="card-title">🚛 Replenish Intake</h3>
+      <div class="form-field"><label class="form-label mono">FUEL TYPE SELECT</label><select class="form-input" [(ngModel)]="replenishForm.fuelType"><option>MS - Petrol (92 RON)</option><option>HSD - Diesel</option><option>CNG</option></select></div>
+      <div class="form-field"><label class="form-label mono">TANK ALLOCATION</label>
+        <div class="tank-chips"><button class="tank-chip mono" *ngFor="let tk of tankOptions" [class.active]="tk === replenishForm.tank" (click)="replenishForm.tank = tk">{{ tk }}</button></div>
+      </div>
+      <div class="form-field"><label class="form-label mono">INTAKE VOLUME (LITERS)</label><input type="number" class="form-input mono" [(ngModel)]="replenishForm.volume" placeholder="00.00" /></div>
+      <div class="form-field"><label class="form-label mono">BOWSER ID / CHALLAN</label><input type="text" class="form-input mono" [(ngModel)]="replenishForm.bowserId" placeholder="BWS-XXXX" /></div>
+      <button class="btn-verify mono">VERIFY & UNLOAD</button>
+    </div>
+
+    <!-- Loading Log -->
+    <div class="card">
+      <div class="card-header-row"><h3 class="card-title mono">LOADING LOG – LAST 24H</h3><button class="btn-export-sm mono">↓ EXPORT PDF</button></div>
+      <table>
+        <thead><tr><th>TIMESTAMP</th><th>OPERATION</th><th>QTY</th><th>TARGET</th><th>STATUS</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let l of loadingLog">
+            <td class="mono">{{ l.time }}</td>
+            <td class="mono" [class.stock-in]="l.op === 'STOCK_IN'" [class.adjustment]="l.op === 'ADJUSTMENT'">{{ l.op }}</td>
+            <td class="mono">{{ l.qty }}</td>
+            <td class="mono text-muted">{{ l.target }}</td>
+            <td><span class="log-status" [ngClass]="getStatusClass(l.status)">{{ l.status }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

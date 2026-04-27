@@ -50,6 +50,7 @@ public partial class RecordFuelSaleValidator : AbstractValidator<RecordFuelSaleC
 public class RecordFuelSaleHandler(
     ITransactionRepository txRepo, IPumpRepository pumpRepo,
     IFuelPriceRepository priceRepo, IRabbitMqPublisher publisher,
+    IFuelPreAuthorizationRepository preAuthRepo,
     ILogger<RecordFuelSaleHandler> logger)
     : IRequestHandler<RecordFuelSaleCommand, TransactionDto>
 {
@@ -71,6 +72,35 @@ public class RecordFuelSaleHandler(
         // Rule 7.3: Parse payment method
         if (!Enum.TryParse<PaymentMethod>(cmd.PaymentMethod, out var paymentMethod))
             throw new DomainException($"Invalid payment method: {cmd.PaymentMethod}");
+
+        // Pre-Auth validation for FleetCard
+        if (paymentMethod == PaymentMethod.FleetCard)
+        {
+            var authCode = cmd.PaymentReferenceId;
+            var preAuth = await preAuthRepo.GetByAuthCodeAsync(authCode, ct);
+            
+            if (preAuth == null)
+            {
+                throw new DomainException($"Invalid Pre-Authorization Code: {authCode}");
+            }
+            if (preAuth.Status != "Active" || preAuth.ExpiresAt < DateTime.UtcNow)
+            {
+                throw new DomainException("Pre-Authorization code is expired or no longer active.");
+            }
+            if (preAuth.StationId != cmd.StationId)
+            {
+                throw new DomainException("This Pre-Authorization code is registered for a different station.");
+            }
+            if (preAuth.AuthorizedAmountINR < totalAmount)
+            {
+                throw new DomainException($"Authorized limit (₹{preAuth.AuthorizedAmountINR}) exceeded for this transaction (₹{totalAmount}).");
+            }
+
+            // Mark as used
+            preAuth.Status = "Used";
+            // preAuth.UsedByTransactionId will be set after tx creation
+            await preAuthRepo.UpdateAsync(preAuth, ct);
+        }
 
         // Rule 7.3: Generate receipt number — yyyyMMdd-{StationCode}-{4-digit-seq}
         var today = DateTimeOffset.UtcNow;
@@ -100,6 +130,16 @@ public class RecordFuelSaleHandler(
         };
 
         await txRepo.AddAsync(tx, ct);
+
+        if (paymentMethod == PaymentMethod.FleetCard)
+        {
+            var preAuth = await preAuthRepo.GetByAuthCodeAsync(cmd.PaymentReferenceId, ct);
+            if (preAuth != null)
+            {
+                preAuth.UsedByTransactionId = tx.Id;
+                await preAuthRepo.UpdateAsync(preAuth, ct);
+            }
+        }
 
         // Saga Step 1: Publish SaleInitiatedEvent
         await publisher.PublishAsync(new SaleInitiatedEvent

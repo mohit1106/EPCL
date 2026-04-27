@@ -12,6 +12,7 @@ public class ReportingDbContext : DbContext
     public DbSet<GeneratedReport> GeneratedReports => Set<GeneratedReport>();
     public DbSet<ScheduledReport> ScheduledReports => Set<ScheduledReport>();
     public DbSet<ProcessedEvent> ProcessedEvents => Set<ProcessedEvent>();
+    public DbSet<StockPrediction> StockPredictions => Set<StockPrediction>();
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
@@ -63,6 +64,18 @@ public class ReportingDbContext : DbContext
             b.ToTable("ProcessedEvents"); b.HasKey(e => e.Id);
             b.Property(e => e.EventType).IsRequired().HasMaxLength(100);
             b.HasIndex(e => e.EventId).IsUnique();
+        });
+
+        mb.Entity<StockPrediction>(b =>
+        {
+            b.ToTable("StockPredictions");
+            b.HasKey(s => s.Id);
+            b.Property(s => s.CurrentStockLitres).HasColumnType("decimal(10,2)");
+            b.Property(s => s.AvgDailyConsumptionL).HasColumnType("decimal(10,3)");
+            b.Property(s => s.DaysUntilEmpty).HasColumnType("decimal(6,1)");
+            b.HasIndex(s => s.StationId);
+            b.HasIndex(s => s.TankId);
+            b.HasIndex(s => s.DaysUntilEmpty);
         });
     }
 }

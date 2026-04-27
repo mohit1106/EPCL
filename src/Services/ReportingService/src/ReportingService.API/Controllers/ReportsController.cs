@@ -73,6 +73,16 @@ public class ReportsController(IMediator mediator) : ControllerBase
         var ext = entity.Format == "PDF" ? "pdf" : "xlsx";
         return PhysicalFile(entity.FilePath, contentType, $"{entity.ReportType}_{entity.Id}.{ext}");
     }
+    /// <summary>Get predictive stock intelligence for a station.</summary>
+    [HttpGet("stock-predictions")]
+    public async Task<IActionResult> GetStockPredictions([FromQuery] Guid? stationId)
+        => Ok(await mediator.Send(new GetStockPredictionsQuery(stationId)));
+
+    /// <summary>Get at-risk tanks globally (Admin) or per station (Dealer).</summary>
+    [HttpGet("stock-predictions/at-risk")]
+    public async Task<IActionResult> GetAtRiskStockPredictions(
+        [FromQuery] int daysThreshold = 7, [FromQuery] Guid? stationId = null)
+        => Ok(await mediator.Send(new GetAtRiskStockPredictionsQuery(daysThreshold, stationId)));
 }
 
 /// <summary>KPI dashboard endpoints.</summary>

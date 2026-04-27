@@ -136,6 +136,65 @@ namespace SalesService.Infrastructure.Persistence.Migrations
                     b.ToTable("FleetVehicles", (string)null);
                 });
 
+            modelBuilder.Entity("SalesService.Domain.Entities.FuelPreAuthorization", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWID()");
+
+                    b.Property<string>("AuthCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<decimal>("AuthorizedAmountINR")
+                        .HasColumnType("DECIMAL(10,2)");
+
+                    b.Property<decimal?>("AuthorizedLitres")
+                        .HasColumnType("DECIMAL(10,3)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<Guid>("DriverUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("FleetAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("FuelTypeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("StationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("Active");
+
+                    b.Property<Guid?>("UsedByTransactionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("VehicleId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthCode")
+                        .IsUnique();
+
+                    b.ToTable("FuelPreAuthorizations", (string)null);
+                });
+
             modelBuilder.Entity("SalesService.Domain.Entities.FuelPrice", b =>
                 {
                     b.Property<Guid>("Id")

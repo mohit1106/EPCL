@@ -92,3 +92,54 @@ public class ProcessedEventRepository(ReportingDbContext ctx) : IProcessedEventR
     public async Task MarkProcessedAsync(Guid eventId, string eventType, CancellationToken ct)
     { await ctx.ProcessedEvents.AddAsync(new ProcessedEvent { Id = Guid.NewGuid(), EventId = eventId, EventType = eventType }, ct); await ctx.SaveChangesAsync(ct); }
 }
+
+public class StockPredictionRepository(ReportingDbContext ctx) : IStockPredictionRepository
+{
+    public async Task UpsertAsync(StockPrediction prediction, CancellationToken ct = default)
+    {
+        var existing = await ctx.StockPredictions.FirstOrDefaultAsync(s => s.TankId == prediction.TankId, ct);
+        if (existing != null)
+        {
+            existing.AvgDailyConsumptionL = prediction.AvgDailyConsumptionL;
+            existing.CurrentStockLitres = prediction.CurrentStockLitres;
+            existing.PredictedEmptyAt = prediction.PredictedEmptyAt;
+            existing.DaysUntilEmpty = prediction.DaysUntilEmpty;
+            existing.CalculatedAt = prediction.CalculatedAt;
+            existing.DataPointsUsed = prediction.DataPointsUsed;
+        }
+        else
+        {
+            await ctx.StockPredictions.AddAsync(prediction, ct);
+        }
+        await ctx.SaveChangesAsync(ct);
+    }
+
+    public async Task<StockPrediction?> GetByTankIdAsync(Guid tankId, CancellationToken ct = default)
+    {
+        return await ctx.StockPredictions.FirstOrDefaultAsync(s => s.TankId == tankId, ct);
+    }
+
+    public async Task<IReadOnlyList<StockPrediction>> GetAllAsync(Guid? stationId = null, CancellationToken ct = default)
+    {
+        IQueryable<StockPrediction> q = ctx.StockPredictions;
+        if (stationId.HasValue) q = q.Where(s => s.StationId == stationId.Value);
+        return await q.AsNoTracking().ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<StockPrediction>> GetAtRiskAsync(int daysThreshold = 7, Guid? stationId = null, CancellationToken ct = default)
+    {
+        IQueryable<StockPrediction> q = ctx.StockPredictions.Where(s => s.DaysUntilEmpty <= daysThreshold);
+        if (stationId.HasValue) q = q.Where(s => s.StationId == stationId.Value);
+        return await q.OrderBy(s => s.DaysUntilEmpty).AsNoTracking().ToListAsync(ct);
+    }
+
+    public async Task MarkAlertSentAsync(Guid tankId, CancellationToken ct = default)
+    {
+        var existing = await ctx.StockPredictions.FirstOrDefaultAsync(s => s.TankId == tankId, ct);
+        if (existing != null)
+        {
+            existing.AlertSentAt = DateTime.UtcNow;
+            await ctx.SaveChangesAsync(ct);
+        }
+    }
+}

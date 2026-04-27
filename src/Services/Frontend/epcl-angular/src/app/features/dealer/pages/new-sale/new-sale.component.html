@@ -1,0 +1,309 @@
+<div class="sale-layout">
+  <!-- Main Content -->
+  <div class="sale-main">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">New Fuel Sale</h1>
+        <p class="page-subtitle">Transaction ID: <span class="txn-id">{{ txnId }}</span></p>
+      </div>
+      <div class="header-badge" *ngIf="selectedPump">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg>
+        {{ selectedPump.type }} — ₹{{ unitPrice | number:'1.2-2' }}/L
+      </div>
+    </div>
+
+    <!-- Quick Stats Bar -->
+    <div class="quick-stats">
+      <div class="stat-chip">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        <span class="stat-value">{{ todaySales }}</span>
+        <span class="stat-label">Sales Today</span>
+      </div>
+      <div class="stat-chip">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        <span class="stat-value">{{ todayLitres | number:'1.0-0' }} L</span>
+        <span class="stat-label">Litres Dispensed</span>
+      </div>
+      <div class="stat-chip">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span class="stat-value">₹{{ todayRevenue | number:'1.0-0' }}</span>
+        <span class="stat-label">Revenue</span>
+      </div>
+      <div class="stat-chip">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+        <span class="stat-value">₹{{ avgPerSale | number:'1.0-0' }}</span>
+        <span class="stat-label">Avg / Sale</span>
+      </div>
+    </div>
+
+    <!-- Step Indicator -->
+    <div class="step-indicator">
+      <div class="step" [class.active]="currentStep >= 1" [class.done]="currentStep > 1">
+        <span class="step-num">
+          <svg *ngIf="currentStep > 1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+          <span *ngIf="currentStep <= 1">1</span>
+        </span>
+        <span class="step-label">Select Pump</span>
+      </div>
+      <div class="step-line" [class.done]="currentStep > 1"></div>
+      <div class="step" [class.active]="currentStep >= 2" [class.done]="currentStep > 2">
+        <span class="step-num">
+          <svg *ngIf="currentStep > 2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+          <span *ngIf="currentStep <= 2">2</span>
+        </span>
+        <span class="step-label">Volume & Price</span>
+      </div>
+      <div class="step-line" [class.done]="currentStep > 2"></div>
+      <div class="step" [class.active]="currentStep >= 3">
+        <span class="step-num">3</span>
+        <span class="step-label">Payment</span>
+      </div>
+    </div>
+
+    <!-- Step 1: Select Pump -->
+    <div class="step-content" *ngIf="currentStep === 1">
+      <div class="section-header">
+        <div class="section-title-group">
+          <svg class="section-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg>
+          <h2>Select Active Pump</h2>
+        </div>
+        <span class="online-badge">
+          <span class="online-dot"></span>
+          {{ getOnlinePumps() }} Online
+        </span>
+      </div>
+
+      <div class="pump-grid" *ngIf="pumps.length > 0">
+        <div class="pump-card"
+             *ngFor="let p of pumps"
+             [class.selected]="p.selected"
+             [class.offline]="!p.online"
+             (click)="selectPump(p)">
+          <div class="pump-card-top">
+            <span class="pump-id">PUMP #{{ p.pumpNumber }}</span>
+            <span class="pump-status-dot" [class.active]="p.online"></span>
+          </div>
+          <h3 class="pump-name">{{ p.name }}</h3>
+          <div class="pump-card-bottom" *ngIf="p.online">
+            <div class="pump-type-group">
+              <span class="pump-type-label">FUEL TYPE</span>
+              <span class="pump-type-value">{{ p.type }}</span>
+            </div>
+            <div class="pump-check-icon" *ngIf="p.selected">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            </div>
+          </div>
+          <div class="pump-bar" [style.background]="p.color" *ngIf="p.online"></div>
+          <div class="pump-offline-label" *ngIf="!p.online">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+            In Use
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty state when no pumps -->
+      <div class="empty-state" *ngIf="pumps.length === 0">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg>
+        <h3>No Pumps Available</h3>
+        <p>No pumps are configured for your station. Please contact admin to set up pumps.</p>
+      </div>
+
+      <div class="step-actions">
+        <div></div>
+        <button class="btn-next" (click)="nextStep()" [disabled]="!selectedPump">
+          Continue to Volume
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: Fuel Amount -->
+    <div class="step-content" *ngIf="currentStep === 2">
+      <div class="section-header">
+        <div class="section-title-group">
+          <svg class="section-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          <h2>Fuel Volume & Price</h2>
+        </div>
+      </div>
+
+      <div class="amount-grid">
+        <div class="amount-col">
+          <label class="amount-label">Volume (Litres)</label>
+          <div class="amount-input-wrapper">
+            <input type="number" [(ngModel)]="volume" placeholder="0" min="0" />
+            <span class="unit-badge">L</span>
+          </div>
+          <div class="preset-chips">
+            <button class="preset" (click)="volume = 0">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              Full Tank
+            </button>
+            <button class="preset" *ngFor="let v of volumePresets" (click)="addVolume(v)">{{ v }}</button>
+          </div>
+        </div>
+        <div class="amount-col">
+          <label class="amount-label">Total Price (₹)</label>
+          <div class="amount-input-wrapper readonly">
+            <input type="text" [value]="totalPrice | number:'1.2-2'" readonly />
+            <span class="unit-badge">₹</span>
+          </div>
+          <div class="preset-chips">
+            <button class="preset" *ngFor="let p of pricePresets" (click)="setByPrice(p)">{{ p }}</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vehicle & Customer Info -->
+      <div class="info-row">
+        <div class="info-field">
+          <label class="amount-label">Vehicle Number (Optional)</label>
+          <div class="info-input-wrapper">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/></svg>
+            <input type="text" [(ngModel)]="vehicleNumber" placeholder="e.g. MH12AB1234" />
+          </div>
+          <span class="field-hint">Format: XX00XX0000 (e.g. MH12AB1234)</span>
+        </div>
+        <div class="info-field">
+          <label class="amount-label">Customer Phone (Optional)</label>
+          <div class="info-input-wrapper">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+            <input type="text" [(ngModel)]="customerPhone" placeholder="+91 9876543210" />
+          </div>
+        </div>
+      </div>
+
+      <div class="step-actions">
+        <button class="btn-back" (click)="prevStep()">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12"/></svg>
+          Back
+        </button>
+        <button class="btn-next" (click)="nextStep()" [disabled]="volume <= 0">
+          Continue to Payment
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 3: Payment -->
+    <div class="step-content" *ngIf="currentStep === 3">
+      <div class="section-header">
+        <div class="section-title-group">
+          <svg class="section-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+          <h2>Select Payment Method</h2>
+        </div>
+      </div>
+
+      <div class="payment-notice" *ngIf="selectedPayment !== 'Cash'">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        A payment reference will be auto-generated for {{ selectedPayment }} payments.
+      </div>
+
+      <div class="payment-grid">
+        <div class="payment-card" *ngFor="let m of paymentMethods" [class.selected]="m.selected" (click)="selectPayment(m)">
+          <div class="payment-icon-wrapper" [class.selected]="m.selected">
+            <svg *ngIf="m.icon === 'cash'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            <svg *ngIf="m.icon === 'card'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+            <svg *ngIf="m.icon === 'wallet'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3"/></svg>
+            <svg *ngIf="m.icon === 'upi'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+          </div>
+          <span class="payment-name">{{ m.name }}</span>
+          <div class="payment-check-icon" *ngIf="m.selected">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sale Summary -->
+      <div class="sale-summary">
+        <h3>Sale Summary</h3>
+        <div class="summary-row">
+          <span>Pump</span>
+          <span>{{ selectedPump?.name }} ({{ selectedPump?.type }})</span>
+        </div>
+        <div class="summary-row">
+          <span>Volume</span>
+          <span>{{ volume | number:'1.2-2' }} L</span>
+        </div>
+        <div class="summary-row">
+          <span>Rate</span>
+          <span>₹{{ unitPrice | number:'1.2-2' }} / L</span>
+        </div>
+        <div class="summary-row">
+          <span>Payment</span>
+          <span>{{ selectedPayment }}</span>
+        </div>
+        <div class="summary-row total">
+          <span>Total</span>
+          <span>₹{{ totalPrice | number:'1.2-2' }}</span>
+        </div>
+      </div>
+
+      <div class="step-actions">
+        <button class="btn-back" (click)="prevStep()">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12"/></svg>
+          Back
+        </button>
+        <button class="btn-complete" (click)="completeSale()" [disabled]="isSubmitting">
+          <svg *ngIf="!isSubmitting" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+          <span *ngIf="!isSubmitting">Complete Sale</span>
+          <span *ngIf="isSubmitting">Processing...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Receipt Sidebar -->
+  <div class="receipt-sidebar">
+    <div class="receipt-card">
+      <div class="receipt-header">
+        <div>
+          <span class="receipt-title">EPCL STATION</span>
+          <small class="receipt-sub">Fuel Management Terminal</small>
+        </div>
+        <div class="receipt-date-group">
+          <span class="receipt-date-label">DATE</span>
+          <span class="receipt-date">{{ today | date:'dd MMM yyyy' }}</span>
+        </div>
+      </div>
+
+      <div class="receipt-body">
+        <div class="receipt-row">
+          <span class="receipt-key">Pump</span>
+          <span class="receipt-val">#{{ selectedPump?.pumpNumber || '—' }} ({{ selectedPump?.type || 'N/A' }})</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-key">Quantity</span>
+          <span class="receipt-val">{{ volume | number:'1.2-2' }} L</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-key">Unit Price</span>
+          <span class="receipt-val">₹{{ unitPrice | number:'1.2-2' }} / L</span>
+        </div>
+        <div class="receipt-row" *ngIf="vehicleNumber">
+          <span class="receipt-key">Vehicle</span>
+          <span class="receipt-val">{{ vehicleNumber }}</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-key">Payment</span>
+          <span class="receipt-val">{{ selectedPayment }}</span>
+        </div>
+        <div class="receipt-divider"></div>
+        <div class="receipt-total-row">
+          <span>Total Amount</span>
+          <span class="total-value">₹{{ totalPrice | number:'1.2-2' }}</span>
+        </div>
+      </div>
+
+      <div class="receipt-barcode">
+        <div class="barcode-line" *ngFor="let i of barcodeLines" [style.width.px]="i.w" [style.height.%]="i.h"></div>
+      </div>
+      <p class="receipt-code">{{ txnId }}</p>
+    </div>
+
+    <button class="btn-complete-sidebar" (click)="completeSale()" *ngIf="currentStep === 3" [disabled]="isSubmitting">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+      {{ isSubmitting ? 'Processing...' : 'Complete Sale' }}
+    </button>
+    <button class="btn-cancel" *ngIf="currentStep === 3" (click)="cancelTransaction()">Cancel Transaction</button>
+  </div>
+</div>

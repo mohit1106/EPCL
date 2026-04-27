@@ -47,6 +47,7 @@ public class LoyaltyConsumerHostedService : BackgroundService
         await _channel.ExchangeDeclareAsync(ExchangeName, ExchangeType.Topic, durable: true, cancellationToken: stoppingToken);
         await _channel.QueueDeclareAsync(QueueName, durable: true, exclusive: false, autoDelete: false, cancellationToken: stoppingToken);
         await _channel.QueueBindAsync(QueueName, ExchangeName, "sales.completed", cancellationToken: stoppingToken);
+        await _channel.QueueBindAsync(QueueName, ExchangeName, "identity.user.registered", cancellationToken: stoppingToken);
 
         await _channel.BasicQosAsync(0, 10, false, stoppingToken);
 
@@ -56,38 +57,70 @@ public class LoyaltyConsumerHostedService : BackgroundService
             try
             {
                 var body = Encoding.UTF8.GetString(ea.Body.ToArray());
+                var routingKey = ea.RoutingKey;
                 var jsonOpts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var evt = JsonSerializer.Deserialize<SaleCompletedEvent>(body, jsonOpts);
-
-                if (evt == null || evt.CustomerUserId == null || evt.CustomerUserId == Guid.Empty)
-                {
-                    // No customer linked — skip loyalty points
-                    await _channel.BasicAckAsync(ea.DeliveryTag, false);
-                    return;
-                }
-
+                
                 using var scope = _scopeFactory.CreateScope();
                 var processedRepo = scope.ServiceProvider.GetRequiredService<IProcessedEventRepository>();
+                var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
-                if (await processedRepo.AlreadyProcessedAsync(evt.EventId))
+                if (routingKey == "sales.completed")
                 {
-                    await _channel.BasicAckAsync(ea.DeliveryTag, false);
-                    return;
+                    var evt = JsonSerializer.Deserialize<SaleCompletedEvent>(body, jsonOpts);
+                    if (evt == null || evt.CustomerUserId == null || evt.CustomerUserId == Guid.Empty)
+                    {
+                        await _channel.BasicAckAsync(ea.DeliveryTag, false);
+                        return;
+                    }
+
+                    if (await processedRepo.AlreadyProcessedAsync(evt.EventId))
+                    {
+                        await _channel.BasicAckAsync(ea.DeliveryTag, false);
+                        return;
+                    }
+
+                    await mediator.Send(new EarnPointsCommand(
+                        evt.CustomerUserId.Value, evt.TransactionId, evt.TotalAmount,
+                        $"Purchase at station {evt.StationId.ToString()[..8]}"));
+
+                    await processedRepo.MarkProcessedAsync(evt.EventId, nameof(SaleCompletedEvent), CancellationToken.None);
+                    _logger.LogInformation("Loyalty points earned for customer {Customer} from sale {Sale}",
+                        evt.CustomerUserId, evt.TransactionId);
+                }
+                else if (routingKey == "identity.user.registered")
+                {
+                    var evt = JsonSerializer.Deserialize<UserRegisteredEvent>(body, jsonOpts);
+                    if (evt == null || evt.Role != "Customer")
+                    {
+                        await _channel.BasicAckAsync(ea.DeliveryTag, false);
+                        return;
+                    }
+
+                    if (await processedRepo.AlreadyProcessedAsync(evt.EventId))
+                    {
+                        await _channel.BasicAckAsync(ea.DeliveryTag, false);
+                        return;
+                    }
+
+                    // Auto-create loyalty account. The EarnPoints step normally does this, but doing it early is correct.
+                    var accountRepo = scope.ServiceProvider.GetRequiredService<ILoyaltyAccountRepository>();
+                    var existing = await accountRepo.GetByCustomerIdAsync(evt.UserId, CancellationToken.None);
+                    if (existing == null) {
+                        await accountRepo.CreateAsync(new Domain.Entities.LoyaltyAccount { Id = Guid.NewGuid(), CustomerId = evt.UserId }, CancellationToken.None);
+                    }
+
+                    // Auto-generate referral code
+                    await mediator.Send(new CreateReferralCodeCommand(evt.UserId));
+
+                    await processedRepo.MarkProcessedAsync(evt.EventId, nameof(UserRegisteredEvent), CancellationToken.None);
+                    _logger.LogInformation("Loyalty account and referral code created for new customer {Customer}", evt.UserId);
                 }
 
-                var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-                await mediator.Send(new EarnPointsCommand(
-                    evt.CustomerUserId.Value, evt.TransactionId, evt.TotalAmount,
-                    $"Purchase at station {evt.StationId.ToString()[..8]}"));
-
-                await processedRepo.MarkProcessedAsync(evt.EventId, nameof(SaleCompletedEvent));
                 await _channel.BasicAckAsync(ea.DeliveryTag, false);
-                _logger.LogInformation("Loyalty points earned for customer {Customer} from sale {Sale}",
-                    evt.CustomerUserId, evt.TransactionId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing SaleCompletedEvent for loyalty");
+                _logger.LogError(ex, "Error processing event for loyalty");
                 await _channel.BasicNackAsync(ea.DeliveryTag, false, true);
             }
         };

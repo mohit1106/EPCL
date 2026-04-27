@@ -1,0 +1,47 @@
+<div class="page-content">
+  <h1 class="page-title">Account Settings</h1>
+  <p class="page-subtitle">Manage your industrial intelligence credentials, notification matrices, and authentication security protocols.</p>
+
+  <div class="settings-grid">
+    <!-- Sidebar Tabs -->
+    <div class="settings-tabs">
+      <button class="tab-item" *ngFor="let t of tabs" [class.active]="t.active" (click)="setTab(t.label)"><app-icon [name]="t.icon" [size]="16"></app-icon> {{ t.label }}</button>
+    </div>
+
+    <!-- Content -->
+    <div class="settings-content">
+      <!-- Section 01: Personal Information -->
+      <div class="card"><div class="card-header-row"><h3 class="card-title"><app-icon name="user" [size]="18"></app-icon> Personal Information</h3><span class="section-label mono">SECTION 01 / PROFILE</span></div>
+        <div class="profile-row">
+          <div class="avatar-block"><div class="avatar-img"><div class="avatar-placeholder">AV</div><button class="avatar-edit"><app-icon name="edit" [size]="14"></app-icon></button></div><span class="avatar-hint">JPG, PNG or GIF.<br/>Max size 2MB.</span></div>
+          <div class="form-grid">
+            <div class="form-field"><label class="form-label mono">FULL NAME</label><input type="text" class="form-input mono" [value]="user.fullName" /></div>
+            <div class="form-field"><label class="form-label mono">WORK EMAIL</label><input type="email" class="form-input mono" [value]="user.email" /></div>
+            <div class="form-field"><label class="form-label mono">PHONE NUMBER</label><input type="tel" class="form-input mono" [value]="user.phone" /></div>
+            <div class="form-field"><label class="form-label mono">INTELLIGENCE ROLE</label><div class="form-input mono locked">{{ user.role }} <app-icon name="lock" [size]="14"></app-icon></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 02: Security Matrix -->
+      <div class="card"><div class="card-header-row"><h3 class="card-title"><app-icon name="shield" [size]="18"></app-icon> Security Matrix</h3><span class="section-label mono">SECTION 02 / AUTH</span></div>
+        <div class="security-row">
+          <div class="security-item"><h4>Password Protocol</h4><p>Update your access key periodically for maximum security.</p><button class="btn-change mono"><app-icon name="key" [size]="14"></app-icon> Change Password</button></div>
+          <div class="security-item"><h4>Two-Factor Authentication</h4><p>Add a second layer of tactical security.</p><div class="toggle-row"><label class="toggle"><input type="checkbox" [checked]="twoFactorEnabled" /><span class="toggle-slider"></span></label></div><span class="recommended-badge mono">RECOMMENDED</span></div>
+        </div>
+      </div>
+
+      <!-- Section 03: Notification Preferences -->
+      <div class="card"><div class="card-header-row"><h3 class="card-title">((•)) Notification Preferences</h3><span class="section-label mono">SECTION 03 / ALERTS</span></div>
+        <table><thead><tr><th>NOTIFICATION TYPE</th><th class="center">EMAIL</th><th class="center">SMS</th><th class="center">PUSH</th></tr></thead>
+          <tbody><tr *ngFor="let n of notifications"><td><strong>{{ n.type }}</strong><br/><small class="text-muted">{{ n.desc }}</small></td>
+            <td class="center"><input type="checkbox" [checked]="n.email" class="cb" /></td>
+            <td class="center"><input type="checkbox" [checked]="n.sms" class="cb" /></td>
+            <td class="center"><input type="checkbox" [checked]="n.push" class="cb" /></td></tr></tbody></table>
+      </div>
+
+      <!-- Actions -->
+      <div class="actions-row"><button class="btn-discard">Discard Changes</button><button class="btn-save mono">Save System Matrix</button></div>
+    </div>
+  </div>
+</div>

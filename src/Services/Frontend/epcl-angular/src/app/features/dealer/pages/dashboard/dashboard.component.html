@@ -1,0 +1,97 @@
+<div class="dealer-dashboard">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="page-header-left">
+      <h1 class="page-header__title">Station Command Center</h1>
+      <p class="page-header__subtitle">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" width="14" height="14" style="display:inline;vertical-align:middle;margin-right:4px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Last sync: {{ lastSync }}
+      </p>
+    </div>
+    <div class="page-header-right">
+      <a routerLink="/dealer/sales/new" class="btn-primary">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+        New Sale
+      </a>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card" *ngFor="let kpi of kpis">
+      <span class="kpi-label">{{ kpi.label }}</span>
+      <div class="kpi-value">{{ kpi.value }}</div>
+      <span class="kpi-trend" [ngClass]="kpi.trendClass">{{ kpi.trend }}</span>
+    </div>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="dashboard-grid">
+    <!-- Tank Levels -->
+    <div class="card tanks-card">
+      <div class="card-header">
+        <h3>Tank Levels</h3>
+        <a routerLink="/dealer/inventory" class="card-link">Manage →</a>
+      </div>
+      <div class="tank-list">
+        <div class="tank-item" *ngFor="let tank of tanks">
+          <div class="tank-header">
+            <span class="tank-name">{{ tank.name }}</span>
+            <span class="tank-pct" [style.color]="tank.color">{{ tank.pct }}%</span>
+          </div>
+          <div class="tank-gauge">
+            <div class="tank-gauge-fill" [style.width.%]="tank.pct" [style.background]="tank.color"></div>
+          </div>
+          <div class="tank-meta">
+            <span>{{ tank.current | number }} / {{ tank.capacity | number }} {{ tank.unit }}</span>
+            <span class="tank-days" *ngIf="tank.daysUntilEmpty">~{{ tank.daysUntilEmpty }}d remaining</span>
+          </div>
+        </div>
+        <div class="empty-state" *ngIf="tanks.length === 0">
+          <p class="empty-state__subtitle">No tanks configured</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pump Status -->
+    <div class="card pumps-card">
+      <div class="card-header">
+        <h3>Pump Status</h3>
+        <span class="card-badge">{{ pumps.length }} pumps</span>
+      </div>
+      <div class="pump-grid">
+        <div class="pump-node" *ngFor="let pump of pumps" [ngClass]="pump.isMaintenance ? 'pump-maintenance' : 'pump-active'">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg>
+          <span class="pump-id">{{ pump.id }}</span>
+          <span class="pump-status badge" [ngClass]="pump.isMaintenance ? 'badge-warning' : 'badge-success'">{{ pump.status }}</span>
+        </div>
+        <div class="empty-state" *ngIf="pumps.length === 0">
+          <p class="empty-state__subtitle">No pumps configured</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="card txn-card">
+      <div class="card-header">
+        <h3>Recent Sales</h3>
+        <a routerLink="/dealer/transactions" class="card-link">View all →</a>
+      </div>
+      <div class="txn-list">
+        <div class="txn-item" *ngFor="let txn of transactions">
+          <div class="txn-left">
+            <div class="txn-id">{{ txn.id }}</div>
+            <div class="txn-meta">{{ txn.product }} · {{ txn.volume }}</div>
+          </div>
+          <div class="txn-right">
+            <span class="txn-amount">{{ txn.amount }}</span>
+            <span class="txn-time">{{ txn.time }}</span>
+          </div>
+        </div>
+        <div class="empty-state" *ngIf="transactions.length === 0">
+          <p class="empty-state__subtitle">No transactions today</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

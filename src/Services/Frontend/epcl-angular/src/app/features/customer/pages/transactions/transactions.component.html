@@ -1,0 +1,64 @@
+<div class="page-content">
+  <div class="txn-top">
+    <div>
+      <span class="page-label mono">Global Logistics</span>
+      <h1 class="page-title">Financial Intelligence</h1>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi-mini"><span class="kpi-mini-label">24H Volume</span><span class="kpi-mini-value">{{ volume24h | number:'1.1-1' }} <small>kL</small></span></div>
+      <div class="kpi-mini accent"><span class="kpi-mini-label">Revenue</span><span class="kpi-mini-value">${{ revenue / 1000 | number:'1.1-1' }}k</span></div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-bar">
+    <div class="filter-item"><label class="filter-label">Date Range</label><input type="date" class="filter-input" /></div>
+    <div class="filter-item"><label class="filter-label">Station Node</label><select class="filter-input"><option>All Terminal Nodes</option></select></div>
+    <div class="filter-item">
+      <label class="filter-label">Fuel Grade</label>
+      <div class="fuel-chips">
+        <span class="fuel-chip" *ngFor="let g of fuelGrades" [class.active]="g === filters.fuelGrade" (click)="filters.fuelGrade = g">{{ g }}</span>
+      </div>
+    </div>
+    <div class="filter-item"><label class="filter-label">Payment Protocol</label><select class="filter-input"><option>Direct Ledger Transfer</option></select></div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card">
+    <div class="table-top">
+      <h2>Historical Audit Trail <span class="version-badge mono">v2.4.0_STABLE</span></h2>
+      <div class="table-actions">
+        <button class="btn-outline-sm">↓ CSV Export</button>
+        <button class="btn-outline-sm">🖨 Print Batch</button>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Date / Timestamp</th><th>Station ID</th><th>Liters (kL)</th><th>Unit Rate</th><th>Total Amount</th><th>Status</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let txn of transactions">
+          <td class="mono"><span class="date-primary">{{ txn.date }}</span><br/><span class="date-sub">{{ txn.time }}</span></td>
+          <td><span class="station-name">{{ txn.station }}</span><br/><span class="station-id mono">{{ txn.stationId }}</span></td>
+          <td class="mono">{{ txn.liters | number:'1.2-2' }}</td>
+          <td class="mono">${{ txn.rate | number:'1.2-2' }}</td>
+          <td class="mono font-bold">${{ txn.total | number:'1.2-2' }}</td>
+          <td><span class="status-pill" [ngClass]="getStatusClass(txn.status)">{{ txn.status }}</span></td>
+          <td><button class="action-dots">⋮</button></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="pagination">
+      <span class="page-info mono">Showing 1 to 25 of {{ totalRecords | number }} transactions</span>
+      <div class="page-buttons">
+        <button class="page-btn">‹</button>
+        <button class="page-btn active">1</button>
+        <button class="page-btn">2</button>
+        <button class="page-btn">3</button>
+        <span>...</span>
+        <button class="page-btn">{{ totalPages }}</button>
+        <button class="page-btn">›</button>
+      </div>
+    </div>
+  </div>
+</div>

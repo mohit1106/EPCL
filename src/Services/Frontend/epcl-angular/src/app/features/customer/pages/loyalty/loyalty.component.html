@@ -1,0 +1,80 @@
+<div class="page-content">
+  <div class="loyalty-header">
+    <div><span class="page-label mono">Loyalty Command Center</span><h1 class="page-title">Intelligence Rewards</h1></div>
+    <div class="kpi-row">
+      <div class="kpi-mini"><span class="kpi-mini-label">Total Points</span><span class="kpi-mini-value">{{ totalPoints | number }} <small>pts</small></span></div>
+      <div class="kpi-mini accent"><span class="kpi-mini-label">Lifetime Savings</span><span class="kpi-mini-value">${{ lifetimeSavings | number:'1.2-2' }}</span></div>
+    </div>
+  </div>
+
+  <div class="loyalty-grid">
+    <!-- Tier Progression -->
+    <div class="tier-card">
+      <h3 class="section-label">Tier Progression</h3>
+      <div class="progress-ring">
+        <svg viewBox="0 0 120 120" class="ring-svg">
+          <circle cx="60" cy="60" r="54" class="ring-bg"></circle>
+          <circle cx="60" cy="60" r="54" class="ring-fill" [style.stroke-dasharray]="(tierProgress / 100) * 339 + ' 339'"></circle>
+        </svg>
+        <div class="ring-text">
+          <span class="ring-value">{{ tierProgress }}%</span>
+          <span class="ring-label">Completion</span>
+        </div>
+      </div>
+      <h4 class="tier-name">{{ currentTier }} to {{ nextTier }}</h4>
+      <p class="tier-remaining mono">{{ pointsToNext | number }} points until next synchronization</p>
+    </div>
+
+    <!-- Active Field Perks -->
+    <div class="perks-section">
+      <div class="perks-header">
+        <h3 class="section-label">Active Field Perks</h3>
+        <a class="link-text">View All Tier Privileges</a>
+      </div>
+      <div class="perks-grid">
+        <div class="perk-card" *ngFor="let perk of perks">
+          <div class="perk-top">
+            <span class="perk-icon">{{ perk.icon }}</span>
+            <span class="perk-badge">{{ perk.badge }}</span>
+          </div>
+          <h4 class="perk-name mono">{{ perk.name | uppercase }}</h4>
+          <p class="perk-desc">{{ perk.desc }}</p>
+        </div>
+        <div class="perk-card locked">
+          <span class="lock-icon">🔒</span>
+          <h4 class="perk-name mono">Diamond VIP Lounge</h4>
+          <p class="perk-desc italic">Unlocks at 1M points</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vouchers + Referral -->
+  <div class="bottom-grid">
+    <div class="vouchers-section">
+      <div class="vouchers-header">
+        <h3 class="section-label">Intelligence Vouchers</h3>
+        <div class="voucher-tabs">
+          <button [class.active]="voucherFilter === 'ACTIVE'" (click)="voucherFilter = 'ACTIVE'">Active</button>
+          <button [class.active]="voucherFilter === 'ARCHIVED'" (click)="voucherFilter = 'ARCHIVED'">Archived</button>
+        </div>
+      </div>
+      <div class="voucher-list">
+        <div class="voucher-item" *ngFor="let v of vouchers">
+          <div class="voucher-value mono">{{ v.value }}</div>
+          <div class="voucher-info"><span class="voucher-name">{{ v.name }}</span><span class="voucher-expiry">{{ v.expiry }}</span></div>
+          <button class="btn-redeem">Redeem</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="referral-cta">
+      <h3>Recruit New Intelligence</h3>
+      <p>Onboard a colleague and synchronize rewards. Both parties receive 50,000 intelligence points upon their first verified dispatch.</p>
+      <div class="referral-code-box">
+        <span class="ref-label mono">Your Transmission Code</span>
+        <div class="ref-code"><span class="mono">{{ referralCode }}</span><button class="copy-btn">📋</button></div>
+      </div>
+    </div>
+  </div>
+</div>

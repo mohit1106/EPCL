@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AIAnalyticsService.API/AIAnalyticsService.API.csproj" />
+    <Project Path="src/AIAnalyticsService.Application/AIAnalyticsService.Application.csproj" />
+    <Project Path="src/AIAnalyticsService.Domain/AIAnalyticsService.Domain.csproj" />
+    <Project Path="src/AIAnalyticsService.Infrastructure/AIAnalyticsService.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AIAnalyticsService.IntegrationTests/AIAnalyticsService.IntegrationTests.csproj" />
+    <Project Path="tests/AIAnalyticsService.UnitTests/AIAnalyticsService.UnitTests.csproj" />
+  </Folder>
+</Solution>

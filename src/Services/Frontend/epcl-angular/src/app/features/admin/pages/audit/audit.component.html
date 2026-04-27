@@ -1,0 +1,27 @@
+<div class="page-content">
+  <div class="page-top"><div><span class="page-label mono">SYSTEM FORENSICS</span><h1 class="page-title">Audit Logs</h1></div>
+    <div class="top-stats"><div class="top-stat"><span class="top-val mono">{{ totalEvents }}</span><span class="top-label mono">TOTAL EVENTS</span></div><div class="top-stat success"><span class="top-val mono">{{ integrityScore }}</span><span class="top-label mono">INTEGRITY SCORE</span></div></div></div>
+
+  <div class="search-bar"><span class="search-icon">🔍</span><input type="text" class="search-input mono" placeholder="SEARCH SYSTEM ACTIONS..." /><button class="btn-filters mono">≡ FILTERS</button>
+    <div class="time-tabs"><span class="time-label mono">TIME WINDOW:</span><button class="time-tab mono" *ngFor="let w of timeWindows" [class.active]="w === activeWindow" (click)="activeWindow = w">{{ w }}</button></div></div>
+
+  <div class="main-grid">
+    <div class="card"><div class="card-header-row"><h3 class="card-title mono">ACTION FEED (REAL-TIME)</h3><span class="live-dot mono">● LIVE SYNC ACTIVE</span></div>
+      <table><thead><tr><th>TIMESTAMP</th><th>ADMIN</th><th>ACTION</th><th>RESOURCE</th></tr></thead>
+        <tbody><tr *ngFor="let l of logs"><td class="mono"><strong>{{ l.date }}</strong><br/><small>{{ l.time }}</small></td><td><span class="avatar mono">{{ l.initials }}</span> {{ l.admin }}</td><td><span class="action-tag" [ngClass]="l.actionClass">{{ l.action }}</span></td><td class="mono">{{ l.resource }}</td></tr></tbody></table>
+      <div class="pagination"><span class="mono">SHOWING ENTRIES 1-25 OF {{ totalEntries | number }}</span><div class="page-btns"><button class="page-btn">‹</button><button class="page-btn active">1</button><button class="page-btn">2</button><button class="page-btn">3</button><button class="page-btn">›</button></div></div>
+    </div>
+
+    <div class="inspector-panel" *ngIf="selectedEntry">
+      <div class="inspector-header"><h3>{{ selectedEntry.title }}</h3><button class="btn-expand" (click)="closeDetails()">✕</button></div>
+      <span class="inspector-id mono">ID: {{ selectedEntry.id }}</span>
+      <div class="inspector-section"><h4 class="mono">DETAILED ACTION</h4><p>{{ selectedEntry.detail }}</p></div>
+      <div class="inspector-section"><h4 class="mono">⊡ STATE DIFFERENTIAL</h4>
+        <div class="state-block current"><span class="state-label mono">CURRENT STATE <span class="state-tag err mono">CRC_ERROR</span></span><pre class="mono">{{ selectedEntry.currentState }}</pre></div>
+        <div class="state-arrow">↓</div>
+        <div class="state-block modified"><span class="state-label mono">MODIFIED STATE <span class="state-tag ok mono">SH_VERIFIED</span></span><pre class="mono">{{ selectedEntry.modifiedState }}</pre></div>
+      </div>
+      <div class="meta-row"><div class="meta-item"><span class="meta-label mono">SOURCE IP</span><span class="mono">{{ selectedEntry.sourceIp }}</span></div><div class="meta-item"><span class="meta-label mono">USER AGENT</span><span class="mono">{{ selectedEntry.userAgent }}</span></div></div>
+    </div>
+  </div>
+</div>

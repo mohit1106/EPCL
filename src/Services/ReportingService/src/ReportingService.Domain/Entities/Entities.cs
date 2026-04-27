@@ -63,3 +63,18 @@ public class ProcessedEvent
     public string EventType { get; set; } = string.Empty;
     public DateTimeOffset ProcessedAt { get; set; } = DateTimeOffset.UtcNow;
 }
+
+public class StockPrediction
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid TankId { get; set; }
+    public Guid StationId { get; set; }
+    public Guid FuelTypeId { get; set; }
+    public decimal CurrentStockLitres { get; set; }
+    public decimal AvgDailyConsumptionL { get; set; }
+    public DateTime? PredictedEmptyAt { get; set; }
+    public decimal? DaysUntilEmpty { get; set; }
+    public DateTime? AlertSentAt { get; set; }
+    public DateTimeOffset CalculatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public int DataPointsUsed { get; set; }
+}

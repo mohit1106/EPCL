@@ -1,0 +1,53 @@
+<div class="page-content">
+  <div class="page-top">
+    <div><h1 class="page-title">Shift Management</h1><p class="page-subtitle mono">● SESSION: ACTIVE • OPERATOR ID: {{ operatorId }} • STARTED: {{ shiftStarted }}</p></div>
+    <div class="shift-actions"><button class="btn-start mono">▶ START SHIFT</button><button class="btn-end mono">⬛ END SHIFT</button></div>
+  </div>
+
+  <!-- Shift KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi-card" *ngFor="let k of shiftKpis">
+      <span class="kpi-label mono">{{ k.label }}</span>
+      <div class="kpi-value mono">{{ k.value }} <small>{{ k.unit }}</small></div>
+      <div class="kpi-trend" [ngClass]="k.trendClass">{{ k.trend }}</div>
+    </div>
+  </div>
+
+  <!-- Shift History Logs -->
+  <div class="card">
+    <div class="card-header-row">
+      <h3 class="card-title">Shift History Logs</h3>
+      <div class="card-actions"><button class="btn-outline-sm mono">EXPORT CSV</button><button class="btn-outline-sm mono">FILTER</button></div>
+    </div>
+    <table>
+      <thead><tr><th>SHIFT ID</th><th>OPERATOR</th><th>PERIOD</th><th>TOTAL REVENUE</th><th>CASH / DIGITAL</th><th>STATUS</th><th>ACTION</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let s of shiftLogs">
+          <td class="mono">{{ s.id }}</td>
+          <td><span class="avatar mono">{{ s.initials }}</span> {{ s.operator }}</td>
+          <td class="mono">{{ s.period }}</td>
+          <td class="mono font-bold">{{ s.revenue }}</td>
+          <td><div class="cash-bar"><div class="cash-fill" [style.width.%]="s.cashPct"></div></div><span class="cash-pct mono">{{ s.cashPct }}% C</span></td>
+          <td><span class="status-pill" [ngClass]="getStatusClass(s.status)">{{ s.status }}</span></td>
+          <td><button class="btn-icon">↗</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Discrepancy + Briefing -->
+  <div class="bottom-grid">
+    <div class="card discrepancy">
+      <h3 class="card-title">Technical Discrepancy Check</h3>
+      <p class="discrepancy-text">{{ discrepancy }}</p>
+      <a class="link-action mono">RUN FULL AUDIT ›</a>
+    </div>
+    <div class="card briefing">
+      <h3 class="card-title">Operator Briefing</h3>
+      <div class="briefing-item" *ngFor="let b of briefings" [ngClass]="b.type">
+        <span class="briefing-icon">{{ b.icon }}</span>
+        <div><strong>{{ b.title }}</strong><p>{{ b.desc }}</p></div>
+      </div>
+    </div>
+  </div>
+</div>

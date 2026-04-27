@@ -1,0 +1,33 @@
+<div class="page-content">
+  <h1 class="page-title">Preferences / <span class="accent">Communications</span></h1>
+
+  <!-- System Silence -->
+  <div class="card silence-card">
+    <div class="silence-row"><div><h2 class="silence-title">System Silence</h2><p class="silence-desc">Suspend all operational transmissions across all connected sub-systems. This action overrides individual preference matrices.</p></div>
+      <div class="mute-toggle"><span class="mute-label mono">GLOBAL MUTE</span><label class="toggle"><input type="checkbox" [(ngModel)]="globalMute" /><span class="toggle-slider"></span></label></div>
+    </div>
+  </div>
+
+  <!-- Transmission Channels -->
+  <div class="card"><div class="card-header-row"><div><h2 class="card-title accent">Transmission Channels</h2><p class="card-sub mono">CONFIGURE EVENT TRIGGERS AND ROUTING PROTOCOLS</p></div>
+    <div class="channel-headers"><div class="ch-header"><app-icon name="mail" [size]="14"></app-icon><span class="mono">EMAIL</span></div><div class="ch-header"><app-icon name="bell" [size]="14"></app-icon><span class="mono">PUSH</span></div><div class="ch-header"><app-icon name="phone" [size]="14"></app-icon><span class="mono">SMS</span></div></div></div>
+
+    <div class="channel-list">
+      <div class="channel-item" *ngFor="let c of channels">
+        <div class="channel-info"><app-icon [name]="c.icon" [size]="18" color="var(--text-muted)"></app-icon><div><strong>{{ c.name }}</strong><small class="text-muted">{{ c.desc }}</small></div></div>
+        <div class="channel-toggles">
+          <label class="toggle"><input type="checkbox" [(ngModel)]="c.email" /><span class="toggle-slider"></span></label>
+          <label class="toggle"><input type="checkbox" [(ngModel)]="c.push" /><span class="toggle-slider"></span></label>
+          <label class="toggle"><input type="checkbox" [(ngModel)]="c.sms" /><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Status -->
+  <div class="status-grid">
+    <div class="status-card"><app-icon name="check-circle" [size]="16" color="#22c55e"></app-icon><div><span class="status-label mono">LAST UPDATE</span><span class="status-value mono">{{ lastUpdate }}</span></div></div>
+    <div class="status-card"><app-icon name="activity" [size]="16" color="var(--color-primary)"></app-icon><div><span class="status-label mono">ACTIVE SYNCS</span><span class="status-value mono">{{ activeSyncs }}</span></div></div>
+    <div class="status-card"><app-icon name="lock" [size]="16" color="var(--text-muted)"></app-icon><div><span class="status-label mono">PROTOCOL</span><span class="status-value mono">{{ protocol }}</span></div></div>
+  </div>
+</div>

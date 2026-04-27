@@ -30,6 +30,7 @@ public static class DependencyInjection
         services.AddScoped<ICustomerWalletRepository, CustomerWalletRepository>();
         services.AddScoped<IWalletTransactionRepository, WalletTransactionRepository>();
         services.AddScoped<IProcessedEventRepository, ProcessedEventRepository>();
+        services.AddScoped<IFuelPreAuthorizationRepository, FuelPreAuthorizationRepository>();
 
         // Messaging
         services.AddSingleton<IRabbitMqPublisher, RabbitMqPublisher>();

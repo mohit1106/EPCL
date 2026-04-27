@@ -10,6 +10,9 @@
 .env.*
 !.env.example
 *.local
+secrets/
+**/environments/environment.ts
+**/environments/environment.prod.ts
 
 # ──────────────────────────────────────────────────────────────────────────────
 # .NET / C#
@@ -150,8 +153,18 @@ $RECYCLE.BIN/
 
 # -----------------------------------------------------------------------
 /AGENT_START_HERE.md
+/BACKEND_VERIFY_AND_SETUP.md
+/changed_plan.md
+/EPCL_EXTRA_FEATURES_PLAN.md
 /EPCL_ADDONS_PLAN.md
+/project_status_analysis.md
+/STEP_13_ANSWER.md
+/STEP_13G.md
+/testing_implementation_plan.md
+/TRACK_STEPS.md
 /IFMS_AGENT_IMPLEMENTATION_PLAN.md
 /IFMS_Implementation_Guide.docx
 /ifms-prd.docx
 /stitch-frontend-ui/
+/.agent/
+/completed-steps/

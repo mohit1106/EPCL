@@ -63,7 +63,7 @@ try
     builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(ApplicationAssemblyMarker).Assembly));
     builder.Services.AddFluentValidationAutoValidation();
     builder.Services.AddValidatorsFromAssembly(typeof(ApplicationAssemblyMarker).Assembly);
-    builder.Services.AddAutoMapper(typeof(ApplicationAssemblyMarker).Assembly);
+    builder.Services.AddAutoMapper(cfg => cfg.AddMaps(typeof(ApplicationAssemblyMarker).Assembly));
 
     // JWT
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

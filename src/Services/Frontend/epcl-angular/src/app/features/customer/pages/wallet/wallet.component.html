@@ -1,0 +1,120 @@
+<div class="page-content">
+  <!-- Balance Section -->
+  <div class="wallet-grid">
+    <div class="balance-card">
+      <span class="balance-label">Available Liquidity</span>
+      <div class="balance-amount">
+        <span class="currency">₹</span>
+        <span class="amount">{{ balance.balance | number:'1.2-2' }}</span>
+      </div>
+      <div class="balance-actions">
+        <div class="balance-chips">
+          <span class="chip">CR</span>
+          <span class="chip">DP</span>
+          <span class="chip">NB</span>
+        </div>
+        <button class="btn-add-funds">Add Funds →</button>
+      </div>
+    </div>
+
+    <!-- Auto Top-up -->
+    <div class="topup-card">
+      <div class="topup-header">
+        <h3>Auto-Top-up</h3>
+        <button class="toggle" [class.active]="autoTopUp" (click)="toggleAutoTopUp()">
+          <span class="toggle-knob"></span>
+        </button>
+      </div>
+      <p class="topup-desc">
+        Automatically add <strong>₹{{ autoTopUpAmount | number }}</strong> when balance falls below <strong>₹{{ autoTopUpThreshold | number }}</strong>.
+      </p>
+      <div class="topup-source">
+        <span class="source-label">Default Source</span>
+        <span class="source-value">HDFC Bank ••••4212</span>
+      </div>
+      <button class="btn-outline">Edit Rules</button>
+    </div>
+  </div>
+
+  <!-- Payment Methods + Monthly Burn -->
+  <div class="methods-grid">
+    <div class="methods-card">
+      <div class="methods-header">
+        <h3>Payment Methods</h3>
+        <button class="btn-text">Add New</button>
+      </div>
+      <div class="methods-list">
+        <div class="method-item" *ngFor="let pm of paymentMethods" [class.active]="pm.active">
+          <span class="method-icon">{{ pm.icon }}</span>
+          <div class="method-info">
+            <span class="method-name">{{ pm.name }}</span>
+            <span class="method-detail">{{ pm.detail }}</span>
+          </div>
+          <button class="method-action" *ngIf="!pm.active">⋮</button>
+          <span class="method-check" *ngIf="pm.active">✓</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Monthly Burn -->
+    <div class="burn-card">
+      <h3>Monthly Burn</h3>
+      <div class="burn-bars">
+        <div class="bar" *ngFor="let h of [40,55,60,50,70,80,90,95]; let i = index"
+             [style.height.%]="h" [class.current]="i === 7"></div>
+      </div>
+      <div class="burn-footer">
+        <span class="burn-label">Avg Spend</span>
+        <div class="burn-value">
+          <span>₹{{ avgSpend / 1000 | number:'1.1-1' }}K</span>
+          <span class="burn-trend down">↓ {{ avgSpendTrend | number }}%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transaction History -->
+  <div class="txn-card">
+    <div class="txn-header">
+      <div>
+        <h3>Transaction History</h3>
+        <span class="txn-subtitle">Audit Log: Last 30 Days</span>
+      </div>
+      <div class="txn-actions">
+        <button class="btn-outline-sm">Export CSV</button>
+        <button class="btn-outline-sm">⚙ Filter</button>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Description</th>
+          <th>ID</th>
+          <th>Method</th>
+          <th class="text-right">Amount</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let txn of recentTransactions">
+          <td class="mono text-muted">{{ txn.date }}</td>
+          <td>
+            <span class="txn-desc">{{ txn.desc }}</span>
+            <span class="txn-sub">{{ txn.subDesc }}</span>
+          </td>
+          <td class="mono text-muted">{{ txn.id }}</td>
+          <td><span class="method-badge">{{ txn.method }}</span></td>
+          <td class="text-right mono" [class.text-danger]="txn.amount < 0" [class.text-success]="txn.amount > 0">
+            {{ txn.amount < 0 ? '−' : '+' }} ₹{{ (txn.amount < 0 ? -txn.amount : txn.amount) | number:'1.2-2' }}
+          </td>
+          <td>
+            <span class="status-dot-badge">
+              <span class="dot settled"></span> {{ txn.status }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

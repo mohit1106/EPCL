@@ -1,0 +1,31 @@
+<div class="page-content">
+  <div class="page-top"><div><h1 class="page-title">System Health</h1><p class="page-subtitle">Real-time infrastructure pulse and node telemetry.</p></div>
+    <div class="cluster-badge"><span class="cluster-label mono">CLUSTER STATUS</span><span class="cluster-status mono">● {{ clusterStatus }}</span></div></div>
+
+  <div class="kpi-grid"><div class="kpi-card" *ngFor="let k of kpis" [style.border-top-color]="k.color">
+    <div class="kpi-top"><app-icon [name]="k.icon" [size]="18" [color]="k.color"></app-icon><span class="kpi-topright mono">{{ k.topRight }}</span></div>
+    <span class="kpi-label mono">{{ k.label }}</span>
+    <div class="kpi-value mono">{{ k.value }} <small>{{ k.unit }}</small></div>
+    <div class="kpi-bar" [style.background]="k.color"></div>
+  </div></div>
+
+  <div class="main-grid">
+    <div class="card"><div class="card-header-row"><h3 class="card-title">Background Processing Queue</h3><div class="legend"><span class="legend-dot a"></span> PIPELINE A <span class="legend-dot b"></span> PIPELINE B</div></div>
+      <p class="chart-sub">Pending vs. Completed task volume (24h)</p>
+      <div class="chart-area"><div class="chart-bars"><div class="chart-bar" *ngFor="let h of queueBars; let i = index" [style.height.%]="h" [class.alt]="i % 2 === 0"></div></div>
+        <div class="chart-labels mono"><span>00:00 UTC</span><span>06:00</span><span>12:00</span><span>18:00</span><span>NOW</span></div></div>
+    </div>
+
+    <div class="card events-card"><div class="card-header-row"><h3 class="card-title mono"><app-icon name="activity" [size]="16"></app-icon> LIVE SYSTEM EVENTS</h3><span class="live-dot">●</span></div>
+      <div class="event-list"><div class="event-item" *ngFor="let e of systemEvents" [ngClass]="e.levelClass">
+        <span class="event-time mono">{{ e.time }}</span>
+        <span class="event-level mono">[{{ e.level }}]</span>
+        <span class="event-msg">{{ e.message }}</span>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="card"><div class="card-header-row"><h3 class="card-title mono">REGIONAL NODE LATENCY</h3><a class="link-text mono">VIEW ALL REGIONS</a></div>
+    <div class="region-list"><div class="region-item" *ngFor="let r of regions"><div class="region-left"><app-icon name="server" [size]="14" color="var(--text-muted)"></app-icon><span>{{ r.name }}</span></div><span class="region-latency mono">{{ r.latency }}</span><div class="region-bar"><div class="region-fill" [style.width.%]="r.load"></div></div></div></div>
+  </div>
+</div>

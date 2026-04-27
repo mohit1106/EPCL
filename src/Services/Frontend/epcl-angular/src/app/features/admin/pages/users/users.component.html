@@ -1,0 +1,70 @@
+<div class="page-content">
+  <div class="page-top"><div><h1 class="page-title">User Operations</h1><p class="page-subtitle"><span class="dot-online">●</span> <span class="mono">842 ACTIVE NODES</span> | GLOBAL PETROLEUM NETWORK</p></div>
+    <button class="btn-create mono"><app-icon name="user-plus" [size]="14"></app-icon> CREATE USER</button></div>
+
+  <div class="top-row">
+    <div class="kpi-card" *ngFor="let k of kpis"><span class="kpi-label mono">{{ k.label }}</span><div class="kpi-value mono">{{ k.value }} <small class="kpi-trend" [ngClass]="k.trendClass">{{ k.trend }}</small></div></div>
+    <div class="kpi-card security"><span class="kpi-label mono">SECURITY PULSE</span><div class="security-value">{{ securityPulse }} <span class="check-icon">✓</span></div><span class="kpi-sub mono">NEXT AUDIT: {{ nextAudit }}</span></div>
+  </div>
+
+  <div class="search-bar"><app-icon name="search" [size]="16" color="var(--text-muted)"></app-icon><input type="text" class="search-input mono" placeholder="SEARCH IDENTITIES, ROLES, OR STATUS..." [(ngModel)]="searchTerm" (keyup.enter)="onSearch()" />
+    <div class="filter-controls">
+      <select class="filter-select mono" (change)="onRoleFilter($any($event.target).value)">
+        <option value="">ALL ROLES</option>
+        <option *ngFor="let r of roles" [value]="r">{{ r | uppercase }}</option>
+      </select>
+      <select class="filter-select mono">
+        <option value="">STATUS: ALL</option>
+        <option value="true">ACTIVE</option>
+        <option value="false">LOCKED</option>
+      </select>
+      <button class="filter-btn" (click)="onSearch()"><app-icon name="filter" [size]="14"></app-icon></button>
+    </div>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead><tr><th>IDENTIFIER &amp; ENTITY</th><th>ACCESS TIER</th><th>CONNECTIVITY</th><th>LAST TELEMETRY</th><th>OPERATIONS</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let u of users">
+          <td><div class="user-row"><span class="avatar mono">{{ u.initials }}</span><div><strong>{{ u.name }}</strong><small class="mono text-muted">{{ u.uid }}</small></div></div></td>
+          <td><span class="role-badge" [ngClass]="u.roleClass">{{ u.role }}</span></td>
+          <td><span class="status-indicator" [ngClass]="u.statusClass">● {{ u.status }}</span></td>
+          <td class="mono">{{ u.lastTelemetry }}</td>
+          <td style="position: relative;">
+            <button class="btn-ops" (click)="toggleActionMenu(u.id, $event)">
+              <app-icon name="more-horizontal" [size]="16"></app-icon>
+            </button>
+            <div class="action-dropdown" *ngIf="actionMenuOpenForId === u.id">
+              <button class="action-item" (click)="viewUser(u.rawDto)">View Profile</button>
+              <button class="action-item" (click)="changeRole(u.id, 'Dealer')">Make Dealer</button>
+              <button class="action-item" *ngIf="u.rawDto.isActive" (click)="lockUser(u.id)">Lock Account</button>
+              <button class="action-item" *ngIf="!u.rawDto.isActive" (click)="unlockUser(u.id)">Unlock Account</button>
+              <div class="action-divider"></div>
+              <button class="action-item text-danger" (click)="deactivateUser(u.id)">Deactivate</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="pagination"><span class="page-info mono">SHOWING 4 OF {{ totalIdentities | number }} GLOBAL IDENTITIES</span>
+      <div class="page-btns"><button class="page-btn">‹</button><button class="page-btn active">1</button><button class="page-btn">2</button><button class="page-btn">3</button><button class="page-btn">›</button></div>
+    </div>
+  </div>
+
+  <div class="bottom-grid">
+    <div class="card"><h3 class="card-title mono">SYSTEM LOG OVERVIEW</h3>
+      <div class="log-item" *ngFor="let l of systemLogs"><app-icon [name]="l.icon" [size]="16" color="var(--text-muted)"></app-icon><div><p class="log-text"><strong>{{ l.text.split(' ')[0] }} {{ l.text.split(' ')[1] }}</strong> {{ l.text.split(' ').slice(2).join(' ') }}</p><span class="log-meta mono">{{ l.time }} | {{ l.meta }}</span></div></div>
+    </div>
+    <div class="card"><h3 class="card-title">ROLE DISTRIBUTION</h3>
+      <div class="chart-container" style="position: relative; height:200px; margin-bottom: 16px;">
+        <canvas baseChart
+          [data]="pieChartData"
+          [options]="pieChartOptions"
+          [type]="pieChartType">
+        </canvas>
+      </div>
+      <button class="btn-audit mono" routerLink="/admin/audit">VIEW DETAILED AUDIT</button>
+    </div>
+  </div>
+</div>

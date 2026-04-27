@@ -19,6 +19,7 @@ public class SalesDbContext : DbContext
     public DbSet<CustomerWallet> CustomerWallets => Set<CustomerWallet>();
     public DbSet<WalletTransaction> WalletTransactions => Set<WalletTransaction>();
     public DbSet<ProcessedEvent> ProcessedEvents => Set<ProcessedEvent>();
+    public DbSet<FuelPreAuthorization> FuelPreAuthorizations => Set<FuelPreAuthorization>();
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
@@ -181,6 +182,19 @@ public class SalesDbContext : DbContext
             b.Property(e => e.EventType).IsRequired().HasMaxLength(100);
             b.Property(e => e.ProcessedAt).HasDefaultValueSql("GETUTCDATE()");
             b.HasIndex(e => e.EventId).IsUnique();
+        });
+
+        // ── FuelPreAuthorization ─────────────────────────────
+        mb.Entity<FuelPreAuthorization>(b =>
+        {
+            b.ToTable("FuelPreAuthorizations"); b.HasKey(f => f.Id);
+            b.Property(f => f.Id).HasDefaultValueSql("NEWID()");
+            b.Property(f => f.AuthorizedAmountINR).HasColumnType("DECIMAL(10,2)");
+            b.Property(f => f.AuthorizedLitres).HasColumnType("DECIMAL(10,3)");
+            b.Property(f => f.AuthCode).IsRequired().HasMaxLength(10);
+            b.Property(f => f.Status).IsRequired().HasMaxLength(20).HasDefaultValue("Active");
+            b.Property(f => f.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+            b.HasIndex(f => f.AuthCode).IsUnique();
         });
     }
 }

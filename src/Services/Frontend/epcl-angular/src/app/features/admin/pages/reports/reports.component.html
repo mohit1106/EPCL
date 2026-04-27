@@ -1,0 +1,28 @@
+<div class="page-content">
+  <div class="page-top"><div><h1 class="page-title">Report Engine</h1><p class="page-subtitle">Assemble complex petroleum intelligence datasets using multi-dimensional filters. Precision analysis for station velocity and fuel logistics.</p></div>
+    <div class="top-actions"><button class="btn-save mono"><app-icon name="save" [size]="14"></app-icon> SAVE CONFIGURATION</button><button class="btn-execute mono"><app-icon name="zap" [size]="14"></app-icon> EXECUTE ENGINE</button></div></div>
+
+  <div class="engine-grid">
+    <!-- Parameter Matrix -->
+    <div class="card"><h3 class="card-title"><app-icon name="menu" [size]="16"></app-icon> Parameter Matrix</h3>
+      <div class="param-section"><h4 class="param-label mono">TEMPORAL BOUND</h4><div class="date-row"><div class="date-field"><span class="date-label mono">START DATE</span><span class="date-value mono">{{ startDate }}</span></div><div class="date-field end"><span class="date-label mono">END DATE</span><span class="date-value mono">{{ endDate }}</span></div></div></div>
+      <div class="param-section"><h4 class="param-label mono">STATION CLUSTERS</h4><div class="cluster-chips"><span class="cluster-chip mono" *ngFor="let c of clusters">{{ c }} ✕</span><button class="add-chip mono">+ Add Cluster</button></div></div>
+      <div class="param-section"><h4 class="param-label mono">FUEL CLASSIFICATION</h4><div class="fuel-checks"><div class="fuel-check" *ngFor="let f of fuelTypes"><span class="fuel-dot" [style.background]="f.color"></span><span>{{ f.name }}</span><input type="checkbox" [checked]="f.selected" /></div></div></div>
+      <div class="param-section"><h4 class="param-label mono">OPERATOR COHORT</h4><select class="form-input mono"><option>{{ operatorCohort }}</option></select></div>
+    </div>
+
+    <!-- Live Preview -->
+    <div class="card preview-card"><div class="card-header-row"><h3 class="card-title">Live Preview</h3><span class="mono text-muted">{{ queryId }}</span><div class="export-icons"><button class="icon-btn"><app-icon name="bar-chart" [size]="16"></app-icon></button><button class="icon-btn"><app-icon name="table" [size]="16"></app-icon></button><button class="icon-btn"><app-icon name="refresh-cw" [size]="16"></app-icon></button></div></div>
+      <table><thead><tr><th>TIMESTAMP</th><th>STATION ID</th><th>PRODUCT</th><th>VOLUME (L)</th><th>YIELD (NET)</th><th>STATUS</th></tr></thead>
+        <tbody><tr *ngFor="let r of results"><td class="mono">{{ r.timestamp }}</td><td class="mono">{{ r.stationId }}</td><td><span class="product-tag" [ngClass]="r.productClass">{{ r.product }}</span></td><td class="mono">{{ r.volume | number:'1.2-2' }}</td><td class="mono" [class.text-success]="r.yield.startsWith('+')" [class.text-danger]="r.yield.startsWith('-')">{{ r.yield }}</td><td><span class="status-dot" [ngClass]="getStatusClass(r.status)">●</span></td></tr></tbody></table>
+      <div class="pagination"><span class="mono">PAGE 1 OF {{ totalPages }} ({{ totalRecords | number }} RECORDS)</span><div class="page-btns"><button class="page-btn">‹</button><button class="page-btn">›</button></div></div>
+    </div>
+  </div>
+
+  <!-- Bottom Row -->
+  <div class="bottom-grid">
+    <div class="card config-health"><h4 class="mono">CONFIGURATION HEALTH <span class="badge-validated mono">VALIDATED</span></h4><div class="health-stats"><div><span class="health-label mono">COMPLEXITY</span><span class="health-value mono">{{ complexity }} <small>/10</small></span></div><div><span class="health-label mono">EST. ROWS</span><span class="health-value mono">{{ estRows }}</span></div></div></div>
+    <div class="card"><h4 class="mono">VELOCITY DISTRIBUTION</h4><div class="vel-chart"><div class="vel-bar" *ngFor="let b of velocityBars" [style.height.%]="b"></div></div></div>
+    <div class="card integrity-card"><div class="integrity-ring"><span class="integrity-pct mono">{{ networkIntegrity }}</span></div><h4>NETWORK INTEGRITY</h4><span class="integrity-label mono">Stable</span><p class="integrity-desc">All 42 station nodes in NORTH_HUB are transmitting telemetry within expected latency thresholds.</p></div>
+  </div>
+</div>

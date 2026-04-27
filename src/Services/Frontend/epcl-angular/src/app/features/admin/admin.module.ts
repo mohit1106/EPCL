@@ -1,0 +1,43 @@
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { SharedModule } from '../../shared/shared.module';
+import { FormsModule } from '@angular/forms';
+import { BaseChartDirective } from 'ng2-charts';
+
+import { AdminDashboardComponent } from './pages/dashboard/dashboard.component';
+import { AdminUsersComponent } from './pages/users/users.component';
+import { AdminStationsComponent } from './pages/stations/stations.component';
+import { AdminPricesComponent } from './pages/prices/prices.component';
+import { AdminFraudComponent } from './pages/fraud/fraud.component';
+import { AdminAuditComponent } from './pages/audit/audit.component';
+import { AdminReportsComponent } from './pages/reports/reports.component';
+import { SystemHealthComponent } from './pages/system-health/system-health.component';
+import { AdminDocumentsComponent } from './pages/documents/documents.component';
+
+const routes: Routes = [
+  { path: 'dashboard', component: AdminDashboardComponent },
+  { path: 'users', component: AdminUsersComponent },
+  { path: 'stations', component: AdminStationsComponent },
+  { path: 'prices', component: AdminPricesComponent },
+  { path: 'fraud', component: AdminFraudComponent },
+  { path: 'audit', component: AdminAuditComponent },
+  { path: 'reports', component: AdminReportsComponent },
+  { path: 'system-health', component: SystemHealthComponent },
+  { path: 'documents', component: AdminDocumentsComponent },
+];
+
+@NgModule({
+  declarations: [
+    AdminDashboardComponent,
+    AdminUsersComponent,
+    AdminStationsComponent,
+    AdminPricesComponent,
+    AdminFraudComponent,
+    AdminAuditComponent,
+    AdminReportsComponent,
+    SystemHealthComponent,
+    AdminDocumentsComponent,
+  ],
+  imports: [SharedModule, FormsModule, BaseChartDirective, RouterModule.forChild(routes)],
+})
+export class AdminModule {}

@@ -6,5 +6,6 @@ public enum UserRole
     Dealer = 1,
     Admin = 2,
     SuperAdmin = 3,
-    Auditor = 4
+    Auditor = 4,
+    Driver = 5
 }

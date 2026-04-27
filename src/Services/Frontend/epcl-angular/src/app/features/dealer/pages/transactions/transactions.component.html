@@ -1,0 +1,31 @@
+<div class="page-content">
+  <div class="page-top"><div><h1 class="page-title">Historical Ledger</h1><p class="page-subtitle mono">SYSTEM NODE: TX-TRANSACTION-LAKE-01</p></div>
+    <div class="kpi-row"><div class="kpi-mini"><span class="kpi-label mono">TOTAL VOLUME (24H)</span><span class="kpi-value mono">{{ totalVolume | number:'1.2-2' }} <small>LTR</small></span></div><div class="kpi-mini accent"><span class="kpi-label mono">GROSS REVENUE</span><span class="kpi-value mono">${{ grossRevenue | number:'1.2-2' }}</span></div></div>
+  </div>
+  <div class="filter-bar">
+    <div class="filter-item"><label class="filter-label mono">TEMPORAL RANGE</label><div class="date-range"><input type="date" class="filter-input" /><span>→</span><input type="date" class="filter-input" /></div></div>
+    <div class="filter-item"><label class="filter-label mono">TERMINAL ID</label><select class="filter-input"><option>ALL_PUMPS</option></select></div>
+    <div class="filter-item"><label class="filter-label mono">PRODUCT GRADE</label><select class="filter-input"><option>ALL_GRADES</option></select></div>
+    <div class="filter-item"><label class="filter-label mono">PROTOCOL</label><select class="filter-input"><option>ANY_PAYMENT</option></select></div>
+  </div>
+  <button class="btn-apply mono">▼ APPLY</button>
+  <div class="table-card">
+    <table>
+      <thead><tr><th>TRANSACTION HASH</th><th>TIMESTAMP</th><th>TERMINAL</th><th>PAYLOAD</th><th>VOLUME/AMOUNT</th><th>STATUS</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let t of transactions">
+          <td class="mono"><span class="status-dot" [ngClass]="getStatusClass(t.status)"></span> {{ t.hash }}</td>
+          <td class="mono">{{ t.date }}<br/><small class="text-muted">{{ t.time }}</small></td>
+          <td><span class="terminal-badge mono">{{ t.terminal }}</span></td>
+          <td><strong>{{ t.payload }}</strong> <small class="text-muted">{{ t.payRef }}</small></td>
+          <td class="mono text-right">{{ t.volume | number:'1.2-2' }} L<br/><small>${{ t.amount | number:'1.2-2' }}</small></td>
+          <td><span class="status-pill" [ngClass]="getStatusClass(t.status)">{{ t.status }}</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="pagination"><span class="page-info mono">DISPLAYING 1-25 OF {{ totalRecords | number }} ENTRIES</span>
+      <div class="page-btns"><button class="page-btn">‹</button><button class="page-btn active">1</button><button class="page-btn">2</button><button class="page-btn">3</button><span>...</span><button class="page-btn">{{ totalPages }}</button><button class="page-btn">›</button></div>
+    </div>
+  </div>
+  <div class="export-row"><button class="btn-export mono">↓ EXPORT CSV</button><button class="btn-export mono">🖨 PRINT DAILY REPORT</button></div>
+</div>

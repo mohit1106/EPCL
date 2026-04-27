@@ -1,0 +1,173 @@
+<div class="fraud-page">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header-left">
+      <h1 class="page-header__title">Fraud Intelligence</h1>
+      <p class="page-header__subtitle">Real-time anomaly detection across all stations — powered by 14 AI rules.</p>
+    </div>
+    <div class="page-header-right">
+      <div class="filter-tabs">
+        <button class="filter-tab" [class.active]="filters.status === 'Open'" (click)="onFilterChange({status: 'Open'})">Open</button>
+        <button class="filter-tab" [class.active]="filters.status === 'Investigating'" (click)="onFilterChange({status: 'Investigating'})">Investigating</button>
+        <button class="filter-tab" [class.active]="filters.status === 'Dismissed'" (click)="onFilterChange({status: 'Dismissed'})">Dismissed</button>
+        <button class="filter-tab" [class.active]="!filters.status" (click)="onFilterChange({})">All</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Row -->
+  <div class="fraud-kpi-row">
+    <div class="fraud-kpi" *ngFor="let kpi of kpis">
+      <span class="fraud-kpi-label">{{ kpi.label }}</span>
+      <div class="fraud-kpi-value">
+        {{ kpi.value }}<span class="fraud-kpi-unit" *ngIf="kpi.unit">{{ kpi.unit }}</span>
+        <span class="fraud-kpi-trend" [ngClass]="kpi.trendClass" *ngIf="kpi.trend">{{ kpi.trend }}</span>
+      </div>
+      <span class="fraud-kpi-sub" *ngIf="kpi.sub">{{ kpi.sub }}</span>
+    </div>
+    <div class="fraud-kpi fraud-kpi-total">
+      <span class="fraud-kpi-label">TOTAL ALERTS</span>
+      <div class="fraud-kpi-value">{{ totalAlerts }}</div>
+      <span class="fraud-kpi-sub">All time</span>
+    </div>
+  </div>
+
+  <!-- AI Insight Banner -->
+  <div class="ai-insight-banner" *ngIf="aiPattern">
+    <div class="ai-banner-icon">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+    </div>
+    <div class="ai-banner-content">
+      <strong>AI Pattern Detected:</strong> {{ aiPattern }}
+      <p class="ai-action">Recommended: {{ aiAction }}</p>
+    </div>
+  </div>
+
+  <!-- Bulk Actions -->
+  <div class="bulk-bar" *ngIf="selectedIds.size > 0">
+    <span>{{ selectedIds.size }} alert(s) selected</span>
+    <button class="btn-sm btn-danger" (click)="showDismissModal = true">Bulk Dismiss</button>
+  </div>
+
+  <!-- Alerts Table -->
+  <div class="card fraud-table-card">
+    <div class="skeleton" *ngIf="isLoading" style="height: 400px;"></div>
+
+    <table class="data-table" *ngIf="!isLoading && anomalies.length > 0">
+      <thead>
+        <tr>
+          <th style="width:40px">
+            <input type="checkbox" (change)="selectedIds.size > 0 ? selectedIds.clear() : ''">
+          </th>
+          <th>Time</th>
+          <th>Station</th>
+          <th>Rule Triggered</th>
+          <th>Severity</th>
+          <th style="width:120px">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let alert of anomalies"
+            [class.selected]="selectedIds.has(alert.id)"
+            (click)="viewAlert(alert)"
+            class="fraud-row">
+          <td (click)="$event.stopPropagation()">
+            <input type="checkbox" [checked]="selectedIds.has(alert.id)" (change)="toggleSelection(alert.id)">
+          </td>
+          <td class="fraud-time-cell">{{ alert.timestamp }}</td>
+          <td>
+            <div class="fraud-station-cell">
+              <div class="station-status-dot" [ngClass]="'status-' + alert.stationStatus"></div>
+              {{ alert.station }}
+            </div>
+          </td>
+          <td class="fraud-flag-cell">{{ alert.flagType }}</td>
+          <td>
+            <span class="badge" [ngClass]="alert.severityClass">{{ alert.severity }}</span>
+          </td>
+          <td (click)="$event.stopPropagation()">
+            <div class="fraud-actions">
+              <button class="action-btn" title="Investigate" (click)="investigateAlert(alert.id)">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              </button>
+              <button class="action-btn" title="Escalate" (click)="escalateAlert(alert.id)">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+              </button>
+              <button class="action-btn action-dismiss" title="Dismiss" (click)="dismissAlert(alert.id, 'Reviewed')">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="empty-state" *ngIf="!isLoading && anomalies.length === 0">
+      <div class="empty-state__icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" width="28" height="28"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      </div>
+      <div class="empty-state__title">All Clear</div>
+      <div class="empty-state__subtitle">No fraud alerts matching current filters</div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalCount > pageSize">
+      <button class="page-btn" [disabled]="page === 1" (click)="onPageChange(page - 1)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <span class="page-info">Page {{ page }} of {{ (totalCount / pageSize | number:'1.0-0') }}</span>
+      <button class="page-btn" [disabled]="page * pageSize >= totalCount" (click)="onPageChange(page + 1)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Alert Detail Panel -->
+  <div class="detail-overlay" *ngIf="selectedAlert" (click)="closeDetail()">
+    <div class="detail-panel" (click)="$event.stopPropagation()">
+      <div class="detail-header">
+        <h3>Alert Detail</h3>
+        <button class="btn-ghost btn-icon" (click)="closeDetail()">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="detail-body">
+        <div class="detail-row"><span class="detail-label">Alert ID</span><span>{{ selectedAlert.id }}</span></div>
+        <div class="detail-row"><span class="detail-label">Transaction</span><span>{{ selectedAlert.transactionId }}</span></div>
+        <div class="detail-row"><span class="detail-label">Station</span><span>{{ selectedAlert.stationName }}</span></div>
+        <div class="detail-row"><span class="detail-label">Rule</span><span>{{ selectedAlert.ruleTriggered }}</span></div>
+        <div class="detail-row"><span class="detail-label">Severity</span><span class="badge" [ngClass]="getSeverityClass(selectedAlert.severity)">{{ selectedAlert.severity }}</span></div>
+        <div class="detail-row"><span class="detail-label">Status</span><span class="badge badge-info">{{ selectedAlert.status }}</span></div>
+        <div class="detail-row"><span class="detail-label">Description</span><span>{{ selectedAlert.description }}</span></div>
+        <div class="detail-row"><span class="detail-label">Created</span><span>{{ selectedAlert.createdAt | date:'medium' }}</span></div>
+      </div>
+      <div class="detail-actions">
+        <button class="btn-primary btn-sm" (click)="investigateAlert(selectedAlert.id)">Investigate</button>
+        <button class="btn-secondary btn-sm" (click)="escalateAlert(selectedAlert.id)">Escalate</button>
+        <button class="btn-danger btn-sm" (click)="dismissAlert(selectedAlert.id, 'Reviewed')">Dismiss</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Dismiss Modal -->
+  <div class="detail-overlay" *ngIf="showDismissModal" (click)="showDismissModal = false">
+    <div class="detail-panel" (click)="$event.stopPropagation()">
+      <div class="detail-header">
+        <h3>Bulk Dismiss {{ selectedIds.size }} Alerts</h3>
+        <button class="btn-ghost btn-icon" (click)="showDismissModal = false">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="detail-body">
+        <div class="form-group">
+          <label class="form-label">Dismissal Reason</label>
+          <textarea class="form-input" [(ngModel)]="dismissReason" rows="3" placeholder="Enter reason for dismissal..."></textarea>
+        </div>
+      </div>
+      <div class="detail-actions">
+        <button class="btn-danger" (click)="bulkDismiss()" [disabled]="!dismissReason">Confirm Dismiss</button>
+        <button class="btn-secondary" (click)="showDismissModal = false">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>

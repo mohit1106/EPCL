@@ -17,6 +17,23 @@ Read every single file in this order:
 - completed-steps/step6/walkthrough.md
 - completed-steps/step7/task.md
 - completed-steps/step7/walkthrough.md
+- completed-steps/step8/task.md
+- completed-steps/step8/walkthrough.md
+- completed-steps/step9/task.md
+- completed-steps/step9/walkthrough.md
+- completed-steps/step10/task.md
+- completed-steps/step10/walkthrough.md
+- completed-steps/step11/task.md
+- completed-steps/step11/walkthrough.md
+- completed-steps/step12/task.md
+- completed-steps/step12/walkthrough.md
+- completed-steps/step12-verification/task.md
+- completed-steps/step12-verification/walkthrough.md
+- completed-steps/step13A/walkthrough.md
+- completed-steps/step13B/walkthrough.md
+- completed-steps/step13C/walkthrough.md
+- completed-steps/step13G/task.md
+- completed-steps/step13G/walkthrough.md
 
 After reading all of them, tell me:
 1. What was built in each step — a 2-3 sentence summary per step

@@ -1,0 +1,49 @@
+:host { display: block; }
+.page-content { padding: 32px; max-width: 1400px; margin: 0 auto; }
+.mono { font-family: 'JetBrains Mono', monospace; }
+.page-top { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; }
+.page-title { font-size: 42px; font-weight: 700; letter-spacing: -1px; color: var(--text-primary); margin-bottom: 4px; }
+.page-subtitle { font-size: 13px; color: var(--text-muted); }
+.cluster-badge { text-align: right; }
+.cluster-label { display: block; font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+.cluster-status { font-size: 18px; font-weight: 700; color: var(--color-success); }
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; @media (max-width:1024px) { grid-template-columns: repeat(2,1fr); } }
+.kpi-card { background: var(--bg-surface); border: 1px solid var(--border-card); border-radius: var(--radius-md); padding: 20px; border-top: 3px solid; }
+.kpi-top { display: flex; justify-content: space-between; margin-bottom: 12px; }
+.kpi-icon { font-size: 18px; color: var(--text-muted); }
+.kpi-topright { font-size: 10px; color: var(--text-muted); }
+.kpi-label { display: block; font-size: 12px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; margin-bottom: 4px; }
+.kpi-value { font-size: 32px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; small { font-size: 12px; color: var(--text-muted); text-transform: uppercase; } }
+.kpi-bar { height: 3px; border-radius: 2px; }
+.main-grid { display: grid; grid-template-columns: 2fr 1.2fr; gap: 24px; margin-bottom: 24px; @media (max-width:1024px) { grid-template-columns: 1fr; } }
+.card { background: var(--bg-surface); border: 1px solid var(--border-card); border-radius: var(--radius-md); padding: 24px; margin-bottom: 24px; }
+.card-title { font-size: 18px; font-weight: 700; }
+.card-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.legend { font-size: 10px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; &.a { background: var(--color-primary); } &.b { background: #f59e0b; } }
+.chart-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 16px; }
+.chart-area { height: 220px; display: flex; flex-direction: column; justify-content: flex-end; }
+.chart-bars { display: flex; align-items: flex-end; gap: 4px; height: 190px; }
+.chart-bar { flex: 1; background: rgba(99,102,241,0.4); border-radius: 2px 2px 0 0; &.alt { background: rgba(245,158,11,0.3); } }
+.chart-labels { display: flex; justify-content: space-between; margin-top: 12px; font-size: 10px; color: var(--text-muted); }
+.events-card { max-height: 420px; overflow-y: auto; }
+.live-dot { color: var(--color-success); font-size: 10px; }
+.event-list { font-size: 12px; }
+.event-item { padding: 8px 12px; border-left: 3px solid transparent; margin-bottom: 4px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  &.crit { background: rgba(239,68,68,0.08); border-left-color: var(--color-danger); }
+  &.warn { border-left-color: #f59e0b; }
+}
+.event-time { color: var(--text-muted); margin-right: 8px; }
+.event-level { margin-right: 8px; &.info { color: var(--color-success); } font-weight: 700; }
+.event-item.crit .event-level { color: var(--color-danger); }
+.event-item.warn .event-level { color: #f59e0b; }
+.event-item.debug .event-level { color: var(--text-muted); }
+.event-msg { color: var(--text-primary); }
+.link-text { font-size: 12px; color: var(--color-primary); cursor: pointer; text-decoration: none; }
+.region-list { display: flex; flex-direction: column; gap: 12px; }
+.region-item { display: flex; align-items: center; gap: 16px; padding: 12px 0; border-bottom: 1px solid rgba(70,69,84,0.1); }
+.region-left { display: flex; align-items: center; gap: 12px; flex: 1; font-size: 14px; }
+.region-icon { font-size: 18px; color: var(--text-muted); }
+.region-latency { font-size: 16px; font-weight: 700; color: var(--color-success); width: 60px; text-align: right; }
+.region-bar { width: 100px; height: 6px; background: var(--bg-secondary); border-radius: 3px; overflow: hidden; }
+.region-fill { height: 100%; background: var(--color-primary); border-radius: 3px; }

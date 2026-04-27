@@ -75,7 +75,7 @@ try
     builder.Services.AddValidatorsFromAssembly(typeof(ApplicationAssemblyMarker).Assembly);
 
     // AutoMapper
-    builder.Services.AddAutoMapper(typeof(ApplicationAssemblyMarker).Assembly);
+    builder.Services.AddAutoMapper(cfg => cfg.AddMaps(typeof(ApplicationAssemblyMarker).Assembly));
 
     // JWT Authentication
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

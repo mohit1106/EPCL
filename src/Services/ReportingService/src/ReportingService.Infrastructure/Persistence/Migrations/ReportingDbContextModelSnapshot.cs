@@ -226,6 +226,53 @@ namespace ReportingService.Infrastructure.Persistence.Migrations
 
                     b.ToTable("ScheduledReports", (string)null);
                 });
+
+            modelBuilder.Entity("ReportingService.Domain.Entities.StockPrediction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("AlertSentAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("AvgDailyConsumptionL")
+                        .HasColumnType("decimal(10,3)");
+
+                    b.Property<DateTimeOffset>("CalculatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<decimal>("CurrentStockLitres")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<int>("DataPointsUsed")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("DaysUntilEmpty")
+                        .HasColumnType("decimal(6,1)");
+
+                    b.Property<Guid>("FuelTypeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("PredictedEmptyAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("StationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TankId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DaysUntilEmpty");
+
+                    b.HasIndex("StationId");
+
+                    b.HasIndex("TankId");
+
+                    b.ToTable("StockPredictions", (string)null);
+                });
 #pragma warning restore 612, 618
         }
     }

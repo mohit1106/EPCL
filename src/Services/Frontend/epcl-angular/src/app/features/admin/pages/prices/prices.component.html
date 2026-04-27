@@ -1,0 +1,32 @@
+<div class="page-content">
+  <div class="page-top"><div><h1 class="page-title">Price Control Center</h1><p class="page-subtitle mono">ACTIVE FISCAL CYCLE: 2024-Q3 // AUTH LEVEL: LEVEL 5 - SYSTEM ADMIN</p></div>
+    <div class="top-actions"><button class="btn-export mono">↓ EXPORT PRICING LEDGER</button><button class="btn-update mono">⊕ UPDATE GLOBAL PRICE</button></div></div>
+
+  <div class="price-grid">
+    <div class="price-card" *ngFor="let p of fuelPrices">
+      <div class="price-header"><span class="price-name mono">{{ p.name }}</span><span class="price-icon">📈</span></div>
+      <div class="price-value mono">${{ p.price | number:'1.3-3' }} <small [ngClass]="p.changeClass">{{ p.change }}</small></div>
+      <div class="price-bar" [style.background]="p.color"></div>
+      <span class="price-updated mono">LAST UPDATE: {{ p.lastUpdate }}</span>
+    </div>
+  </div>
+
+  <div class="analytics-grid">
+    <div class="card"><div class="card-header-row"><h3 class="card-title mono">HISTORICAL DELTA ANALYSIS</h3><div class="tab-chips mono"><button class="tab active">PETROL</button><button class="tab">DIESEL</button><button class="tab">CNG</button></div></div>
+      <p class="chart-hint">Market fluctuations vs Regional Ceiling (30D)</p>
+      <div class="chart-area"><div class="chart-bars"><div class="chart-bar" *ngFor="let h of chartBars" [style.height.%]="h"></div></div></div>
+    </div>
+    <div class="card adjust-card"><h3 class="card-title">PRICE ADJUSTMENT MODULE</h3>
+      <div class="form-field"><label class="form-label mono">SELECT FUEL VARIANT</label><select class="form-input mono"><option>{{ selectedFuel }}</option></select></div>
+      <div class="form-field"><label class="form-label mono">NEW GLOBAL BASE PRICE ($)</label><div class="price-input"><input type="number" class="form-input mono big" [(ngModel)]="newPrice" /><div class="price-btns"><button>−</button><button>+</button></div></div></div>
+      <div class="impact-row"><span>Projected Revenue Impact</span><span class="mono text-success">{{ projectedImpact }} <small>/Day</small></span></div>
+      <div class="impact-row"><span>Regional Compliance Shift</span><span class="mono text-danger">{{ complianceShift }} <small>Deviation</small></span></div>
+      <button class="btn-apply mono">APPLY CHANGE GLOBALLY</button>
+    </div>
+  </div>
+
+  <div class="card"><div class="card-header-row"><h3 class="card-title mono">AUDIT TRAIL: PRICING COMMANDS</h3><span class="mono text-muted">VIEWING LATEST 150 EVENTS</span></div>
+    <table><thead><tr><th>TIMESTAMP (UTC)</th><th>FUEL ID</th><th>CHANGE TYPE</th><th>ADJUSTMENT</th><th>OPERATOR</th><th>STATUS</th></tr></thead>
+      <tbody><tr *ngFor="let a of auditTrail"><td class="mono">{{ a.timestamp }}</td><td><span class="fuel-tag mono">{{ a.fuelId }}</span></td><td>{{ a.changeType }}</td><td class="mono">{{ a.adjustment }}</td><td class="mono">{{ a.operator }}</td><td><span class="status-pill" [ngClass]="getStatusClass(a.status)">{{ a.status }}</span></td></tr></tbody></table>
+  </div>
+</div>

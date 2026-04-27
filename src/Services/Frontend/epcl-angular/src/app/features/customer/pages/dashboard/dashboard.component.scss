@@ -1,0 +1,319 @@
+// EPCL Customer Dashboard — Light Theme
+
+.customer-dashboard {
+  animation: fadeIn 0.4s ease;
+}
+
+// ═══════════════════════════════════════════════════════
+// Welcome Banner
+// ═══════════════════════════════════════════════════════
+.welcome-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 28px 32px;
+  background: linear-gradient(135deg, var(--color-primary) 0%, #2563EB 100%);
+  border-radius: var(--radius-xl);
+  color: white;
+  margin-bottom: 24px;
+}
+
+.welcome-content {
+  h1 {
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 4px;
+
+    .text-gradient {
+      background: linear-gradient(135deg, #93C5FD, #FCD34D);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+  }
+
+  p {
+    font-size: 14px;
+    opacity: 0.8;
+  }
+}
+
+.tier-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+
+  &.tier-silver { color: #E2E8F0; }
+  &.tier-gold { color: #FCD34D; }
+  &.tier-platinum { color: #FFF; }
+}
+
+// ═══════════════════════════════════════════════════════
+// KPI Row
+// ═══════════════════════════════════════════════════════
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.kpi-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: rgba(30, 64, 175, 0.2);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+}
+
+.kpi-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.blue { background: rgba(30, 64, 175, 0.08); color: var(--color-primary); }
+  &.amber { background: rgba(245, 158, 11, 0.08); color: var(--color-warning); }
+  &.green { background: rgba(16, 185, 129, 0.08); color: var(--color-success); }
+  &.purple { background: rgba(139, 92, 246, 0.08); color: #8B5CF6; }
+}
+
+.kpi-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.kpi-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.kpi-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.kpi-value-sm {
+  font-size: 16px;
+}
+
+.kpi-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.kpi-action {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary);
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// Bottom Row
+// ═══════════════════════════════════════════════════════
+.dashboard-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 16px;
+}
+
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+
+  h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+.card-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-primary);
+
+  &:hover { text-decoration: underline; }
+}
+
+// Price List
+.price-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.price-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-subtle);
+
+  &:last-child { border-bottom: none; }
+}
+
+.price-fuel-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.price-value-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.price-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.price-per {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+// Transaction List
+.txn-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.txn-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-subtle);
+
+  &:last-child { border-bottom: none; }
+}
+
+.txn-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.txn-terminal {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.txn-detail {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.txn-amount-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.txn-amount {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+// Status badges
+.status-success {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--color-success);
+}
+
+.status-pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--color-warning);
+}
+
+.status-flagged {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-danger);
+}
+
+.status-default {
+  background: rgba(100, 116, 139, 0.1);
+  color: var(--text-muted);
+}
+
+// Skeleton
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+// ═══════════════════════════════════════════════════════
+// Responsive
+// ═══════════════════════════════════════════════════════
+@media (max-width: 1024px) {
+  .kpi-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dashboard-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .kpi-row {
+    grid-template-columns: 1fr;
+  }
+
+  .welcome-banner {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

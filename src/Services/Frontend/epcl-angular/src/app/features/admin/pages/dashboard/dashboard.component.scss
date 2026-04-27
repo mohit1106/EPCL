@@ -1,0 +1,552 @@
+// EPCL Admin Dashboard — Light Theme Premium Design
+
+.admin-dashboard {
+  animation: fadeIn 0.4s ease;
+}
+
+// ═══════════════════════════════════════════════════════
+// Page Header
+// ═══════════════════════════════════════════════════════
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 28px;
+}
+
+.page-header-left {}
+
+.page-header__title {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.page-header__subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.last-updated {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 6px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+}
+
+// ═══════════════════════════════════════════════════════
+// Loading Skeleton
+// ═══════════════════════════════════════════════════════
+.loading-container {
+  animation: fadeIn 0.3s ease;
+}
+
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.skeleton-kpi {
+  height: 120px;
+  border-radius: var(--radius-lg);
+}
+
+// ═══════════════════════════════════════════════════════
+// KPI Cards
+// ═══════════════════════════════════════════════════════
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.kpi-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  transition: var(--transition-spring);
+  cursor: default;
+
+  &:hover {
+    border-color: rgba(30, 64, 175, 0.3);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-4px);
+  }
+}
+
+.kpi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.kpi-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.kpi-trend {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+
+  &.up {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--color-success);
+  }
+
+  &.down {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--color-danger);
+  }
+
+  &.warn {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--color-warning);
+  }
+
+  &.stable {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--color-info);
+  }
+}
+
+.kpi-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.kpi-unit {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-left: 2px;
+}
+
+.kpi-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+// ═══════════════════════════════════════════════════════
+// Charts Row
+// ═══════════════════════════════════════════════════════
+.chart-row {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+// ═══════════════════════════════════════════════════════
+// Card Base
+// ═══════════════════════════════════════════════════════
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+
+  h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+}
+
+.card-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: rgba(30, 64, 175, 0.08);
+  color: var(--color-primary);
+}
+
+.card-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: var(--transition-fast);
+
+  &:hover {
+    color: var(--color-primary-hover);
+    transform: translateX(2px);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// Volume Chart (CSS Bars)
+// ═══════════════════════════════════════════════════════
+.volume-chart {
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-bars {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding-bottom: 8px;
+}
+
+.chart-bar {
+  flex: 1;
+  min-height: 4px;
+  background: linear-gradient(180deg, var(--color-primary) 0%, rgba(30, 64, 175, 0.4) 100%);
+  border-radius: 4px 4px 0 0;
+  position: relative;
+  transition: var(--transition-spring);
+
+  &:hover {
+    background: linear-gradient(180deg, var(--color-accent-blue) 0%, rgba(59, 130, 246, 0.6) 100%);
+    box-shadow: var(--glow-primary);
+  }
+
+  .chart-bar-tooltip {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text-primary);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    margin-bottom: 4px;
+  }
+
+  &:hover .chart-bar-tooltip {
+    display: block;
+  }
+}
+
+.chart-labels {
+  display: flex;
+  gap: 6px;
+
+  span {
+    flex: 1;
+    text-align: center;
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// Fraud Alerts
+// ═══════════════════════════════════════════════════════
+.fraud-list {
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.fraud-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-subtle);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.fraud-severity {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.severity-critical .fraud-severity {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--color-danger);
+  animation: pulse-danger 2s infinite;
+}
+
+@keyframes pulse-danger {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.severity-warn .fraud-severity {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--color-warning);
+}
+
+.fraud-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.fraud-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.fraud-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fraud-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.fraud-time {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.fraud-action {
+  font-size: 10px;
+}
+
+// ═══════════════════════════════════════════════════════
+// Bottom Row
+// ═══════════════════════════════════════════════════════
+.bottom-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 16px;
+}
+
+// Station Grid
+.station-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.station-node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-subtle);
+  font-size: 12px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+  }
+}
+
+.station-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.status-ok .station-dot {
+  background: var(--color-success);
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
+}
+
+.status-down .station-dot {
+  background: var(--color-danger);
+}
+
+.station-name {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+// Risk Items
+.risk-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.risk-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.risk-gauge {
+  width: 60px;
+  height: 6px;
+  background: var(--bg-surface);
+  border-radius: 3px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.risk-gauge-fill {
+  height: 100%;
+  background: var(--color-danger);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.risk-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.risk-station {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.risk-days {
+  font-size: 11px;
+  color: var(--color-danger);
+}
+
+// Health Grid
+.health-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.health-node {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+.health-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-ok .health-dot {
+  background: var(--color-success);
+}
+
+.status-down .health-dot {
+  background: var(--color-danger);
+}
+
+.status-warn .health-dot {
+  background: var(--color-warning);
+}
+
+.health-name {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.health-value {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-success);
+}
+
+.status-down .health-value {
+  color: var(--color-danger);
+}
+
+.status-warn .health-value {
+  color: var(--color-warning);
+}
+
+// ═══════════════════════════════════════════════════════
+// Empty State (override local)
+// ═══════════════════════════════════════════════════════
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  text-align: center;
+}
+
+// ═══════════════════════════════════════════════════════
+// Responsive
+// ═══════════════════════════════════════════════════════
+@media (max-width: 1200px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .bottom-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-row {
+    grid-template-columns: 1fr;
+  }
+
+  .bottom-row {
+    grid-template-columns: 1fr;
+  }
+
+  .page-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

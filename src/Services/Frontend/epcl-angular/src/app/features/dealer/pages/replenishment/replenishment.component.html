@@ -1,0 +1,67 @@
+<div class="page-content">
+  <div class="page-top"><div><h1 class="page-title">Replenishment Center</h1><p class="page-subtitle">Stock optimization and fleet management. Initiate new fuel procurement or monitor the trajectory of active logistics.</p></div>
+    <div class="latency mono">SYSTEM LATENCY <span class="latency-val">12ms</span> ●</div></div>
+
+  <div class="main-grid">
+    <!-- New Stock Request -->
+    <div class="card">
+      <div class="card-header-row"><h3 class="card-title">New Stock Request</h3><span class="req-id mono">ID: {{ requestId }}</span></div>
+      <div class="form-field"><label class="form-label mono">SELECT FUEL GRADE</label>
+        <div class="grade-chips"><button class="grade-chip" *ngFor="let g of fuelGrades" [class.active]="g === selectedGrade" (click)="selectedGrade = g"><strong>{{ g }}</strong></button></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field flex-1"><label class="form-label mono">REQUESTED VOLUME (LITERS)</label>
+          <div class="vol-input"><input type="number" class="form-input mono" [(ngModel)]="requestVolume" /><div class="vol-btns"><button>−</button><button>+</button></div></div>
+          <span class="form-hint mono">Min: 10k L   Max: 100k L</span></div>
+        <div class="form-field flex-1"><label class="form-label mono">TARGET STORAGE</label><select class="form-input">
+          <option>{{ targetTank }}</option></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field flex-1"><label class="form-label mono">REQUESTED WINDOW</label><input type="text" class="form-input mono" [value]="requestWindow" readonly /></div>
+        <div class="form-field flex-1"><label class="form-label mono">PRIORITY LEVEL</label>
+          <div class="priority-chips"><button class="priority-chip" [class.active]="priority === 'STANDARD'" (click)="priority = 'STANDARD'">STANDARD</button><button class="priority-chip urgent" [class.active]="priority === 'URGENT'" (click)="priority = 'URGENT'">URGENT</button></div></div>
+      </div>
+      <button class="btn-transmit mono">TRANSMIT REQUEST ➤</button>
+    </div>
+
+    <!-- Active Deployment Timeline -->
+    <div class="card">
+      <div class="card-header-row"><h3 class="card-title">Active Deployment</h3><span class="deploy-badge mono">{{ deploymentStatus }}</span></div>
+      <div class="timeline">
+        <div class="timeline-step" *ngFor="let s of deploymentSteps" [class.done]="s.done" [class.active]="s.active">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <span class="timeline-label" [class.active-label]="s.active">{{ s.label }}</span>
+            <p class="timeline-detail">{{ s.detail }}</p>
+            <span class="timeline-date mono" *ngIf="s.date">{{ s.date }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="eta-bar mono" *ngIf="deploymentStatus === 'IN-TRANSIT'">ETA Terminal <span class="eta-value">{{ eta }}</span></div>
+      <p class="telemetry-label mono">Real-time Telemetry Active</p>
+      <div class="driver-card"><span class="driver-avatar">🧑</span><div><span class="driver-label mono">ASSIGNED DRIVER</span><strong>{{ driver.name }}</strong></div>
+        <div class="driver-actions"><button class="driver-btn">📞</button><button class="driver-btn">💬</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Budget Stats -->
+  <div class="stats-row">
+    <div class="stat-card" *ngFor="let s of budgetStats"><span class="stat-label mono">{{ s.label }}</span><span class="stat-value mono">{{ s.value }}</span><span class="stat-trend" [ngClass]="s.trendClass">{{ s.trend }}</span></div>
+  </div>
+
+  <!-- Request History -->
+  <div class="card">
+    <div class="card-header-row"><h3 class="card-title">Request History</h3><div class="history-actions"><input type="text" class="search-input mono" placeholder="Search Batch ID..." /><button class="btn-outline-sm mono">▼ FILTER</button></div></div>
+    <table>
+      <thead><tr><th>REFERENCE ID</th><th>GRADE</th><th>VOLUME</th><th>STATUS</th><th>COMPLETION</th><th>ACTIONS</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let h of history">
+          <td class="mono">{{ h.id }}</td><td>{{ h.grade }}</td><td class="mono">{{ h.volume }}</td>
+          <td><span class="status-pill" [ngClass]="getStatusClass(h.status)">{{ h.status }}</span></td>
+          <td class="mono text-muted">{{ h.completion }}</td><td><button class="btn-icon">📄</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

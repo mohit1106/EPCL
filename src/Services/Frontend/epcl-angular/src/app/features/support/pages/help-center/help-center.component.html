@@ -1,0 +1,46 @@
+<div class="page-content">
+  <h1 class="page-title">Support & Help Center</h1>
+  <p class="page-subtitle">Navigate our digital refinery of resources. Technical documentation, logistics support, and intelligence assistance at your disposal.</p>
+
+  <!-- Search -->
+  <div class="search-bar"><app-icon name="search" [size]="16" color="var(--text-muted)"></app-icon><input type="text" class="search-input" placeholder="Search FAQs, terminals, or logistics codes..." /><span class="shortcut mono">⌘ K</span></div>
+
+  <!-- Knowledge Domains -->
+  <h2 class="section-title">Knowledge Domains</h2>
+  <p class="section-sub mono">SELECT INTELLIGENCE SECTOR</p>
+  <div class="domain-grid">
+    <div class="domain-card" *ngFor="let d of domains">
+      <app-icon [name]="d.icon" [size]="22" color="var(--color-primary)"></app-icon>
+      <h3>{{ d.name }}</h3>
+      <p>{{ d.desc }}</p>
+      <a class="domain-link mono" [ngClass]="d.linkColor">ACCESS MODULE →</a>
+    </div>
+  </div>
+
+  <!-- Bottom Grid: Trending + Still Need Help -->
+  <div class="bottom-grid">
+    <div class="trending-col">
+      <h2 class="section-title"><span class="dot-green">●</span> Trending Topics</h2>
+      <div class="trending-grid">
+        <div class="trending-card" *ngFor="let t of trending">
+          <span class="trending-ref mono">{{ t.ref }}</span><app-icon name="trending-up" [size]="14" color="#22c55e"></app-icon>
+          <h3>{{ t.title }}</h3>
+          <p>{{ t.desc }}</p>
+        </div>
+      </div>
+      <div class="featured-article">
+        <app-icon [name]="featured.icon" [size]="18" color="var(--color-primary)"></app-icon>
+        <div><strong>{{ featured.title }}</strong><br/><small class="text-muted">{{ featured.desc }}</small></div>
+        <span class="featured-arrow">›</span>
+      </div>
+    </div>
+
+    <div class="help-card">
+      <app-icon name="help-circle" [size]="24" color="var(--color-primary)"></app-icon>
+      <h3>Still Need Help?</h3>
+      <p>Our intelligence analysts are standing by 24/7 to assist with your technical or logistical queries.</p>
+      <button class="btn-chat">Live Chat ▶</button>
+      <div class="agents-row"><div class="agent-avatars"><app-icon name="user" [size]="16"></app-icon><app-icon name="user" [size]="16"></app-icon><span class="agent-count mono">+{{ agentsActive }}</span></div><span class="agents-label mono">AGENTS ACTIVE</span></div>
+    </div>
+  </div>
+</div>

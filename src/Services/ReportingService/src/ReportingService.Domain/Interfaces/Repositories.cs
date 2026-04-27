@@ -34,3 +34,12 @@ public interface IProcessedEventRepository
     Task<bool> AlreadyProcessedAsync(Guid eventId, CancellationToken ct = default);
     Task MarkProcessedAsync(Guid eventId, string eventType, CancellationToken ct = default);
 }
+
+public interface IStockPredictionRepository
+{
+    Task UpsertAsync(StockPrediction prediction, CancellationToken ct = default);
+    Task<StockPrediction?> GetByTankIdAsync(Guid tankId, CancellationToken ct = default);
+    Task<IReadOnlyList<StockPrediction>> GetAllAsync(Guid? stationId = null, CancellationToken ct = default);
+    Task<IReadOnlyList<StockPrediction>> GetAtRiskAsync(int daysThreshold = 7, Guid? stationId = null, CancellationToken ct = default);
+    Task MarkAlertSentAsync(Guid tankId, CancellationToken ct = default);
+}
