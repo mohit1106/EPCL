@@ -23,7 +23,7 @@ public class MailKitEmailService : IEmailService
         var message = new MimeMessage();
         message.From.Add(new MailboxAddress(
             _config["SMTP_FROM_NAME"] ?? "EPCL Fuel Platform",
-            _config["SMTP_FROM_EMAIL"] ?? "noreply@epcl.in"));
+            _config["SMTP_FROM_ADDRESS"] ?? "noreply@epcl.in"));
         message.To.Add(MailboxAddress.Parse(toEmail));
         message.Subject = subject;
         message.Body = new TextPart("html") { Text = htmlBody };

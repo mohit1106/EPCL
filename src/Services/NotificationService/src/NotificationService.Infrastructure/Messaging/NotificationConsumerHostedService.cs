@@ -57,7 +57,8 @@ public class NotificationConsumerHostedService : BackgroundService
             "inventory.stock.critical", "inventory.replenishment.requested",
             "inventory.replenishment.approved", "inventory.dip.variance",
             "sales.price.updated", "identity.account.locked", "sales.voided",
-            "reporting.stock.prediction.alert", "document.expiring.alert"
+            "reporting.stock.prediction.alert", "document.expiring.alert",
+            "identity.user.registered"
         };
         foreach (var key in bindings)
             await _channel.QueueBindAsync(QueueName, ExchangeName, key, cancellationToken: stoppingToken);
@@ -120,6 +121,9 @@ public class NotificationConsumerHostedService : BackgroundService
                         break;
                     case "DocumentExpiringEvent":
                         await HandleDocumentExpiring(mediator, templateService, body, jsonOpts);
+                        break;
+                    case nameof(UserRegisteredEvent):
+                        await HandleUserRegistered(mediator, templateService, body, jsonOpts);
                         break;
                     default:
                         _logger.LogWarning("Unknown event type: {type}", eventType);
@@ -311,6 +315,32 @@ public class NotificationConsumerHostedService : BackgroundService
         await m.Send(new SendNotificationCommand(null, null, null,
             NotificationChannel.InApp, $"📄 Document Expiring: {evt.FileName}",
             msg, "DocumentExpiringEvent"));
+    }
+
+    // ── Handler: UserRegistered → Welcome Email to User ────────
+    private async Task HandleUserRegistered(IMediator m, IEmailTemplateService tpl, string body, JsonSerializerOptions opts)
+    {
+        var evt = JsonSerializer.Deserialize<UserRegisteredEvent>(body, opts)!;
+        var roleMessage = evt.Role switch
+        {
+            "Dealer" => "You now have access to pump management, inventory tracking, and sales tools.",
+            "Customer" => "Track your fuel purchases, earn loyalty points, and manage your wallet.",
+            _ => "You can now explore all EPCL platform features."
+        };
+        var html = tpl.Render("welcome", new Dictionary<string, string>
+        {
+            ["RecipientName"] = evt.FullName,
+            ["RoleMessage"] = roleMessage,
+            ["DashboardUrl"] = "http://localhost:4200/auth/login"
+        });
+        // Send welcome email
+        await m.Send(new SendNotificationCommand(
+            evt.UserId, evt.Email, null,
+            NotificationChannel.Email,
+            "Welcome to EPCL — Eleven Petroleum Corporation Limited",
+            html,
+            nameof(UserRegisteredEvent)));
+        _logger.LogInformation("Welcome email sent to {Email} ({Role})", evt.Email, evt.Role);
     }
 
     public override async Task StopAsync(CancellationToken ct)

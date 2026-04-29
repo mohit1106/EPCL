@@ -11,7 +11,9 @@ public interface ITransactionRepository
     Task<(IReadOnlyList<Transaction> Items, int Total)> GetPagedAsync(
         int page, int pageSize, Guid? stationId = null, Guid? dealerId = null,
         Guid? customerId = null, string? vehicleNumber = null,
-        TransactionStatus? status = null, CancellationToken ct = default);
+        TransactionStatus? status = null, DateTimeOffset? dateFrom = null,
+        DateTimeOffset? dateTo = null, Guid? fuelTypeId = null,
+        CancellationToken ct = default);
     Task<int> GetDailySequenceAsync(Guid stationId, DateTimeOffset date, CancellationToken ct = default);
 }
 

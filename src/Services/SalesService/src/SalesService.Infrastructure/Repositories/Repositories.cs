@@ -19,7 +19,8 @@ public class TransactionRepository(SalesDbContext ctx) : ITransactionRepository
 
     public async Task<(IReadOnlyList<Transaction> Items, int Total)> GetPagedAsync(
         int page, int pageSize, Guid? stationId, Guid? dealerId, Guid? customerId,
-        string? vehicleNumber, TransactionStatus? status, CancellationToken ct)
+        string? vehicleNumber, TransactionStatus? status, DateTimeOffset? dateFrom,
+        DateTimeOffset? dateTo, Guid? fuelTypeId, CancellationToken ct)
     {
         var q = ctx.Transactions.AsQueryable();
         if (stationId.HasValue) q = q.Where(t => t.StationId == stationId.Value);
@@ -27,6 +28,9 @@ public class TransactionRepository(SalesDbContext ctx) : ITransactionRepository
         if (customerId.HasValue) q = q.Where(t => t.CustomerUserId == customerId.Value);
         if (!string.IsNullOrEmpty(vehicleNumber)) q = q.Where(t => t.VehicleNumber == vehicleNumber);
         if (status.HasValue) q = q.Where(t => t.Status == status.Value);
+        if (dateFrom.HasValue) q = q.Where(t => t.Timestamp >= dateFrom.Value);
+        if (dateTo.HasValue) q = q.Where(t => t.Timestamp <= dateTo.Value);
+        if (fuelTypeId.HasValue) q = q.Where(t => t.FuelTypeId == fuelTypeId.Value);
         var total = await q.CountAsync(ct);
         var items = await q.OrderByDescending(t => t.Timestamp).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
         return (items, total);

@@ -10,7 +10,8 @@ namespace SalesService.Application.Queries;
 // ── Transactions ───────────────────────────────────────────────────
 public record GetTransactionsQuery(int Page = 1, int PageSize = 20, Guid? StationId = null,
     Guid? DealerId = null, Guid? CustomerId = null, string? VehicleNumber = null,
-    string? Status = null) : IRequest<PagedResult<TransactionDto>>;
+    string? Status = null, DateTimeOffset? DateFrom = null, DateTimeOffset? DateTo = null,
+    Guid? FuelTypeId = null) : IRequest<PagedResult<TransactionDto>>;
 
 public class GetTransactionsHandler(ITransactionRepository txRepo) : IRequestHandler<GetTransactionsQuery, PagedResult<TransactionDto>>
 {
@@ -20,7 +21,7 @@ public class GetTransactionsHandler(ITransactionRepository txRepo) : IRequestHan
         if (q.Status != null && Enum.TryParse<TransactionStatus>(q.Status, out var s)) statusFilter = s;
 
         var (items, total) = await txRepo.GetPagedAsync(q.Page, q.PageSize, q.StationId, q.DealerId,
-            q.CustomerId, q.VehicleNumber, statusFilter, ct);
+            q.CustomerId, q.VehicleNumber, statusFilter, q.DateFrom, q.DateTo, q.FuelTypeId, ct);
 
         return new PagedResult<TransactionDto>
         {

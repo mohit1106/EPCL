@@ -1,0 +1,54 @@
+You are starting work on the EPCL (Eleven Petroleum Corporation Limited) enterprise fuel management platform.
+
+Your first and only task right now is to read AGENT_START_HERE.md located in the project root. Do not write any code. Do not create any files. Just read that file completely from top to bottom.
+
+After reading it, also read these files in this order:
+1. IFMS_AGENT_IMPLEMENTATION_PLAN.md
+2. EPCL_ADDONS_PLAN.md
+3. ifms-prd.docx
+4. IFMS_Implementation_Guide.docx
+
+After reading all four documents, open stitch-frontend-ui/ and for every folder inside it, open screen.png and code.html and study both.
+
+When you have finished reading everything, respond with:
+- A one-paragraph summary of each planning document (4 paragraphs total)
+- A one-line summary for each stitch folder describing what you saw in its screen.png
+- Your answers to these 7 questions from AGENT_START_HERE.md Step 0.3
+- Finally, ask me "Analysis complete. Ready to begin Step 1. Should I proceed?"
+
+Do not write a single line of code until I confirm.
+also you have all the permission like to create and edit .env files and dockercompose and all
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+read AGENT_START_HERE.md located in the project root completely from top to bottom.
+After reading it, also read these files in this order:
+1. IFMS_AGENT_IMPLEMENTATION_PLAN.md
+2. EPCL_ADDONS_PLAN.md
+3. ifms-prd.docx
+4. IFMS_Implementation_Guide.docx
+After reading all four documents,
+verify that all services are fullfilling all the reuirements and swagger docs is documented properly for sending requests
+
+
+the agent have completed tell step 12 from AGENT_START_HERE.md, so basically its now asking for forntend that is step 13, but before start frontend tell it to analyze everything and verify the backend.
+create swagger docs and tell that now SSMS and docker and rabbitMQ is running so it can do all the necessary things like creating 
+redis, elasticsearch, kibana containers, do migrations of databases, generating swagger docs and all necesary things.
+
+
+
+
+the agent have completed tell step 12 from AGENT_START_HERE.md, so basically its now asking for forntend that is step 13, but before start frontend tell it to analyze everything and verify the backend.
+also can you recommend some other features that can be implemented in it, one i was thinking like integrating a cahtbot for analyzing and querying the data using gemini api or something like 
+that, what else if you have any recommendations, go ahead and tell how to implemnt them any other microservices or anyhing that will be useful in this. accordingly what will be changed in other services and api gateway

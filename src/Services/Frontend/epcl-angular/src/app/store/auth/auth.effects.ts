@@ -87,9 +87,21 @@ export class AuthEffects {
       switchMap(({ request }) =>
         this.authApi.register(request).pipe(
           map((response) => AuthActions.registerSuccess({ message: response.message })),
-          catchError((err) =>
-            of(AuthActions.registerFailure({ error: err.error?.message || 'Registration failed' }))
-          )
+          catchError((err) => {
+            let errorMsg = 'Registration failed';
+            if (err.error?.message) {
+              errorMsg = err.error.message;
+            } else if (err.error?.errors) {
+              // ASP.NET validation errors: { errors: { FieldName: ["msg1", "msg2"] } }
+              const allErrors = Object.values(err.error.errors).flat();
+              errorMsg = (allErrors as string[]).join('. ');
+            } else if (err.error?.title) {
+              errorMsg = err.error.title;
+            } else if (typeof err.error === 'string') {
+              errorMsg = err.error;
+            }
+            return of(AuthActions.registerFailure({ error: errorMsg }));
+          })
         )
       )
     )

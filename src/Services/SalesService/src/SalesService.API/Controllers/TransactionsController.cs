@@ -50,10 +50,16 @@ public class TransactionsController(IMediator mediator) : ControllerBase
     /// <summary>Get customer's own transactions.</summary>
     [HttpGet("transactions/my")]
     [Authorize(Roles = "Customer")]
-    public async Task<IActionResult> GetMyTransactions([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<IActionResult> GetMyTransactions([FromQuery] int page = 1, [FromQuery] int pageSize = 20,
+        [FromQuery] string? dateFrom = null, [FromQuery] string? dateTo = null,
+        [FromQuery] Guid? fuelTypeId = null, [FromQuery] string? paymentMethod = null,
+        [FromQuery] string? status = null)
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        return Ok(await mediator.Send(new GetTransactionsQuery(page, pageSize, CustomerId: userId)));
+        DateTimeOffset? from = dateFrom != null ? DateTimeOffset.Parse(dateFrom) : null;
+        DateTimeOffset? to = dateTo != null ? DateTimeOffset.Parse(dateTo).AddDays(1) : null;
+        return Ok(await mediator.Send(new GetTransactionsQuery(page, pageSize, CustomerId: userId,
+            Status: status, DateFrom: from, DateTo: to, FuelTypeId: fuelTypeId)));
     }
 
     /// <summary>Get transactions by vehicle number.</summary>

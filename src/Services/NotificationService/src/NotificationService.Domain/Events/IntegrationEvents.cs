@@ -106,3 +106,11 @@ public class TransactionVoidedEvent : IntegrationEvent
     public Guid VoidedByUserId { get; set; }
     public string Reason { get; set; } = string.Empty;
 }
+
+public class UserRegisteredEvent : IntegrationEvent
+{
+    public Guid UserId { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty;
+}

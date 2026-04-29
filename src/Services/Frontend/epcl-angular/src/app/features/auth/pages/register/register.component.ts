@@ -94,6 +94,7 @@ export class RegisterComponent implements AfterViewInit {
           email: this.identityForm.value.email,
           phoneNumber: this.identityForm.value.phoneNumber,
           password: this.detailsForm.value.password,
+          confirmPassword: this.detailsForm.value.confirmPassword,
           role: this.selectedRole,
           referralCode: this.detailsForm.value.referralCode || undefined,
         },

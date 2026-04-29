@@ -122,6 +122,7 @@ export class SalesApiService {
     if (filters?.dateTo) params = params.set('dateTo', filters.dateTo);
     if (filters?.fuelTypeId) params = params.set('fuelTypeId', filters.fuelTypeId);
     if (filters?.paymentMethod) params = params.set('paymentMethod', filters.paymentMethod);
+    if (filters?.status) params = params.set('status', filters.status);
     return this.http.get<PaginatedResult<TransactionDto>>(`${this.base}/transactions/my`, { params });
   }
 
