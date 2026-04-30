@@ -159,9 +159,22 @@
           <label class="amount-label">Vehicle Number (Optional)</label>
           <div class="info-input-wrapper">
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/></svg>
-            <input type="text" [(ngModel)]="vehicleNumber" placeholder="e.g. MH12AB1234" />
+            <input type="text" [(ngModel)]="vehicleNumber" placeholder="e.g. MH12AB1234" (input)="onVehicleNumberInput()" style="text-transform: uppercase;" />
           </div>
           <span class="field-hint">Format: XX00XX0000 (e.g. MH12AB1234)</span>
+          <!-- Vehicle Lookup Status -->
+          <div class="lookup-status searching" *ngIf="isLookingUp">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            Looking up vehicle...
+          </div>
+          <div class="lookup-status found" *ngIf="!isLookingUp && lookupDone && linkedVehicle">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            Linked to registered customer{{ linkedVehicle.nickname ? ' — ' + linkedVehicle.nickname : '' }}
+          </div>
+          <div class="lookup-status not-found" *ngIf="!isLookingUp && lookupDone && !linkedVehicle">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            Unregistered vehicle — will proceed as guest
+          </div>
         </div>
         <div class="info-field">
           <label class="amount-label">Customer Phone (Optional)</label>

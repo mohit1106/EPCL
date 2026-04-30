@@ -157,5 +157,5 @@ public class ParkingBookingRepository(SalesDbContext ctx) : IParkingBookingRepos
     public async Task UpdateAsync(ParkingBooking booking, CancellationToken ct)
     { ctx.ParkingBookings.Update(booking); await ctx.SaveChangesAsync(ct); }
     public async Task<IReadOnlyList<ParkingBooking>> GetByCustomerAsync(Guid customerId, int page, int pageSize, CancellationToken ct)
-        => await ctx.ParkingBookings.Where(b => b.CustomerId == customerId).OrderByDescending(b => b.BookedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+        => await ctx.ParkingBookings.Include(b => b.ParkingSlot).Where(b => b.CustomerId == customerId).OrderByDescending(b => b.BookedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
 }

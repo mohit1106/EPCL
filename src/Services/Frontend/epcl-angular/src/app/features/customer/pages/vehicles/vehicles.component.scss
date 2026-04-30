@@ -1,38 +1,557 @@
+// EPCL Vehicles — Pro-Max Design System
 :host { display: block; }
-.page-content { padding: 32px; max-width: 1280px; margin: 0 auto; }
-.page-title { font-size: 36px; font-weight: 700; letter-spacing: -1px; color: white; margin-bottom: 4px; }
-.page-subtitle { font-size: 14px; color: var(--text-muted); }
-.page-header-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; }
-.mono { font-family: 'JetBrains Mono', monospace; }
 
-.btn-primary { background: var(--color-primary); color: white; border: none; padding: 12px 24px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 700; cursor: pointer; transition: var(--transition-fast);
+.vehicles-page {
+  max-width: 1280px;
+  margin: 0 auto;
+  animation: fadeIn 0.35s ease;
+}
+
+// ═══════════════════════════════════════════════
+// Page Header
+// ═══════════════════════════════════════════════
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  svg { color: var(--color-primary); }
+}
+
+.page-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.btn-register {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: var(--color-primary);
+  color: #FFF;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+
   &:hover { filter: brightness(1.1); transform: translateY(-1px); }
 }
 
-.vehicle-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
-  @media (max-width: 1024px) { grid-template-columns: repeat(2, 1fr); }
-  @media (max-width: 600px) { grid-template-columns: 1fr; }
+// ═══════════════════════════════════════════════
+// Summary Strip
+// ═══════════════════════════════════════════════
+.summary-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, rgba(30, 64, 175, 0.03) 0%, rgba(30, 64, 175, 0.07) 100%);
+  border: 1px solid rgba(30, 64, 175, 0.1);
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
 }
 
-.vehicle-card { background: var(--bg-surface); border: 1px solid var(--border-card); border-radius: var(--radius-md); padding: 24px; transition: var(--transition-base);
-  &:hover { border-color: var(--border-subtle); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); }
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
 }
-.vehicle-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.vehicle-icon { font-size: 28px; }
-.vehicle-status { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 4px;
-  &.active { background: rgba(16, 185, 129, 0.15); color: var(--color-success); }
-  &.maintenance { background: rgba(246, 188, 117, 0.15); color: #f6bc75; }
+
+.summary-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-primary);
+
+  &.active {
+    color: #059669;
+    text-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+  }
 }
-.vehicle-name { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
-.vehicle-plate { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; }
 
-.vehicle-details { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; padding: 16px 0; border-top: 1px solid rgba(70, 69, 84, 0.1); border-bottom: 1px solid rgba(70, 69, 84, 0.1); }
-.detail-row { display: flex; justify-content: space-between; }
-.detail-label { font-size: 12px; color: var(--text-muted); }
-.detail-value { font-size: 12px; color: var(--text-primary); font-weight: 500; }
+.summary-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
 
-.vehicle-actions { display: flex; gap: 8px; }
-.btn-outline-sm { flex: 1; padding: 8px; background: none; border: 1px solid var(--border-card); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 12px; font-weight: 600; cursor: pointer; transition: var(--transition-fast);
-  &:hover { border-color: var(--color-primary); color: var(--color-primary); }
-  &.danger:hover { border-color: var(--color-danger); color: var(--color-danger); }
+.summary-divider {
+  width: 1px;
+  height: 32px;
+  background: var(--border-subtle, rgba(0,0,0,0.1));
+  flex-shrink: 0;
+  margin: 0 20px;
+}
+
+// ═══════════════════════════════════════════════
+// Vehicle Card Grid
+// ═══════════════════════════════════════════════
+.vehicle-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.vehicle-card {
+  background: var(--bg-secondary, #FFF);
+  border: 1px solid var(--border-subtle, #E5E7EB);
+  border-radius: var(--radius-lg, 12px);
+  padding: 20px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: rgba(30, 64, 175, 0.2);
+    box-shadow: 0 6px 20px rgba(30, 64, 175, 0.06);
+    transform: translateY(-2px);
+  }
+}
+
+// Card Header
+.vcard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.vcard-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(30, 64, 175, 0.07);
+  color: var(--color-primary);
+}
+
+.vcard-status {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.04em;
+  background: rgba(100, 116, 139, 0.1);
+  color: var(--text-muted);
+
+  &.active {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+  }
+}
+
+// Indian License Plate
+.plate-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+  border: 2px solid #D97706;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.plate-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 800;
+  color: #1E293B;
+  letter-spacing: 0.12em;
+}
+
+// Name & Details
+.vcard-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+
+.vcard-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border-subtle, rgba(0,0,0,0.06));
+}
+
+.vcard-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.vcard-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.vcard-val {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+// Actions
+.vcard-actions {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle, rgba(0,0,0,0.06));
+}
+
+.btn-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  background: none;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-sm);
+  color: #DC2626;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.06);
+    border-color: rgba(239, 68, 68, 0.4);
+  }
+}
+
+// ═══════════════════════════════════════════════
+// Empty State
+// ═══════════════════════════════════════════════
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.empty-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 20px;
+  background: rgba(30, 64, 175, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-disabled, #9CA3AF);
+  margin-bottom: 20px;
+}
+
+.empty-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+}
+
+.empty-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 0 20px;
+  max-width: 380px;
+  line-height: 1.5;
+}
+
+// ═══════════════════════════════════════════════
+// Skeleton Loaders
+// ═══════════════════════════════════════════════
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.skeleton-card {
+  background: var(--bg-secondary, #FFF);
+  border: 1px solid var(--border-subtle, #E5E7EB);
+  border-radius: var(--radius-lg, 12px);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeleton-line {
+  height: 16px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+
+  &.w40 { width: 40%; }
+  &.w60 { width: 60%; }
+  &.w80 { width: 80%; }
+}
+
+// ═══════════════════════════════════════════════
+// Modal
+// ═══════════════════════════════════════════════
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 10000;
+  backdrop-filter: blur(4px);
+}
+
+.modal-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 480px;
+  max-width: 92vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--bg-primary, #FFF);
+  border: 1px solid var(--border-subtle, #E5E7EB);
+  border-radius: 16px;
+  z-index: 10001;
+  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.2);
+  animation: modalSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border-subtle, rgba(0,0,0,0.06));
+
+  h2 {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0;
+  }
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: var(--bg-surface, #F3F4F6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.15s;
+
+  &:hover { background: var(--border-subtle, #E5E7EB); }
+}
+
+.modal-body {
+  padding: 20px 24px;
+}
+
+// Form styles
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary, #475569);
+  margin-bottom: 6px;
+
+  .optional {
+    font-weight: 400;
+    text-transform: none;
+    color: var(--text-muted);
+    letter-spacing: 0;
+  }
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border-subtle, #D1D5DB);
+  border-radius: var(--radius-sm, 8px);
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--bg-primary, #FFF);
+  transition: border-color 0.15s;
+  outline: none;
+  box-sizing: border-box;
+
+  &:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+  }
+
+  &.mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+  }
+}
+
+select.form-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 18px;
+  padding-right: 36px;
+}
+
+.form-hint {
+  display: block;
+  font-size: 11px;
+  color: #DC2626;
+  margin-top: 4px;
+}
+
+// Vehicle type selector grid
+.type-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.type-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border: 1.5px solid var(--border-subtle, #D1D5DB);
+  border-radius: var(--radius-sm, 8px);
+  background: var(--bg-primary, #FFF);
+  color: var(--text-secondary, #475569);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  &.selected {
+    border-color: var(--color-primary);
+    background: rgba(30, 64, 175, 0.06);
+    color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.15);
+  }
+}
+
+// Modal footer
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-subtle, rgba(0,0,0,0.06));
+}
+
+.btn-cancel {
+  padding: 10px 18px;
+  background: none;
+  border: 1px solid var(--border-subtle, #D1D5DB);
+  border-radius: var(--radius-sm, 8px);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover { background: var(--bg-surface, #F3F4F6); }
+}
+
+.btn-submit {
+  padding: 10px 20px;
+  background: var(--color-primary);
+  color: #FFF;
+  border: none;
+  border-radius: var(--radius-sm, 8px);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover { filter: brightness(1.1); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+// ═══════════════════════════════════════════════
+// Animations
+// ═══════════════════════════════════════════════
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translate(-50%, -46%) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+// ═══════════════════════════════════════════════
+// Responsive
+// ═══════════════════════════════════════════════
+@media (max-width: 1024px) {
+  .vehicle-grid, .skeleton-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .vehicle-grid, .skeleton-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .type-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }

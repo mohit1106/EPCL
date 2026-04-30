@@ -942,3 +942,37 @@
   margin-top: 4px;
   padding-left: 2px;
 }
+
+// Vehicle Lookup Status
+.lookup-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+
+  &.searching {
+    color: #D97706;
+    background: rgba(245, 158, 11, 0.06);
+    svg { animation: spin 1s linear infinite; }
+  }
+
+  &.found {
+    color: #059669;
+    background: rgba(16, 185, 129, 0.06);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+  }
+
+  &.not-found {
+    color: var(--text-muted);
+    background: var(--bg-surface, rgba(0,0,0,0.02));
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

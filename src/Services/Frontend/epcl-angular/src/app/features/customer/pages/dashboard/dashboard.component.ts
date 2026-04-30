@@ -4,7 +4,7 @@ import { Subject, takeUntil, forkJoin, interval, startWith, switchMap, of, catch
 import { selectUser } from '../../../../store/auth/auth.selectors';
 import { SalesApiService, FuelPriceDto, TransactionDto } from '../../../../core/services/sales-api.service';
 import { LoyaltyApiService, LoyaltyBalanceDto } from '../../../../core/services/loyalty-api.service';
-import { StationsApiService, NearbyStationDto, FuelTypeDto } from '../../../../core/services/stations-api.service';
+import { StationsApiService, NearbyStationDto, FuelTypeDto, ParkingBookingDto } from '../../../../core/services/stations-api.service';
 import { PaymentsApiService } from '../../../../core/services/payments-api.service';
 
 @Component({
@@ -27,6 +27,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   priceTicker: { name: string; price: number; change: number; direction: string }[] = [];
   nearestStation: { name: string; distance: string; hours: string } | null = null;
   recentTransactions: { id: string; terminal: string; fuelType: string; volume: string; cost: number; status: string }[] = [];
+  parkingBookings: ParkingBookingDto[] = [];
+  activeParkingCount = 0;
+  totalParkingSpent = 0;
 
   constructor(
     private store: Store,
@@ -86,6 +89,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           this.lastVolume = transactions.items[0].quantityLitres;
         }
         this.isLoading = false;
+        this.loadParkingBookings();
       },
       error: () => { this.isLoading = false; },
     });
@@ -129,12 +133,57 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }));
   }
 
+  private loadParkingBookings(): void {
+    this.stationsApi.getMyParkingBookings(1, 6).pipe(
+      takeUntil(this.destroy$),
+      catchError(() => of([]))
+    ).subscribe(bookings => {
+      this.parkingBookings = bookings;
+      const now = new Date();
+      this.activeParkingCount = bookings.filter(
+        b => b.status === 'Confirmed' && new Date(b.expiresAt) > now
+      ).length;
+      this.totalParkingSpent = bookings
+        .filter(b => b.status === 'Confirmed')
+        .reduce((sum, b) => sum + b.amount, 0);
+    });
+  }
+
   getStatusClass(status: string): string {
     switch (status?.toLowerCase()) {
-      case 'completed': case 'success': return 'status-success';
+      case 'completed': case 'success': case 'confirmed': return 'status-success';
       case 'initiated': case 'pending': return 'status-pending';
-      case 'voided': case 'failed': return 'status-flagged';
+      case 'voided': case 'failed': case 'cancelled': return 'status-flagged';
       default: return 'status-default';
     }
+  }
+
+  getParkingStatusClass(booking: ParkingBookingDto): string {
+    if (booking.status === 'Confirmed') {
+      return new Date(booking.expiresAt) > new Date() ? 'status-success' : 'status-default';
+    }
+    return this.getStatusClass(booking.status);
+  }
+
+  getParkingStatusLabel(booking: ParkingBookingDto): string {
+    if (booking.status === 'Confirmed') {
+      return new Date(booking.expiresAt) > new Date() ? 'Active' : 'Expired';
+    }
+    return booking.status;
+  }
+
+  getVehicleIcon(slotType: string): string {
+    const icons: Record<string, string> = { TwoWheeler: '🏍️', FourWheeler: '🚗', HGV: '🚛' };
+    return icons[slotType] || '🚗';
+  }
+
+  getVehicleLabel(slotType: string): string {
+    const labels: Record<string, string> = { TwoWheeler: '2-Wheeler', FourWheeler: '4-Wheeler', HGV: 'HGV' };
+    return labels[slotType] || slotType;
+  }
+
+  getDurationLabel(hours: number): string {
+    if (hours >= 24) return 'Full Day';
+    return hours === 1 ? '1 Hr' : `${hours} Hrs`;
   }
 }

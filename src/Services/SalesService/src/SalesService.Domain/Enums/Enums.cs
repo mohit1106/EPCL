@@ -54,7 +54,13 @@ public enum VehicleType
     TwoWheeler,
     FourWheeler,
     Commercial,
-    CNG
+    CNG,
+    Car,
+    Motorcycle,
+    Truck,
+    Bus,
+    Van,
+    AutoRickshaw
 }
 
 public enum ParkingSlotType

@@ -103,6 +103,12 @@ export class StationsApiService {
   confirmParkingPayment(orderId: string, paymentId: string, signature: string): Observable<any> {
     return this.http.post('/gateway/sales/parking/confirm', { orderId, paymentId, signature });
   }
+
+  getMyParkingBookings(page = 1, pageSize = 10): Observable<ParkingBookingDto[]> {
+    return this.http.get<ParkingBookingDto[]>(`/gateway/sales/parking/my-bookings`, {
+      params: { page: page.toString(), pageSize: pageSize.toString() }
+    });
+  }
 }
 
 export interface ParkingSlotDto {
@@ -111,4 +117,19 @@ export interface ParkingSlotDto {
   slotType: string;
   slotNumber: string;
   isAvailable: boolean;
+}
+
+export interface ParkingBookingDto {
+  id: string;
+  parkingSlotId: string;
+  stationId: string;
+  customerId: string;
+  slotType: string;
+  durationHours: number;
+  amount: number;
+  status: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  bookedAt: string;
+  expiresAt: string;
 }

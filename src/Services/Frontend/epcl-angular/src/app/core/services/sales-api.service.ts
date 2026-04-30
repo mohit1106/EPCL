@@ -87,10 +87,13 @@ export interface ShiftSummaryDto {
 
 export interface VehicleDto {
   id: string;
+  customerId: string;
   registrationNumber: string;
+  fuelTypePreference?: string;
   vehicleType: string;
-  fuelPreference: string;
-  createdAt: string;
+  nickname?: string;
+  isActive: boolean;
+  registeredAt: string;
 }
 
 export interface DailySummaryDto {
@@ -226,11 +229,15 @@ export class SalesApiService {
     return this.http.get<VehicleDto[]>('/gateway/vehicles');
   }
 
-  registerVehicle(vehicle: { registrationNumber: string; vehicleType: string; fuelPreference: string }): Observable<VehicleDto> {
+  registerVehicle(vehicle: { registrationNumber: string; vehicleType: string; fuelTypePreference?: string; nickname?: string }): Observable<VehicleDto> {
     return this.http.post<VehicleDto>('/gateway/vehicles', vehicle);
   }
 
   deleteVehicle(id: string): Observable<void> {
     return this.http.delete<void>(`/gateway/vehicles/${id}`);
+  }
+
+  lookupVehicle(registrationNumber: string): Observable<VehicleDto | null> {
+    return this.http.get<VehicleDto>(`/gateway/vehicles/lookup/${registrationNumber}`);
   }
 }

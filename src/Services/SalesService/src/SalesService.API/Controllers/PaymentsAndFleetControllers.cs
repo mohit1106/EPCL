@@ -80,10 +80,11 @@ public class FleetController(IMediator mediator) : ControllerBase
 /// <summary>Customer vehicle registration.</summary>
 [ApiController]
 [Route("api/vehicles")]
-[Authorize(Roles = "Customer")]
-public class VehiclesController(IMediator mediator) : ControllerBase
+[Authorize]
+public class VehiclesController(IMediator mediator, SalesService.Domain.Interfaces.IRegisteredVehicleRepository vehicleRepo) : ControllerBase
 {
     [HttpGet]
+    [Authorize(Roles = "Customer")]
     public async Task<IActionResult> GetMyVehicles()
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -91,10 +92,32 @@ public class VehiclesController(IMediator mediator) : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Customer")]
     public async Task<IActionResult> Register([FromBody] RegisterVehicleRequest body)
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         return CreatedAtAction(nameof(GetMyVehicles), null,
             await mediator.Send(new RegisterVehicleCommand(userId, body.RegistrationNumber, body.FuelTypePreference, body.VehicleType, body.Nickname)));
+    }
+
+    /// <summary>Lookup a vehicle by registration number (for dealers creating sales).</summary>
+    [HttpGet("lookup/{registrationNumber}")]
+    [Authorize(Roles = "Dealer,Admin,SuperAdmin")]
+    public async Task<IActionResult> Lookup(string registrationNumber)
+    {
+        var normalized = registrationNumber.Replace("-", "").Replace(" ", "").ToUpperInvariant();
+        var vehicle = await vehicleRepo.GetByRegistrationAsync(normalized);
+        if (vehicle == null) return NotFound(new { message = $"No vehicle found with registration {normalized}." });
+        return Ok(new
+        {
+            vehicle.Id,
+            vehicle.CustomerId,
+            vehicle.RegistrationNumber,
+            FuelTypePreference = vehicle.FuelTypePreference?.ToString(),
+            VehicleType = vehicle.VehicleType.ToString(),
+            vehicle.Nickname,
+            vehicle.IsActive,
+            RegisteredAt = vehicle.RegisteredAt
+        });
     }
 }

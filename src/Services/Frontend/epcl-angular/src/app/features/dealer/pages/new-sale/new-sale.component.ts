@@ -2,9 +2,9 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Subject, takeUntil, forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { selectUser } from '../../../../store/auth/auth.selectors';
-import { SalesApiService, PumpDto, FuelPriceDto, RecordSaleCommand } from '../../../../core/services/sales-api.service';
+import { SalesApiService, PumpDto, FuelPriceDto, RecordSaleCommand, VehicleDto } from '../../../../core/services/sales-api.service';
 import { StationsApiService, FuelTypeDto } from '../../../../core/services/stations-api.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 
@@ -68,6 +68,12 @@ export class NewSaleComponent implements OnInit, OnDestroy {
   todayRevenue = 0;
   avgPerSale = 0;
 
+  // Vehicle lookup
+  private vehicleLookup$ = new Subject<string>();
+  linkedVehicle: VehicleDto | null = null;
+  isLookingUp = false;
+  lookupDone = false;
+
   private pumpColors = ['#1E40AF', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
   constructor(
@@ -85,6 +91,29 @@ export class NewSaleComponent implements OnInit, OnDestroy {
         this.stationId = user.profile?.stationId || '';
         this.loadData();
       }
+    });
+
+    // Vehicle lookup debounce
+    this.vehicleLookup$.pipe(
+      debounceTime(600),
+      distinctUntilChanged(),
+      switchMap(regNum => {
+        const normalized = regNum.replace(/[-\s]/g, '').toUpperCase();
+        if (!/^[A-Z]{2}[0-9]{2}[A-Z]{2}[0-9]{4}$/.test(normalized)) {
+          this.linkedVehicle = null;
+          this.isLookingUp = false;
+          this.lookupDone = false;
+          return of(null);
+        }
+        this.isLookingUp = true;
+        this.lookupDone = false;
+        return this.salesApi.lookupVehicle(normalized).pipe(catchError(() => of(null)));
+      }),
+      takeUntil(this.destroy$)
+    ).subscribe(v => {
+      this.linkedVehicle = v;
+      this.isLookingUp = false;
+      this.lookupDone = true;
     });
   }
 
@@ -266,8 +295,14 @@ export class NewSaleComponent implements OnInit, OnDestroy {
     this.volume = 0;
     this.vehicleNumber = '';
     this.customerPhone = '';
+    this.linkedVehicle = null;
+    this.lookupDone = false;
     this.txnId = 'TXN-' + Math.random().toString(36).substring(2, 8).toUpperCase();
     this.toast.info('Transaction cancelled.');
+  }
+
+  onVehicleNumberInput(): void {
+    this.vehicleLookup$.next(this.vehicleNumber);
   }
 
   completeSale(): void {
@@ -299,6 +334,7 @@ export class NewSaleComponent implements OnInit, OnDestroy {
       pumpId: this.selectedPump.id,
       tankId: '00000000-0000-0000-0000-000000000000', // Default tank
       fuelTypeId: this.selectedPump.fuelTypeId,
+      customerUserId: this.linkedVehicle?.customerId,
       vehicleNumber: vehicleForApi,
       quantityLitres: Math.round(this.volume * 1000) / 1000, // Max 3 decimal places
       paymentMethod: this.selectedPayment,
