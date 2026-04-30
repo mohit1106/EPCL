@@ -37,8 +37,8 @@ public class RazorpayService : IRazorpayService
         {
             ["amount"] = (int)(amountInRupees * 100),
             ["currency"] = currency,
-            ["receipt"] = $"epcl-wallet-{Guid.NewGuid():N}",
-            ["notes"] = new Dictionary<string, string> { ["platform"] = "EPCL", ["purpose"] = "wallet-topup" }
+            ["receipt"] = $"epcl_{Guid.NewGuid().ToString("N")[..20]}",
+            ["notes"] = new Dictionary<string, string> { ["platform"] = "EPCL" }
         };
 
         Razorpay.Api.Order order = _client.Order.Create(options);

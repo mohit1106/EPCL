@@ -109,11 +109,24 @@ export interface TransactionFilters {
   status?: string;
 }
 
+export interface FuelPriceDto {
+  id: string;
+  fuelTypeId: string;
+  pricePerLitre: number;
+  effectiveFrom: string;
+  isActive: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class SalesApiService {
   private readonly base = '/gateway/sales';
 
   constructor(private http: HttpClient) {}
+
+  // Fuel Prices
+  getActiveFuelPrices(): Observable<FuelPriceDto[]> {
+    return this.http.get<FuelPriceDto[]>(`${this.base}/fuel-prices`);
+  }
 
   // Transactions
   getMyTransactions(page = 1, pageSize = 20, filters?: TransactionFilters): Observable<PaginatedResult<TransactionDto>> {

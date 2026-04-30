@@ -4,21 +4,27 @@ import { Observable } from 'rxjs';
 
 export interface StationDto {
   id: string;
-  name: string;
-  code: string;
-  address: string;
+  stationName: string;
+  stationCode: string;
+  addressLine1: string;
   city: string;
   state: string;
+  pinCode?: string;
   latitude: number;
   longitude: number;
-  contactPhone: string;
-  dealerUserId: string;
+  dealerUserId?: string;
   is24x7: boolean;
-  hasCng: boolean;
   isActive: boolean;
   operatingHoursStart: string;
   operatingHoursEnd: string;
   createdAt: string;
+  distanceKm?: number;
+  // Backend sometimes sends these aliases (mapped differently)
+  name: string;
+  code: string;
+  address: string;
+  hasCng?: boolean;
+  contactPhone?: string;
 }
 
 export interface FuelTypeDto {
@@ -80,4 +86,29 @@ export class StationsApiService {
   getFuelTypes(): Observable<FuelTypeDto[]> {
     return this.http.get<FuelTypeDto[]>(`${this.base}/fuel-types`);
   }
+
+  // ── Parking ──────────────────────────────────────────
+  getParkingSlots(stationId: string): Observable<ParkingSlotDto[]> {
+    return this.http.get<ParkingSlotDto[]>(`/gateway/sales/parking/stations/${stationId}/slots`);
+  }
+
+  getParkingPricing(): Observable<Record<string, Record<string, number>>> {
+    return this.http.get<Record<string, Record<string, number>>>(`/gateway/sales/parking/pricing`);
+  }
+
+  bookParking(stationId: string, slotType: string, durationHours: number): Observable<any> {
+    return this.http.post('/gateway/sales/parking/book', { stationId, slotType, durationHours });
+  }
+
+  confirmParkingPayment(orderId: string, paymentId: string, signature: string): Observable<any> {
+    return this.http.post('/gateway/sales/parking/confirm', { orderId, paymentId, signature });
+  }
+}
+
+export interface ParkingSlotDto {
+  id: string;
+  stationId: string;
+  slotType: string;
+  slotNumber: string;
+  isAvailable: boolean;
 }

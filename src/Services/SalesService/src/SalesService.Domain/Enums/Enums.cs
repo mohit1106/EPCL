@@ -56,3 +56,18 @@ public enum VehicleType
     Commercial,
     CNG
 }
+
+public enum ParkingSlotType
+{
+    TwoWheeler,
+    FourWheeler,
+    HGV
+}
+
+public enum ParkingBookingStatus
+{
+    Initiated,
+    Confirmed,
+    Cancelled,
+    Expired
+}

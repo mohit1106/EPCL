@@ -68,3 +68,16 @@ public record CreateWalletOrderRequest(decimal Amount);
 public record VerifyWalletPaymentRequest(string OrderId, string PaymentId, string Signature);
 
 public record CreateOrderResponseDto(string OrderId, decimal Amount, string Currency, string KeyId);
+
+// ── Parking DTOs ───────────────────────────────────────────────────
+public record ParkingSlotDto(
+    Guid Id, Guid StationId, string SlotType, string SlotNumber, bool IsAvailable);
+
+public record ParkingBookingDto(
+    Guid Id, Guid ParkingSlotId, Guid StationId, Guid CustomerId,
+    string SlotType, int DurationHours, decimal Amount, string Status,
+    string? RazorpayOrderId, string? RazorpayPaymentId,
+    DateTimeOffset BookedAt, DateTimeOffset ExpiresAt);
+
+public record CreateParkingBookingRequest(Guid StationId, string SlotType, int DurationHours);
+public record ConfirmParkingPaymentRequest(string OrderId, string PaymentId, string Signature);

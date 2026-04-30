@@ -90,3 +90,19 @@ public interface IProcessedEventRepository
     Task<bool> AlreadyProcessedAsync(Guid eventId, CancellationToken ct = default);
     Task MarkProcessedAsync(Guid eventId, string eventType, CancellationToken ct = default);
 }
+
+public interface IParkingSlotRepository
+{
+    Task<IReadOnlyList<ParkingSlot>> GetByStationAsync(Guid stationId, CancellationToken ct = default);
+    Task<ParkingSlot?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task UpdateAsync(ParkingSlot slot, CancellationToken ct = default);
+}
+
+public interface IParkingBookingRepository
+{
+    Task<ParkingBooking> AddAsync(ParkingBooking booking, CancellationToken ct = default);
+    Task<ParkingBooking?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task<ParkingBooking?> GetByRazorpayOrderIdAsync(string orderId, CancellationToken ct = default);
+    Task UpdateAsync(ParkingBooking booking, CancellationToken ct = default);
+    Task<IReadOnlyList<ParkingBooking>> GetByCustomerAsync(Guid customerId, int page, int pageSize, CancellationToken ct = default);
+}

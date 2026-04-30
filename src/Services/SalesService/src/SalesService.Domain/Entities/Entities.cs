@@ -170,3 +170,33 @@ public class ProcessedEvent
     public string EventType { get; set; } = string.Empty;
     public DateTimeOffset ProcessedAt { get; set; } = DateTimeOffset.UtcNow;
 }
+
+// ── ParkingSlot ────────────────────────────────────────────────────
+public class ParkingSlot
+{
+    public Guid Id { get; set; }
+    public Guid StationId { get; set; }
+    public ParkingSlotType SlotType { get; set; }
+    public string SlotNumber { get; set; } = string.Empty;
+    public bool IsAvailable { get; set; } = true;
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+}
+
+// ── ParkingBooking ─────────────────────────────────────────────────
+public class ParkingBooking
+{
+    public Guid Id { get; set; }
+    public Guid ParkingSlotId { get; set; }
+    public Guid StationId { get; set; }
+    public Guid CustomerId { get; set; }
+    public ParkingSlotType SlotType { get; set; }
+    public int DurationHours { get; set; }
+    public decimal Amount { get; set; }
+    public ParkingBookingStatus Status { get; set; } = ParkingBookingStatus.Initiated;
+    public string? RazorpayOrderId { get; set; }
+    public string? RazorpayPaymentId { get; set; }
+    public DateTimeOffset BookedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset ExpiresAt { get; set; }
+
+    public ParkingSlot ParkingSlot { get; set; } = null!;
+}

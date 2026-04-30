@@ -1,53 +1,272 @@
-<div class="stations-layout">
-  <!-- Station List -->
-  <div class="station-list-panel">
-    <div class="panel-header">
-      <h2>📍 Station Network</h2>
-      <div class="filter-chips">
-        <button *ngFor="let f of filters" [class.active]="f === activeFilter" (click)="activeFilter = f" class="chip">{{ f }}</button>
-      </div>
-    </div>
-    <div class="station-items">
-      <div class="station-item" *ngFor="let s of stations" (click)="selectStation(s)" [class.selected]="selectedStation === s">
-        <div class="station-item-header">
-          <span class="station-item-name">{{ s.name }}</span>
-          <span class="station-status" [ngClass]="s.statusClass">{{ s.status }}</span>
-        </div>
-        <p class="station-item-meta">⛽ {{ s.distance }} • {{ s.address }}</p>
-        <div class="station-prices">
-          <div><span class="price-label">Regular</span><span class="price-value">${{ s.regular | number:'1.2-2' }}</span>
-            <span class="price-change" *ngIf="s.change !== 0">({{ s.change }}%)</span></div>
-          <div *ngIf="s.premium"><span class="price-label">Premium</span><span class="price-value">${{ s.premium | number:'1.2-2' }}</span></div>
-        </div>
-        <div class="station-amenities">
-          <span class="amenity" *ngFor="let a of s.amenities">{{ a }}</span>
-          <a class="details-link" (click)="selectStation(s); $event.stopPropagation()">Details ›</a>
-        </div>
-      </div>
+<div class="stations-page">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Station Network
+      </h1>
+      <p class="page-subtitle">{{ filteredStations.length }} stations across India</p>
     </div>
   </div>
 
-  <!-- Map Area -->
-  <div class="map-area" style="position: relative; width: 100%; height: 100%; min-height: 500px;">
-    <div id="leaflet-map" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;"></div>
+  <!-- Filters Bar -->
+  <div class="filter-bar">
+    <div class="search-box">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search stations, cities..." [(ngModel)]="searchQuery" (input)="applyFilters()" />
+    </div>
+    <select class="filter-select" [(ngModel)]="selectedCity" (change)="applyFilters()">
+      <option value="">All Cities</option>
+      <option *ngFor="let c of cities" [value]="c">{{ c }}</option>
+    </select>
+    <div class="filter-chips">
+      <button class="chip" [class.active]="!selectedFuelFilter" (click)="selectedFuelFilter=''; applyFilters()">All Fuels</button>
+      <button class="chip" *ngFor="let ft of fuelTypes" [class.active]="selectedFuelFilter === ft.id" (click)="selectedFuelFilter=ft.id; applyFilters()">
+        {{ ft.name }}
+      </button>
+    </div>
+    <label class="toggle-label">
+      <input type="checkbox" [(ngModel)]="show24x7Only" (change)="applyFilters()" />
+      <span>24/7 Only</span>
+    </label>
+    <button class="btn-clear-sm" *ngIf="hasActiveFilters()" (click)="clearFilters()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      Clear
+    </button>
   </div>
 
-  <!-- Station Detail Panel -->
-  <div class="detail-panel" *ngIf="selectedStation">
-    <button class="close-btn" (click)="closeDetails()">✕</button>
-    <h2>{{ selectedStation.name }}</h2>
-    <p class="mono detail-uid">UID: TX-HOU-0922-A</p>
-    <h3 class="detail-section-title">Live Fuel Indices</h3>
-    <div class="fuel-index-grid">
-      <div class="fuel-index"><span class="idx-label">Regular (87)</span><span class="idx-value">${{ selectedStation.regular | number:'1.2-2' }}</span></div>
-      <div class="fuel-index" *ngIf="selectedStation.premium"><span class="idx-label">Premium (93)</span><span class="idx-value">${{ selectedStation.premium | number:'1.2-2' }}</span></div>
+  <!-- Main Content -->
+  <div class="main-layout">
+    <!-- Left Panel: List or Detail (mutually exclusive) -->
+    <div class="left-panel">
+
+      <!-- ───── Station List View ───── -->
+      <div class="station-list-view" *ngIf="!selectedStation">
+        <div class="loading-container" *ngIf="isLoading">
+          <div class="loading-spinner"></div>
+          <p>Finding stations near you...</p>
+        </div>
+        <div class="empty-state" *ngIf="!isLoading && filteredStations.length === 0">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <p>No stations found</p>
+          <span>Try adjusting your search or filters</span>
+        </div>
+        <div class="station-items" *ngIf="!isLoading">
+          <div class="station-card" *ngFor="let s of filteredStations"
+               (click)="selectStation(s)" role="button" tabindex="0">
+            <div class="station-card-top">
+              <div class="station-name-row">
+                <h3 class="station-name">{{ s.name }}</h3>
+                <span class="station-badge" [ngClass]="s.statusClass">{{ s.status }}</span>
+              </div>
+              <p class="station-address">{{ s.address }}, {{ s.city }}, {{ s.state }}</p>
+              <div class="station-meta">
+                <span class="meta-item">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  {{ s.distanceStr }}
+                </span>
+                <span class="meta-item" *ngIf="s.is24x7">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  24/7
+                </span>
+                <span class="meta-item">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>
+                  {{ s.code }}
+                </span>
+              </div>
+            </div>
+            <div class="station-card-bottom">
+              <div class="price-chips" *ngIf="s.fuelPrices.length > 0">
+                <span class="price-chip" *ngFor="let fp of s.fuelPrices.slice(0,3)" [style.borderColor]="getFuelColor(fp.name)">
+                  {{ fp.name }}: <strong>₹{{ fp.price | number:'1.2-2' }}</strong>
+                </span>
+              </div>
+              <div class="amenity-tags">
+                <span class="amenity-tag" *ngFor="let a of s.amenities">{{ a }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ───── Station Detail View (replaces list) ───── -->
+      <div class="detail-view" *ngIf="selectedStation">
+        <!-- Back Nav -->
+        <button class="back-btn" (click)="closeDetails()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          Back to all stations
+        </button>
+
+        <!-- Station Header Card -->
+        <div class="detail-hero">
+          <div class="detail-hero-top">
+            <h2 class="detail-station-name">{{ selectedStation.name }}</h2>
+            <span class="station-badge" [ngClass]="selectedStation.statusClass">{{ selectedStation.status }}</span>
+          </div>
+          <p class="detail-meta-line">
+            <span class="detail-code">{{ selectedStation.code }}</span>
+            <span class="dot">·</span>
+            <span>{{ selectedStation.distanceStr }}</span>
+            <span class="dot" *ngIf="selectedStation.is24x7">·</span>
+            <span class="tag-24" *ngIf="selectedStation.is24x7">24/7</span>
+          </p>
+          <p class="detail-address">{{ selectedStation.address }}, {{ selectedStation.city }}, {{ selectedStation.state }} {{ selectedStation.pinCode }}</p>
+          <p class="detail-hours" *ngIf="!selectedStation.is24x7">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            {{ selectedStation.operatingHoursStart }} — {{ selectedStation.operatingHoursEnd }}
+          </p>
+        </div>
+
+        <!-- Scrollable Sections -->
+        <div class="detail-scroll">
+
+          <!-- Live Fuel Prices -->
+          <div class="detail-section">
+            <h4 class="section-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+              Live Fuel Prices
+            </h4>
+            <div class="fuel-price-grid">
+              <div class="fuel-price-card" *ngFor="let fp of selectedStation.fuelPrices" [style.borderLeftColor]="getFuelColor(fp.name)">
+                <span class="fuel-name">{{ fp.name }}</span>
+                <span class="fuel-price">₹{{ fp.price | number:'1.2-2' }}<small>/L</small></span>
+              </div>
+              <div class="fuel-price-card empty" *ngIf="selectedStation.fuelPrices.length === 0">
+                <span class="fuel-name">Loading prices...</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- On-Site Infrastructure -->
+          <div class="detail-section">
+            <h4 class="section-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+              On-Site Infrastructure
+            </h4>
+            <div class="infra-list">
+              <div class="infra-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                <span>Multi-Grade Fuel Dispensers</span>
+                <span class="infra-badge">{{ fuelTypes.length }} Types</span>
+              </div>
+              <div class="infra-item" *ngIf="selectedStation.is24x7">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span>24/7 Operations</span>
+                <span class="infra-badge green">Active</span>
+              </div>
+              <div class="infra-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="23 7 16 12 16 2 23 7"/></svg>
+                <span>CCTV Surveillance</span>
+                <span class="infra-badge">Monitored</span>
+              </div>
+              <div class="infra-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                <span>Attendant Service</span>
+                <span class="infra-badge">Available</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Parking Availability -->
+          <div class="detail-section">
+            <h4 class="section-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="22" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 010 6H9"/></svg>
+              Parking Availability
+            </h4>
+            <div class="parking-grid">
+              <div class="parking-type">
+                <span class="parking-icon">🏍️</span>
+                <span class="parking-label">2-Wheeler</span>
+                <span class="parking-count" [class.zero]="selectedStation.parkingAvailable.twoWheeler === 0">
+                  {{ selectedStation.parkingAvailable.twoWheeler }}
+                </span>
+                <span class="parking-sub">available</span>
+              </div>
+              <div class="parking-type">
+                <span class="parking-icon">🚗</span>
+                <span class="parking-label">4-Wheeler</span>
+                <span class="parking-count" [class.zero]="selectedStation.parkingAvailable.fourWheeler === 0">
+                  {{ selectedStation.parkingAvailable.fourWheeler }}
+                </span>
+                <span class="parking-sub">available</span>
+              </div>
+              <div class="parking-type">
+                <span class="parking-icon">🚛</span>
+                <span class="parking-label">HGV / Truck</span>
+                <span class="parking-count" [class.zero]="selectedStation.parkingAvailable.hgv === 0">
+                  {{ selectedStation.parkingAvailable.hgv }}
+                </span>
+                <span class="parking-sub">available</span>
+              </div>
+            </div>
+            <button class="btn-book-parking" (click)="openParkingModal()" [disabled]="getTotalParking(selectedStation) === 0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="22" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 010 6H9"/></svg>
+              Book Parking Slot
+            </button>
+          </div>
+        </div>
+
+        <!-- Sticky Action Footer -->
+        <div class="detail-actions">
+          <button class="btn-navigate" (click)="navigateToStation(selectedStation)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+            Navigate via Google Maps
+          </button>
+        </div>
+      </div>
     </div>
-    <h3 class="detail-section-title">On-Site Infrastructure</h3>
-    <div class="infra-list">
-      <div class="infra-item"><span>🚛</span><span>Fleet-Ready Bays (HGV)</span><span class="infra-count">12 Available</span></div>
-      <div class="infra-item"><span>⚡</span><span>DC Fast Chargers</span><span class="infra-count accent">6 Active</span></div>
-      <div class="infra-item"><span>☕</span><span>24/7 Logistics Lounge</span><span class="infra-count">Wifi Access</span></div>
+
+    <!-- Right: Map Area -->
+    <div class="map-area">
+      <div id="leaflet-map" class="leaflet-container"></div>
     </div>
-    <button class="btn-navigate-full" (click)="getDirections(selectedStation)">🧭 Navigate</button>
+  </div>
+</div>
+
+<!-- ═══ Parking Booking Modal (portal-level, outside page flow) ═══ -->
+<div class="parking-modal-backdrop" *ngIf="showParkingModal" (click)="closeParkingModal()"></div>
+<div class="parking-modal" *ngIf="showParkingModal">
+  <div class="modal-header">
+    <h3>Book Parking</h3>
+    <button class="close-btn" (click)="closeParkingModal()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="modal-body">
+    <p class="modal-station">{{ selectedStation?.name }}</p>
+
+    <label class="field-label">Vehicle Type</label>
+    <div class="slot-type-selector">
+      <button class="slot-btn" [class.active]="bookingSlotType === 'TwoWheeler'" (click)="bookingSlotType='TwoWheeler'; updateBookingPrice()">
+        <span class="slot-icon">🏍️</span> 2-Wheeler
+      </button>
+      <button class="slot-btn" [class.active]="bookingSlotType === 'FourWheeler'" (click)="bookingSlotType='FourWheeler'; updateBookingPrice()">
+        <span class="slot-icon">🚗</span> 4-Wheeler
+      </button>
+      <button class="slot-btn" [class.active]="bookingSlotType === 'HGV'" (click)="bookingSlotType='HGV'; updateBookingPrice()">
+        <span class="slot-icon">🚛</span> HGV
+      </button>
+    </div>
+
+    <label class="field-label">Duration</label>
+    <div class="duration-selector">
+      <button class="dur-btn" [class.active]="bookingDuration === 1" (click)="bookingDuration=1; updateBookingPrice()">1 Hour</button>
+      <button class="dur-btn" [class.active]="bookingDuration === 2" (click)="bookingDuration=2; updateBookingPrice()">2 Hours</button>
+      <button class="dur-btn" [class.active]="bookingDuration === 4" (click)="bookingDuration=4; updateBookingPrice()">4 Hours</button>
+      <button class="dur-btn" [class.active]="bookingDuration === 24" (click)="bookingDuration=24; updateBookingPrice()">Full Day</button>
+    </div>
+
+    <div class="price-display">
+      <span>Total Amount</span>
+      <span class="price-amount">₹{{ bookingPrice | number:'1.0-0' }}</span>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn-cancel" (click)="closeParkingModal()">Cancel</button>
+    <button class="btn-pay" (click)="confirmBooking()" [disabled]="isBooking || bookingPrice === 0">
+      <span *ngIf="!isBooking">Pay ₹{{ bookingPrice | number:'1.0-0' }}</span>
+      <span *ngIf="isBooking">Processing...</span>
+    </button>
   </div>
 </div>

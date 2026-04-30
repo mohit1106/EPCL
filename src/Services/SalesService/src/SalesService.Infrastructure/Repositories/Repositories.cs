@@ -135,3 +135,27 @@ public class ProcessedEventRepository(SalesDbContext ctx) : IProcessedEventRepos
     public async Task MarkProcessedAsync(Guid eventId, string eventType, CancellationToken ct)
     { await ctx.ProcessedEvents.AddAsync(new ProcessedEvent { Id = Guid.NewGuid(), EventId = eventId, EventType = eventType }, ct); await ctx.SaveChangesAsync(ct); }
 }
+
+public class ParkingSlotRepository(SalesDbContext ctx) : IParkingSlotRepository
+{
+    public async Task<IReadOnlyList<ParkingSlot>> GetByStationAsync(Guid stationId, CancellationToken ct)
+        => await ctx.ParkingSlots.Where(p => p.StationId == stationId).OrderBy(p => p.SlotNumber).ToListAsync(ct);
+    public async Task<ParkingSlot?> GetByIdAsync(Guid id, CancellationToken ct)
+        => await ctx.ParkingSlots.FirstOrDefaultAsync(p => p.Id == id, ct);
+    public async Task UpdateAsync(ParkingSlot slot, CancellationToken ct)
+    { ctx.ParkingSlots.Update(slot); await ctx.SaveChangesAsync(ct); }
+}
+
+public class ParkingBookingRepository(SalesDbContext ctx) : IParkingBookingRepository
+{
+    public async Task<ParkingBooking> AddAsync(ParkingBooking booking, CancellationToken ct)
+    { await ctx.ParkingBookings.AddAsync(booking, ct); await ctx.SaveChangesAsync(ct); return booking; }
+    public async Task<ParkingBooking?> GetByIdAsync(Guid id, CancellationToken ct)
+        => await ctx.ParkingBookings.Include(b => b.ParkingSlot).FirstOrDefaultAsync(b => b.Id == id, ct);
+    public async Task<ParkingBooking?> GetByRazorpayOrderIdAsync(string orderId, CancellationToken ct)
+        => await ctx.ParkingBookings.Include(b => b.ParkingSlot).FirstOrDefaultAsync(b => b.RazorpayOrderId == orderId, ct);
+    public async Task UpdateAsync(ParkingBooking booking, CancellationToken ct)
+    { ctx.ParkingBookings.Update(booking); await ctx.SaveChangesAsync(ct); }
+    public async Task<IReadOnlyList<ParkingBooking>> GetByCustomerAsync(Guid customerId, int page, int pageSize, CancellationToken ct)
+        => await ctx.ParkingBookings.Where(b => b.CustomerId == customerId).OrderByDescending(b => b.BookedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+}

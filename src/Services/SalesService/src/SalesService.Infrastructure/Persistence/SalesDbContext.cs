@@ -20,6 +20,8 @@ public class SalesDbContext : DbContext
     public DbSet<WalletTransaction> WalletTransactions => Set<WalletTransaction>();
     public DbSet<ProcessedEvent> ProcessedEvents => Set<ProcessedEvent>();
     public DbSet<FuelPreAuthorization> FuelPreAuthorizations => Set<FuelPreAuthorization>();
+    public DbSet<ParkingSlot> ParkingSlots => Set<ParkingSlot>();
+    public DbSet<ParkingBooking> ParkingBookings => Set<ParkingBooking>();
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
@@ -195,6 +197,39 @@ public class SalesDbContext : DbContext
             b.Property(f => f.Status).IsRequired().HasMaxLength(20).HasDefaultValue("Active");
             b.Property(f => f.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
             b.HasIndex(f => f.AuthCode).IsUnique();
+        });
+
+        // ── ParkingSlot ──────────────────────────────────────
+        mb.Entity<ParkingSlot>(b =>
+        {
+            b.ToTable("ParkingSlots"); b.HasKey(p => p.Id);
+            b.Property(p => p.Id).HasDefaultValueSql("NEWID()");
+            b.Property(p => p.StationId).IsRequired();
+            b.Property(p => p.SlotType).IsRequired().HasMaxLength(20).HasConversion<string>();
+            b.Property(p => p.SlotNumber).IsRequired().HasMaxLength(10);
+            b.Property(p => p.IsAvailable).HasDefaultValue(true);
+            b.Property(p => p.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+            b.HasIndex(p => p.StationId);
+        });
+
+        // ── ParkingBooking ───────────────────────────────────
+        mb.Entity<ParkingBooking>(b =>
+        {
+            b.ToTable("ParkingBookings"); b.HasKey(p => p.Id);
+            b.Property(p => p.Id).HasDefaultValueSql("NEWID()");
+            b.Property(p => p.StationId).IsRequired();
+            b.Property(p => p.CustomerId).IsRequired();
+            b.Property(p => p.SlotType).IsRequired().HasMaxLength(20).HasConversion<string>();
+            b.Property(p => p.DurationHours).IsRequired();
+            b.Property(p => p.Amount).IsRequired().HasColumnType("DECIMAL(10,2)");
+            b.Property(p => p.Status).IsRequired().HasMaxLength(20).HasConversion<string>().HasDefaultValue(ParkingBookingStatus.Initiated);
+            b.Property(p => p.RazorpayOrderId).HasMaxLength(100);
+            b.Property(p => p.RazorpayPaymentId).HasMaxLength(100);
+            b.Property(p => p.BookedAt).HasDefaultValueSql("GETUTCDATE()");
+            b.Property(p => p.ExpiresAt).IsRequired();
+            b.HasOne(p => p.ParkingSlot).WithMany().HasForeignKey(p => p.ParkingSlotId);
+            b.HasIndex(p => p.CustomerId);
+            b.HasIndex(p => p.RazorpayOrderId);
         });
     }
 }

@@ -91,3 +91,18 @@ public class AuditEvent : IntegrationEvent
     public Guid? ChangedByUserId { get; set; }
     public string ServiceName { get; set; } = "SalesService";
 }
+
+// ── Parking ────────────────────────────────────────────────────────
+public class ParkingBookingConfirmedEvent : IntegrationEvent
+{
+    public Guid BookingId { get; set; }
+    public Guid StationId { get; set; }
+    public string SlotType { get; set; } = string.Empty;
+    public string SlotNumber { get; set; } = string.Empty;
+    public int DurationHours { get; set; }
+    public decimal Amount { get; set; }
+    public DateTimeOffset BookedAt { get; set; }
+    public DateTimeOffset ExpiresAt { get; set; }
+    public string? UserEmail { get; set; }
+    public string? UserName { get; set; }
+}
