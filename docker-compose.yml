@@ -1,6 +1,6 @@
 ##############################################################################
 # EPCL — Eleven Petroleum Corporation Limited
-# Docker Compose — Infrastructure Services ONLY
+# Docker Compose —  Infrastructure Services ONLY
 # SQL Server and RabbitMQ run locally (not in Docker)
 ##############################################################################
 

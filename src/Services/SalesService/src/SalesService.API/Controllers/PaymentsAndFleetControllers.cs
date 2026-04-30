@@ -100,6 +100,17 @@ public class VehiclesController(IMediator mediator, SalesService.Domain.Interfac
             await mediator.Send(new RegisterVehicleCommand(userId, body.RegistrationNumber, body.FuelTypePreference, body.VehicleType, body.Nickname)));
     }
 
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Customer")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var vehicle = await vehicleRepo.GetByIdAsync(id);
+        if (vehicle == null || vehicle.CustomerId != userId) return NotFound(new { message = "Vehicle not found." });
+        await vehicleRepo.DeleteAsync(vehicle);
+        return NoContent();
+    }
+
     /// <summary>Lookup a vehicle by registration number (for dealers creating sales).</summary>
     [HttpGet("lookup/{registrationNumber}")]
     [Authorize(Roles = "Dealer,Admin,SuperAdmin")]

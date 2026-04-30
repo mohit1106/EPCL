@@ -52,6 +52,7 @@ public interface IRegisteredVehicleRepository
     Task<RegisteredVehicle?> GetByRegistrationAsync(string regNumber, CancellationToken ct = default);
     Task<IReadOnlyList<RegisteredVehicle>> GetByCustomerAsync(Guid customerId, CancellationToken ct = default);
     Task<RegisteredVehicle> AddAsync(RegisteredVehicle v, CancellationToken ct = default);
+    Task DeleteAsync(RegisteredVehicle v, CancellationToken ct = default);
 }
 
 public interface IFleetAccountRepository

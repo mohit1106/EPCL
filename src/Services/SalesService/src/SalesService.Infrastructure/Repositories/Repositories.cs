@@ -91,6 +91,7 @@ public class RegisteredVehicleRepository(SalesDbContext ctx) : IRegisteredVehicl
     public async Task<IReadOnlyList<RegisteredVehicle>> GetByCustomerAsync(Guid customerId, CancellationToken ct)
         => await ctx.RegisteredVehicles.Where(v => v.CustomerId == customerId && v.IsActive).ToListAsync(ct);
     public async Task<RegisteredVehicle> AddAsync(RegisteredVehicle v, CancellationToken ct) { await ctx.RegisteredVehicles.AddAsync(v, ct); await ctx.SaveChangesAsync(ct); return v; }
+    public async Task DeleteAsync(RegisteredVehicle v, CancellationToken ct) { v.IsActive = false; ctx.RegisteredVehicles.Update(v); await ctx.SaveChangesAsync(ct); }
 }
 
 public class FleetAccountRepository(SalesDbContext ctx) : IFleetAccountRepository

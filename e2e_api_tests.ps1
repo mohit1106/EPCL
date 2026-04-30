@@ -3,7 +3,7 @@ $baseUrl = "http://127.0.0.1:5000/gateway"
 
 Write-Host "Starting API E2E Validation..."
 
-# Customer Auth
+# Customer  Auth
 Write-Host "1. Testing Customer Auth..."
 $cLogin = Invoke-RestMethod -Uri "$baseUrl/auth/login" -Method Post -Body '{"email":"customer@epcl.in", "password":"Test@EPCL2025!"}' -ContentType "application/json"
 $cToken = $cLogin.accessToken
