@@ -270,3 +270,106 @@
     </button>
   </div>
 </div>
+
+<!-- ═══ Parking Ticket Receipt Modal ═══ -->
+<div class="ticket-backdrop" *ngIf="showTicket" (click)="closeTicket()"></div>
+<div class="ticket-modal" *ngIf="showTicket && ticketData">
+  <!-- Success Header -->
+  <div class="ticket-success-header">
+    <div class="success-icon-ring">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <h3 class="ticket-success-title">Booking Confirmed!</h3>
+    <p class="ticket-success-sub">Your parking slot has been reserved</p>
+  </div>
+
+  <!-- Ticket Body — tear-off style -->
+  <div class="ticket-body">
+    <!-- Dashed separator with cutout circles -->
+    <div class="ticket-tear">
+      <div class="tear-circle left"></div>
+      <div class="tear-line"></div>
+      <div class="tear-circle right"></div>
+    </div>
+
+    <!-- Station & Slot Info -->
+    <div class="ticket-station-row">
+      <div class="ticket-station-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      </div>
+      <div>
+        <p class="ticket-station-name">{{ ticketData.stationName }}</p>
+        <p class="ticket-station-sub">EPCL Fuel Station</p>
+      </div>
+    </div>
+
+    <!-- Vehicle & Duration Grid -->
+    <div class="ticket-info-grid">
+      <div class="ticket-info-cell">
+        <span class="ticket-label">Vehicle</span>
+        <span class="ticket-value">
+          <span class="ticket-vehicle-icon">{{ getVehicleIcon(ticketData.slotType) }}</span>
+          {{ getVehicleLabel(ticketData.slotType) }}
+        </span>
+      </div>
+      <div class="ticket-info-cell">
+        <span class="ticket-label">Duration</span>
+        <span class="ticket-value">{{ getDurationLabel(ticketData.durationHours) }}</span>
+      </div>
+      <div class="ticket-info-cell">
+        <span class="ticket-label">Slot Number</span>
+        <span class="ticket-value mono">{{ ticketData.slotNumber }}</span>
+      </div>
+      <div class="ticket-info-cell">
+        <span class="ticket-label">Status</span>
+        <span class="ticket-value">
+          <span class="ticket-status-dot"></span>
+          {{ ticketData.status }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Time Row -->
+    <div class="ticket-time-row">
+      <div class="ticket-time-block">
+        <span class="ticket-label">Check In</span>
+        <span class="ticket-time">{{ ticketData.bookedAt | date:'dd MMM, hh:mm a' }}</span>
+      </div>
+      <div class="ticket-time-arrow">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </div>
+      <div class="ticket-time-block right">
+        <span class="ticket-label">Check Out</span>
+        <span class="ticket-time">{{ ticketData.expiresAt | date:'dd MMM, hh:mm a' }}</span>
+      </div>
+    </div>
+
+    <!-- Amount Paid -->
+    <div class="ticket-amount-row">
+      <span>Amount Paid</span>
+      <span class="ticket-amount">₹{{ ticketData.amount | number:'1.0-0' }}</span>
+    </div>
+
+    <!-- Reference Row -->
+    <div class="ticket-ref-section">
+      <div class="ticket-ref-row">
+        <span class="ticket-label">Booking ID</span>
+        <span class="ticket-ref-value">{{ ticketData.bookingId.substring(0, 8).toUpperCase() }}</span>
+      </div>
+      <div class="ticket-ref-row">
+        <span class="ticket-label">Payment ID</span>
+        <span class="ticket-ref-value">{{ ticketData.paymentId }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ticket Footer -->
+  <div class="ticket-footer">
+    <button class="btn-ticket-done" (click)="closeTicket()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      Done
+    </button>
+  </div>
+</div>

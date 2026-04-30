@@ -5,10 +5,9 @@ import { RoleGuard } from './core/guards/role.guard';
 import { NotFoundComponent, UnauthorizedComponent } from './pages/error/error-pages.component';
 
 const routes: Routes = [
-  // Public Landing Page
   {
     path: '',
-    loadChildren: () => import('./features/landing/landing.module').then((m) => m.LandingModule),
+    redirectTo: 'auth/login',
     pathMatch: 'full',
   },
 

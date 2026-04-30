@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, NgZone } from '@angular/core';
 import { Subject, takeUntil, forkJoin } from 'rxjs';
 import { StationsApiService, StationDto, NearbyStationDto, FuelTypeDto, ParkingSlotDto } from '../../../../core/services/stations-api.service';
 import { SalesApiService } from '../../../../core/services/sales-api.service';
@@ -33,6 +33,19 @@ interface DisplayStation {
 
 interface ParkingPricing {
   [slotType: string]: { [duration: string]: number };
+}
+
+interface ParkingTicket {
+  bookingId: string;
+  stationName: string;
+  slotType: string;
+  slotNumber: string;
+  durationHours: number;
+  amount: number;
+  bookedAt: string;
+  expiresAt: string;
+  paymentId: string;
+  status: string;
 }
 
 @Component({
@@ -73,10 +86,15 @@ export class StationsComponent implements OnInit, OnDestroy, AfterViewInit {
   isBooking = false;
   razorpayKeyId = '';
 
+  // Ticket receipt
+  showTicket = false;
+  ticketData: ParkingTicket | null = null;
+
   constructor(
     private stationsApi: StationsApiService,
     private salesApi: SalesApiService,
-    private toast: ToastService
+    private toast: ToastService,
+    private zone: NgZone
   ) {}
 
   ngOnInit(): void {
@@ -351,12 +369,14 @@ export class StationsComponent implements OnInit, OnDestroy, AfterViewInit {
       description: `Parking - ${this.bookingSlotType} (${this.bookingDuration}h) - Slot ${orderData.slotNumber}`,
       order_id: orderData.orderId,
       handler: (response: any) => {
-        this.handlePaymentSuccess(response);
+        this.zone.run(() => this.handlePaymentSuccess(response));
       },
       modal: {
         ondismiss: () => {
-          this.isBooking = false;
-          this.toast.error('Payment cancelled');
+          this.zone.run(() => {
+            this.isBooking = false;
+            this.toast.error('Payment cancelled');
+          });
         },
       },
       prefill: { email: '', contact: '' },
@@ -374,7 +394,20 @@ export class StationsComponent implements OnInit, OnDestroy, AfterViewInit {
         next: (res) => {
           this.isBooking = false;
           this.showParkingModal = false;
-          this.toast.success(res.message || 'Parking booked successfully! Confirmation sent to email.');
+          // Build ticket data and show receipt
+          this.ticketData = {
+            bookingId: res.bookingId,
+            stationName: this.selectedStation?.name || 'EPCL Station',
+            slotType: res.slotType || this.bookingSlotType,
+            slotNumber: res.slotNumber || 'N/A',
+            durationHours: res.durationHours || this.bookingDuration,
+            amount: res.amount || this.bookingPrice,
+            bookedAt: res.bookedAt,
+            expiresAt: res.expiresAt,
+            paymentId: res.paymentId || response.razorpay_payment_id,
+            status: res.status || 'Confirmed',
+          };
+          this.showTicket = true;
           // Refresh parking slots
           if (this.selectedStation) {
             this.selectStation(this.selectedStation);
@@ -382,9 +415,29 @@ export class StationsComponent implements OnInit, OnDestroy, AfterViewInit {
         },
         error: () => {
           this.isBooking = false;
-          this.toast.error('Payment verification failed');
+          this.toast.error('Payment verification failed. Please contact support.');
         },
       });
+  }
+
+  closeTicket(): void {
+    this.showTicket = false;
+    this.ticketData = null;
+  }
+
+  getVehicleIcon(slotType: string): string {
+    const icons: Record<string, string> = { TwoWheeler: '🏍️', FourWheeler: '🚗', HGV: '🚛' };
+    return icons[slotType] || '🚗';
+  }
+
+  getVehicleLabel(slotType: string): string {
+    const labels: Record<string, string> = { TwoWheeler: '2-Wheeler', FourWheeler: '4-Wheeler', HGV: 'HGV / Truck' };
+    return labels[slotType] || slotType;
+  }
+
+  getDurationLabel(hours: number): string {
+    if (hours >= 24) return 'Full Day';
+    return hours === 1 ? '1 Hour' : `${hours} Hours`;
   }
 
   // ─── Helpers ───────────────────────────────────────

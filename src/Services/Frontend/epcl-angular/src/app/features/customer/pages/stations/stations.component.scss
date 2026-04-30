@@ -532,9 +532,289 @@
   from { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
   to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
+@keyframes ticketSlideUp {
+  from { opacity: 0; transform: translate(-50%, -46%) scale(0.96); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes successPulse {
+  0% { transform: scale(0.6); opacity: 0; }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes checkDraw {
+  from { stroke-dashoffset: 30; }
+  to   { stroke-dashoffset: 0; }
+}
+
+// ─── Ticket Receipt Modal ────────────────────────────
+.ticket-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 10002;
+  backdrop-filter: blur(4px);
+}
+
+.ticket-modal {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 420px; max-width: 92vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-card);
+  border-radius: 16px;
+  z-index: 10003;
+  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.3);
+  animation: ticketSlideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+// Success Header
+.ticket-success-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 24px 20px;
+  background: linear-gradient(135deg, #059669 0%, #10B981 50%, #34D399 100%);
+  border-radius: 16px 16px 0 0;
+  text-align: center;
+}
+
+.success-icon-ring {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 12px;
+  animation: successPulse 0.5s ease 0.15s both;
+
+  svg {
+    stroke-dasharray: 30;
+    animation: checkDraw 0.4s ease 0.5s both;
+  }
+}
+
+.ticket-success-title {
+  font-size: 18px; font-weight: 800;
+  color: #FFF; margin: 0 0 4px;
+}
+
+.ticket-success-sub {
+  font-size: 12px; color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+}
+
+// Ticket Body
+.ticket-body {
+  padding: 0 24px 16px;
+  position: relative;
+}
+
+// Tear-off effect
+.ticket-tear {
+  display: flex;
+  align-items: center;
+  position: relative;
+  margin: 0 -24px;
+  padding: 0;
+}
+
+.tear-circle {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--bg-primary);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+
+  &.left {
+    margin-left: -10px;
+    box-shadow: inset -2px 0 4px rgba(0, 0, 0, 0.06);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-card);
+    border-left: none;
+  }
+  &.right {
+    margin-right: -10px;
+    box-shadow: inset 2px 0 4px rgba(0, 0, 0, 0.06);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-card);
+    border-right: none;
+  }
+}
+
+.tear-line {
+  flex: 1;
+  border-top: 2px dashed var(--border-card);
+}
+
+// Station row
+.ticket-station-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0 14px;
+  border-bottom: 1px solid var(--bg-surface);
+}
+
+.ticket-station-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  background: rgba(30, 64, 175, 0.06);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.ticket-station-name {
+  font-size: 15px; font-weight: 700;
+  color: var(--text-primary); margin: 0 0 2px;
+}
+
+.ticket-station-sub {
+  font-size: 11px; color: var(--text-muted); margin: 0;
+}
+
+// Info grid
+.ticket-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--bg-surface);
+}
+
+.ticket-info-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ticket-label {
+  font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.ticket-value {
+  font-size: 13px; font-weight: 700;
+  color: var(--text-primary);
+  display: flex; align-items: center; gap: 4px;
+
+  &.mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+  }
+}
+
+.ticket-vehicle-icon { font-size: 16px; }
+
+.ticket-status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #10B981;
+  display: inline-block;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+// Time row
+.ticket-time-row {
+  display: flex;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--bg-surface);
+}
+
+.ticket-time-block {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &.right { text-align: right; }
+}
+
+.ticket-time {
+  font-size: 13px; font-weight: 700;
+  color: var(--text-primary);
+}
+
+.ticket-time-arrow {
+  flex-shrink: 0;
+  padding: 0 10px;
+  color: var(--text-disabled);
+}
+
+// Amount row
+.ticket-amount-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  margin: 14px 0;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, rgba(16, 185, 129, 0.12) 100%);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+
+  span:first-child {
+    font-size: 13px; font-weight: 600;
+    color: var(--text-secondary);
+  }
+}
+
+.ticket-amount {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px; font-weight: 800;
+  color: #059669;
+}
+
+// Reference section
+.ticket-ref-section {
+  padding: 12px 0 0;
+  display: flex; flex-direction: column; gap: 8px;
+}
+
+.ticket-ref-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ticket-ref-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.03em;
+}
+
+// Footer
+.ticket-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-card);
+}
+
+.btn-ticket-done {
+  width: 100%;
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px;
+  padding: 12px;
+  background: var(--color-primary);
+  color: #FFF; border: none;
+  border-radius: var(--radius-sm);
+  font-size: 14px; font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover { filter: brightness(1.1); }
+}
 
 // Leaflet overrides — prevent leaflet from creating z-index conflicts
 ::ng-deep .user-marker-icon, ::ng-deep .station-marker-icon {
   background: none !important;
   border: none !important;
 }
+

@@ -149,7 +149,13 @@ public class ParkingController(
             message = "Parking booked successfully!",
             bookingId = booking.Id,
             status = booking.Status.ToString(),
+            slotType = booking.SlotType.ToString(),
+            slotNumber = booking.ParkingSlot?.SlotNumber ?? "N/A",
+            durationHours = booking.DurationHours,
+            amount = booking.Amount,
+            bookedAt = booking.BookedAt,
             expiresAt = booking.ExpiresAt,
+            paymentId = req.PaymentId,
         });
     }
 
