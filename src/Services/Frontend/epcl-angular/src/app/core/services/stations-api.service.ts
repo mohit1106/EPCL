@@ -81,7 +81,7 @@ export class StationsApiService {
   }
 
   deactivateStation(id: string): Observable<void> {
-    return this.http.put<void>(`${this.base}/${id}`, { isActive: false });
+    return this.http.delete<void>(`${this.base}/${id}`);
   }
 
   getFuelTypes(): Observable<FuelTypeDto[]> {
@@ -102,6 +102,17 @@ export class StationsApiService {
     );
   }
 
+  /** Find the station assigned to the current dealer by matching dealerUserId */
+  getMyStation(dealerUserId: string): Observable<StationDto | null> {
+    return this.getStations(1, 100).pipe(
+      map(res => {
+        const match = res.items.find(s =>
+          s.dealerUserId === dealerUserId
+        );
+        return match || null;
+      })
+    );
+  }
 
   // ── Parking ──────────────────────────────────────────
   getParkingSlots(stationId: string): Observable<ParkingSlotDto[]> {

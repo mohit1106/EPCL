@@ -1,0 +1,114 @@
+<div class="contact-page">
+  <div class="page-hdr">
+    <div>
+      <h1 class="page-title">Contact Administrator</h1>
+      <p class="page-sub">Send requests for station assignment, support, or any assistance</p>
+    </div>
+  </div>
+
+  <div class="contact-grid">
+    <!-- Left: Form -->
+    <div class="card form-card">
+      <h3 class="card-title">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        New Request
+      </h3>
+
+      <div class="user-id-row">
+        <span class="uid-label">YOUR ID</span>
+        <code class="uid-value">{{ userId }}</code>
+        <button class="btn-copy" (click)="copyUserId()" title="Copy">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+        </button>
+      </div>
+
+      <div class="form-field">
+        <label>Select Admin</label>
+        <div *ngIf="isLoadingAdmins" class="loading-inline">Loading admins...</div>
+        <select *ngIf="!isLoadingAdmins" [(ngModel)]="selectedAdminId">
+          <option value="" disabled>— Choose an admin —</option>
+          <option *ngFor="let a of admins" [value]="a.id">{{ a.fullName }} ({{ a.email }})</option>
+        </select>
+        <span class="field-hint" *ngIf="admins.length === 0 && !isLoadingAdmins">No admins found in the system.</span>
+      </div>
+
+      <div class="form-field">
+        <label>Category</label>
+        <select [(ngModel)]="category">
+          <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
+        </select>
+      </div>
+
+      <div class="form-field">
+        <label>Message</label>
+        <textarea [(ngModel)]="message" rows="5" placeholder="Describe your request in detail..."></textarea>
+      </div>
+
+      <div class="form-info">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>Your name ({{ userName }}) and email ({{ userEmail }}) will be included.</span>
+      </div>
+
+      <button class="btn-submit" (click)="submitRequest()" [disabled]="isSubmitting || !selectedAdminId">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+        {{ isSubmitting ? 'Sending...' : 'Send Request' }}
+      </button>
+    </div>
+
+    <!-- Right: History -->
+    <div class="card history-card">
+      <h3 class="card-title">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Your Requests ({{ myRequests.length }})
+      </h3>
+
+      <div class="req-list" *ngIf="myRequests.length > 0">
+        <div class="req-item" *ngFor="let r of myRequests" [class.expanded]="r.expanded">
+          <div class="req-header" (click)="toggleExpand(r)">
+            <div class="req-top-row">
+              <span class="req-cat">{{ r.category }}</span>
+              <span class="req-status" [ngClass]="getStatusClass(r.status)">{{ r.status }}</span>
+            </div>
+            <p class="req-msg-preview">{{ r.message }}</p>
+            <div class="req-meta">
+              <span class="req-admin-label">To: <strong>{{ r.targetAdminName || 'Admin' }}</strong></span>
+              <span class="req-time">{{ getTimeAgo(r.createdAt) }}</span>
+            </div>
+          </div>
+
+          <!-- Expanded conversation thread -->
+          <div class="req-thread" *ngIf="r.expanded">
+            <div class="thread-msg thread-original">
+              <div class="tmsg-head">
+                <span class="tmsg-from">You</span>
+                <span class="tmsg-time">{{ getTimeAgo(r.createdAt) }}</span>
+              </div>
+              <p class="tmsg-body">{{ r.message }}</p>
+            </div>
+
+            <div class="thread-msg" *ngFor="let reply of r.replies || []" [class.thread-admin]="reply.from === 'admin'" [class.thread-dealer]="reply.from === 'dealer'">
+              <div class="tmsg-head">
+                <span class="tmsg-from">{{ reply.from === 'admin' ? reply.fromName + ' (Admin)' : 'You' }}</span>
+                <span class="tmsg-time">{{ getTimeAgo(reply.createdAt) }}</span>
+              </div>
+              <p class="tmsg-body">{{ reply.message }}</p>
+            </div>
+
+            <!-- Reply input -->
+            <div class="thread-reply" *ngIf="r.status === 'Pending' || r.status === 'Resolved'">
+              <input type="text" [(ngModel)]="replyText[r.id]" placeholder="Type a reply..." (keyup.enter)="sendReply(r)" />
+              <button class="btn-send" (click)="sendReply(r)" [disabled]="!(replyText[r.id] || '').trim()">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="myRequests.length === 0">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" width="36" height="36"><path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+        <p>No requests yet. Send your first request using the form.</p>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { Subject, takeUntil, forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, switchMap } from 'rxjs/operators';
 import { selectUser } from '../../../../store/auth/auth.selectors';
 import { SalesApiService, TransactionDto, TransactionFilters, PumpDto } from '../../../../core/services/sales-api.service';
 import { StationsApiService, FuelTypeDto } from '../../../../core/services/stations-api.service';
@@ -75,9 +75,22 @@ export class DealerTransactionsComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.store.select(selectUser).pipe(takeUntil(this.destroy$)).subscribe(user => {
-      if (user) {
-        this.stationId = user.profile?.stationId || '';
+    this.store.select(selectUser).pipe(
+      takeUntil(this.destroy$),
+      switchMap(user => {
+        if (!user) return of(null);
+        // Try profile.stationId first, then query by dealerUserId
+        if (user.profile?.stationId) {
+          return this.stationsApi.getStationById(user.profile.stationId).pipe(
+            catchError(() => this.stationsApi.getMyStation(user.id))
+          );
+        }
+        return this.stationsApi.getMyStation(user.id);
+      })
+    ).subscribe(station => {
+      if (station) {
+        this.stationId = station.id;
+        this.stationName = station.stationName || station.name || 'My Station';
         this.loadReferenceData();
       }
     });
@@ -88,11 +101,9 @@ export class DealerTransactionsComponent implements OnInit, OnDestroy {
   private loadReferenceData(): void {
     if (!this.stationId) return;
     forkJoin({
-      station: this.stationsApi.getStationById(this.stationId).pipe(catchError(() => of(null))),
       fuelTypes: this.stationsApi.getFuelTypes().pipe(catchError(() => of([]))),
       pumps: this.salesApi.getStationPumps(this.stationId).pipe(catchError(() => of([]))),
-    }).pipe(takeUntil(this.destroy$)).subscribe(({ station, fuelTypes, pumps }) => {
-      this.stationName = (station as any)?.stationName || (station as any)?.name || 'My Station';
+    }).pipe(takeUntil(this.destroy$)).subscribe(({ fuelTypes, pumps }) => {
       this.fuelTypes = fuelTypes;
       this.pumps = pumps;
       fuelTypes.forEach(ft => this.fuelTypeMap.set(ft.id, ft.name));
@@ -115,16 +126,21 @@ export class DealerTransactionsComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (result) => {
-          this.transactions = result.items.map(t => this.mapTransaction(t));
-          this.totalCount = result.totalCount;
-          this.totalRecords = result.totalCount;
-          this.totalPages = result.totalPages || Math.ceil(result.totalCount / this.pageSize);
-          this.totalVolume = result.items.reduce((sum, t) => sum + t.quantityLitres, 0);
-          this.grossRevenue = result.items.reduce((sum, t) => sum + t.totalAmount, 0);
-          this.completedCount = result.items.filter(t => t.status === 'Completed').length;
-          this.pendingCount = result.items.filter(t => t.status === 'Initiated').length;
+          // Client-side pump filter (backend doesn't support pumpId filter)
+          let items = result.items;
+          if (this.filterPumpId) {
+            items = items.filter(t => t.pumpId === this.filterPumpId);
+          }
+          this.transactions = items.map(t => this.mapTransaction(t));
+          this.totalCount = this.filterPumpId ? items.length : result.totalCount;
+          this.totalRecords = this.filterPumpId ? items.length : result.totalCount;
+          this.totalPages = this.filterPumpId ? 1 : (result.totalPages || Math.ceil(result.totalCount / this.pageSize));
+          this.totalVolume = items.reduce((sum, t) => sum + t.quantityLitres, 0);
+          this.grossRevenue = items.reduce((sum, t) => sum + t.totalAmount, 0);
+          this.completedCount = items.filter(t => t.status === 'Completed').length;
+          this.pendingCount = items.filter(t => t.status === 'Initiated').length;
           this.avgTransaction = this.transactions.length > 0 ? this.grossRevenue / this.transactions.length : 0;
-          this.buildCharts(result.items);
+          this.buildCharts(items);
           this.isLoading = false;
         },
         error: () => { this.isLoading = false; },

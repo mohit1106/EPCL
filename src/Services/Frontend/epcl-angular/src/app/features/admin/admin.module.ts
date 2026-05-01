@@ -13,6 +13,7 @@ import { AdminAuditComponent } from './pages/audit/audit.component';
 import { AdminReportsComponent } from './pages/reports/reports.component';
 import { SystemHealthComponent } from './pages/system-health/system-health.component';
 import { AdminDocumentsComponent } from './pages/documents/documents.component';
+import { AdminHelpRequestsComponent } from './pages/help-requests/help-requests.component';
 
 const routes: Routes = [
   { path: 'dashboard', component: AdminDashboardComponent },
@@ -24,6 +25,7 @@ const routes: Routes = [
   { path: 'reports', component: AdminReportsComponent },
   { path: 'system-health', component: SystemHealthComponent },
   { path: 'documents', component: AdminDocumentsComponent },
+  { path: 'help-requests', component: AdminHelpRequestsComponent },
 ];
 
 @NgModule({
@@ -37,6 +39,7 @@ const routes: Routes = [
     AdminReportsComponent,
     SystemHealthComponent,
     AdminDocumentsComponent,
+    AdminHelpRequestsComponent,
   ],
   imports: [SharedModule, FormsModule, BaseChartDirective, RouterModule.forChild(routes)],
 })

@@ -1,19 +1,38 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { StationsApiService, StationDto, FuelTypeDto } from '../../../../core/services/stations-api.service';
+import { SalesApiService, PumpDto } from '../../../../core/services/sales-api.service';
+import { UsersApiService, UserListDto } from '../../../../core/services/users-api.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 
-interface DisplayAdminStation {
+interface DisplayStation {
   id: string;
   name: string;
-  statusClass: string;
-  status: string;
   code: string;
-  pumps: number;
-  totalPumps: number;
-  throughput: string;
-  fuels: { name: string; pct: number }[];
+  city: string;
+  state: string;
+  address: string;
+  isActive: boolean;
+  is24x7: boolean;
+  operatingHours: string;
+  dealerUserId: string;
+  dealerDisplay: string;
+  pumpCount: number;
+  pumps: PumpDto[];
+  fuelTypesOnStation: string[];
   rawDto: StationDto;
+  showPumps: boolean;
+}
+
+interface DealerRequest {
+  id: string;
+  dealerUserId: string;
+  dealerEmail: string;
+  dealerName: string;
+  message: string;
+  status: string;
+  createdAt: string;
 }
 
 @Component({
@@ -23,141 +42,227 @@ interface DisplayAdminStation {
 })
 export class AdminStationsComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
-  stations: DisplayAdminStation[] = [];
-  rawStations: StationDto[] = [];
-  
-  activeStations = 412;
-  offlineStations = 8;
+  stations: DisplayStation[] = [];
+  fuelTypes: FuelTypeDto[] = [];
+  fuelTypeMap = new Map<string, string>();
+
   totalCount = 0;
   page = 1;
   pageSize = 20;
   isLoading = true;
-  selectedStation: StationDto | null = null;
-  showAddModal = false;
+  searchTerm = '';
+
+  // Stats
+  activeCount = 0;
+  offlineCount = 0;
+  totalPumps = 0;
+
+  // Station form modal
+  showStationModal = false;
+  isEditMode = false;
   isSubmitting = false;
-  viewMode: 'list' | 'map' = 'list';
-  cityFilter = '';
+  stationForm: any = {};
 
-  // Form for add/edit
-  stationForm: Partial<StationDto> = {};
+  // Dealer assignment modal
+  showAssignModal = false;
+  assignStationId = '';
+  dealerSearchTerm = '';
+  dealerSearchResults: UserListDto[] = [];
+  isSearchingDealer = false;
+  selectedDealerId = '';
+  isAssigning = false;
 
-  telemetryStation = 'North Terminal Hub';
-  tankData = [
-    { name: 'REGULAR', pct: 78 },
-    { name: 'DIESEL', pct: 42 }
-  ];
-  liveTxns = [
-    { time: '10:42:15', pump: 'PUMP 04', type: 'DIESEL', amount: '$45.20' },
-    { time: '10:41:59', pump: 'PUMP 01', type: 'REGULAR', amount: '$12.50' }
-  ];
-  envPressure = '14.7';
-  tempVariance = '±0.2';
+  // Dealer requests
+  dealerRequests: DealerRequest[] = [];
 
-  inventory = [
-    { name: 'West Side Depot', code: 'WSD-001', region: 'WEST', status: 'ACTIVE', statusClass: 'status-ok' },
-    { name: 'East Junction', code: 'EJ-092', region: 'EAST', status: 'OFFLINE', statusClass: 'status-error' }
-  ];
+  constructor(
+    private stationsApi: StationsApiService,
+    private salesApi: SalesApiService,
+    private usersApi: UsersApiService,
+    private toast: ToastService
+  ) {}
 
-  constructor(private stationsApi: StationsApiService, private toast: ToastService) {}
+  ngOnInit(): void {
+    this.loadFuelTypes();
+    this.loadStations();
+    this.loadDealerRequests();
+  }
 
-  ngOnInit(): void { this.loadStations(); }
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 
-  loadStations(): void {
-    this.isLoading = true;
-    const filters: { isActive?: boolean; city?: string } = {};
-    if (this.cityFilter) filters.city = this.cityFilter;
-    this.stationsApi.getStations(this.page, this.pageSize, filters).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (result) => {
-        this.rawStations = result.items;
-        this.stations = result.items.map(s => ({
-          id: s.id,
-          name: s.name,
-          status: s.isActive ? 'ONLINE' : 'OFFLINE',
-          statusClass: s.isActive ? 'status-ok' : 'status-err',
-          code: s.code || `UID-${s.id.substring(0, 6).toUpperCase()}`,
-          pumps: s.isActive ? 4 : 0,
-          totalPumps: 4,
-          throughput: s.isActive ? '142.5' : '0.0',
-          fuels: [
-            { name: 'REGULAR', pct: 85 },
-            { name: 'DIESEL', pct: 60 }
-          ],
-          rawDto: s
-        }));
-        this.totalCount = result.totalCount;
-        this.activeStations = this.stations.filter(st => st.rawDto.isActive).length;
-        this.offlineStations = this.stations.filter(st => !st.rawDto.isActive).length;
-        this.isLoading = false;
-      },
-      error: () => { this.isLoading = false; },
+  private loadFuelTypes(): void {
+    this.stationsApi.getFuelTypes().pipe(takeUntil(this.destroy$), catchError(() => of([]))).subscribe(fts => {
+      this.fuelTypes = fts;
+      fts.forEach(ft => this.fuelTypeMap.set(ft.id, ft.name));
     });
   }
 
-  onPageChange(page: number): void { this.page = page; this.loadStations(); }
-  toggleView(): void { this.viewMode = this.viewMode === 'list' ? 'map' : 'list'; }
+  loadStations(): void {
+    this.isLoading = true;
+    this.stationsApi.getStations(this.page, this.pageSize).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (result) => {
+        this.totalCount = result.totalCount;
+        const stationList = result.items;
+        this.activeCount = stationList.filter(s => s.isActive).length;
+        this.offlineCount = stationList.filter(s => !s.isActive).length;
 
-  viewStation(station: StationDto): void { this.selectedStation = station; }
-  closeDetail(): void { this.selectedStation = null; }
+        // Load pumps for each station
+        const pumpCalls = stationList.map(s =>
+          this.salesApi.getStationPumps(s.id).pipe(catchError(() => of([] as PumpDto[])))
+        );
 
-  openAddModal(): void {
-    this.stationForm = {};
-    this.showAddModal = true;
+        if (pumpCalls.length > 0) {
+          forkJoin(pumpCalls).pipe(takeUntil(this.destroy$)).subscribe(pumpResults => {
+            this.stations = stationList.map((s, i) => this.mapStation(s, pumpResults[i]));
+            this.totalPumps = this.stations.reduce((sum, st) => sum + st.pumpCount, 0);
+            this.isLoading = false;
+          });
+        } else {
+          this.stations = [];
+          this.isLoading = false;
+        }
+      },
+      error: () => { this.isLoading = false; this.toast.error('Failed to load stations.'); },
+    });
   }
 
-  openEditModal(station: StationDto): void {
-    this.stationForm = { ...station };
-    this.showAddModal = true;
+  private mapStation(s: StationDto, pumps: PumpDto[]): DisplayStation {
+    const dealerId = s.dealerUserId || '';
+    const isUnassigned = !dealerId || dealerId === '00000000-0000-0000-0000-000000000000';
+    const fuelTypeIds = new Set(pumps.map(p => p.fuelTypeId));
+    const fuelTypesOnStation = Array.from(fuelTypeIds).map(id => this.fuelTypeMap.get(id) || 'Unknown');
+
+    return {
+      id: s.id,
+      name: s.stationName || s.name || 'Unknown',
+      code: s.stationCode || s.code || s.id.substring(0, 8),
+      city: s.city || '',
+      state: s.state || '',
+      address: s.addressLine1 || s.address || '',
+      isActive: s.isActive,
+      is24x7: s.is24x7,
+      operatingHours: s.is24x7 ? '24/7' : `${s.operatingHoursStart || '06:00'} – ${s.operatingHoursEnd || '22:00'}`,
+      dealerUserId: dealerId,
+      dealerDisplay: isUnassigned ? 'Unassigned' : dealerId.substring(0, 8) + '…',
+      pumpCount: pumps.length,
+      pumps: pumps,
+      fuelTypesOnStation,
+      rawDto: s,
+      showPumps: false,
+    };
   }
 
-  closeAddModal(): void { this.showAddModal = false; }
+  togglePumps(station: DisplayStation): void { station.showPumps = !station.showPumps; }
+
+  // ═══ Station CRUD ═══
+  openAddStation(): void {
+    this.isEditMode = false;
+    this.stationForm = {
+      stationCode: '', stationName: '', addressLine1: '', city: '', state: '',
+      pinCode: '', latitude: 0, longitude: 0, licenseNumber: '',
+      operatingHoursStart: '06:00', operatingHoursEnd: '22:00', is24x7: false,
+      dealerUserId: '00000000-0000-0000-0000-000000000000',
+    };
+    this.showStationModal = true;
+  }
+
+  openEditStation(station: DisplayStation): void {
+    this.isEditMode = true;
+    this.stationForm = {
+      id: station.id,
+      stationName: station.name,
+      addressLine1: station.address,
+      city: station.city,
+      state: station.state,
+      pinCode: station.rawDto.pinCode || '',
+      latitude: station.rawDto.latitude || 0,
+      longitude: station.rawDto.longitude || 0,
+      operatingHoursStart: station.rawDto.operatingHoursStart || '06:00',
+      operatingHoursEnd: station.rawDto.operatingHoursEnd || '22:00',
+      is24x7: station.is24x7,
+    };
+    this.showStationModal = true;
+  }
+
+  closeStationModal(): void { this.showStationModal = false; }
 
   saveStation(): void {
     this.isSubmitting = true;
-    const op = this.stationForm.id
+    const op = this.isEditMode
       ? this.stationsApi.updateStation(this.stationForm.id, this.stationForm)
       : this.stationsApi.createStation(this.stationForm);
 
     op.pipe(takeUntil(this.destroy$)).subscribe({
       next: () => {
-        this.toast.success(this.stationForm.id ? 'Station updated.' : 'Station created.');
+        this.toast.success(this.isEditMode ? 'Station updated.' : 'Station created.');
         this.isSubmitting = false;
-        this.showAddModal = false;
+        this.showStationModal = false;
         this.loadStations();
       },
-      error: () => { this.toast.error('Failed to save station.'); this.isSubmitting = false; },
+      error: (err) => {
+        this.toast.error(err?.error?.message || 'Failed to save station.');
+        this.isSubmitting = false;
+      },
     });
   }
 
-  deactivateStation(id: string): void {
-    if (!confirm('Deactivate this station? It will no longer appear in the system.')) return;
-    this.stationsApi.deactivateStation(id).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.toast.success('Station deactivated.'); this.loadStations(); this.closeDetail(); },
+  deactivateStation(station: DisplayStation): void {
+    if (!confirm(`Deactivate "${station.name}"? It will be marked as offline.`)) return;
+    this.stationsApi.deactivateStation(station.id).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { this.toast.success('Station deactivated.'); this.loadStations(); },
       error: () => this.toast.error('Failed to deactivate station.'),
     });
   }
 
-  // ═══ Dealer Assignment ═══
-  showAssignModal = false;
-  assignStationId = '';
-  assignDealerUserId = '';
-  isAssigning = false;
+  permanentlyRemoveStation(station: DisplayStation): void {
+    if (!confirm(`⚠️ PERMANENTLY REMOVE "${station.name}" (${station.code})?\n\nThis will deactivate the station and it cannot be undone. All associated data will be marked inactive.`)) return;
+    if (!confirm(`Are you absolutely sure? Type OK to confirm removal of "${station.name}".`)) return;
+    this.stationsApi.deactivateStation(station.id).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => {
+        this.toast.success(`Station "${station.name}" has been permanently removed.`);
+        this.loadStations();
+      },
+      error: (err) => this.toast.error(err?.error?.message || 'Failed to remove station.'),
+    });
+  }
 
-  openAssignDealer(station: DisplayAdminStation): void {
+  // ═══ Dealer Assignment ═══
+  openAssignDealer(station: DisplayStation): void {
     this.assignStationId = station.id;
-    this.assignDealerUserId = station.rawDto.dealerUserId || '';
+    this.selectedDealerId = station.dealerUserId || '';
+    this.dealerSearchTerm = '';
+    this.dealerSearchResults = [];
     this.showAssignModal = true;
   }
 
   closeAssignModal(): void { this.showAssignModal = false; }
 
+  searchDealers(): void {
+    if (!this.dealerSearchTerm.trim() || this.dealerSearchTerm.trim().length < 3) return;
+    this.isSearchingDealer = true;
+    this.usersApi.getUsers(1, 10, { role: 'Dealer', search: this.dealerSearchTerm.trim() }).pipe(
+      takeUntil(this.destroy$),
+      catchError(() => of({ items: [], totalCount: 0, page: 1, pageSize: 10, totalPages: 0 }))
+    ).subscribe(result => {
+      this.dealerSearchResults = result.items;
+      this.isSearchingDealer = false;
+    });
+  }
+
+  selectDealer(dealer: UserListDto): void {
+    this.selectedDealerId = dealer.id;
+    this.dealerSearchTerm = dealer.email;
+  }
+
   assignDealer(): void {
-    if (!this.assignDealerUserId.trim()) {
-      this.toast.error('Please enter the dealer User ID.');
+    if (!this.selectedDealerId || this.selectedDealerId === '00000000-0000-0000-0000-000000000000') {
+      this.toast.error('Please search and select a dealer first.');
       return;
     }
     this.isAssigning = true;
-    this.stationsApi.assignDealerToStation(this.assignStationId, this.assignDealerUserId.trim()).pipe(
+    this.stationsApi.assignDealerToStation(this.assignStationId, this.selectedDealerId).pipe(
       takeUntil(this.destroy$)
     ).subscribe({
       next: () => {
@@ -173,16 +278,60 @@ export class AdminStationsComponent implements OnInit, OnDestroy {
     });
   }
 
-  removeDealer(stationId: string): void {
-    if (!confirm('Remove dealer from this station?')) return;
-    this.stationsApi.removeDealerFromStation(stationId).pipe(takeUntil(this.destroy$)).subscribe({
+  removeDealer(station: DisplayStation): void {
+    if (!confirm(`Remove dealer from "${station.name}"?`)) return;
+    this.stationsApi.removeDealerFromStation(station.id).pipe(takeUntil(this.destroy$)).subscribe({
       next: () => { this.toast.success('Dealer removed.'); this.loadStations(); },
       error: () => this.toast.error('Failed to remove dealer.'),
     });
   }
 
-  getDealerDisplay(dealerUserId: string | undefined): string {
-    if (!dealerUserId || dealerUserId === '00000000-0000-0000-0000-000000000000') return 'Unassigned';
-    return dealerUserId.substring(0, 8) + '...';
+  // ═══ Dealer Requests ═══
+  loadDealerRequests(): void {
+    const raw = localStorage.getItem('epcl_dealer_requests');
+    this.dealerRequests = raw ? JSON.parse(raw).filter((r: DealerRequest) => r.status === 'Pending') : [];
+  }
+
+  dismissRequest(req: DealerRequest): void {
+    const all = JSON.parse(localStorage.getItem('epcl_dealer_requests') || '[]');
+    const idx = all.findIndex((r: any) => r.id === req.id);
+    if (idx >= 0) all[idx].status = 'Dismissed';
+    localStorage.setItem('epcl_dealer_requests', JSON.stringify(all));
+    this.dealerRequests = this.dealerRequests.filter(r => r.id !== req.id);
+    this.toast.success('Request dismissed.');
+  }
+
+  assignFromRequest(req: DealerRequest): void {
+    this.selectedDealerId = req.dealerUserId;
+    this.dealerSearchTerm = req.dealerEmail;
+    // Open assign modal with first unassigned station pre-selected
+    const unassigned = this.stations.find(s =>
+      !s.dealerUserId || s.dealerUserId === '00000000-0000-0000-0000-000000000000'
+    );
+    if (unassigned) {
+      this.assignStationId = unassigned.id;
+    } else if (this.stations.length > 0) {
+      this.assignStationId = this.stations[0].id;
+    }
+    this.showAssignModal = true;
+  }
+
+  get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize); }
+  get pageNumbers(): number[] {
+    const pages: number[] = [];
+    const start = Math.max(1, this.page - 2);
+    const end = Math.min(this.totalPages, this.page + 2);
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  }
+
+  onPageChange(p: number): void {
+    if (p < 1 || p > this.totalPages) return;
+    this.page = p;
+    this.loadStations();
+  }
+
+  getPumpStatusClass(status: string): string {
+    return status === 'Active' ? 'st-active' : 'st-maint';
   }
 }

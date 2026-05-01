@@ -15,8 +15,8 @@ import { loadCurrentUserSuccess } from '../../../../store/auth/auth.actions';
 export class SettingsComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
-  user: { fullName: string; email: string; phone: string; role: string } = {
-    fullName: '', email: '', phone: '', role: '',
+  user: { id: string; fullName: string; email: string; phone: string; role: string } = {
+    id: '', fullName: '', email: '', phone: '', role: '',
   };
 
   tabs = [
@@ -52,7 +52,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.store.select(selectUser).pipe(takeUntil(this.destroy$)).subscribe(u => {
       if (u) {
-        this.user = { fullName: u.fullName, email: u.email, phone: u.phoneNumber, role: u.role };
+        this.user = { id: u.id, fullName: u.fullName, email: u.email, phone: u.phoneNumber, role: u.role };
       }
     });
   }
@@ -97,6 +97,12 @@ export class SettingsComponent implements OnInit, OnDestroy {
         this.isChangingPassword = false;
       },
       error: () => { this.toast.error('Failed to change password.'); this.isChangingPassword = false; },
+    });
+  }
+
+  copyId(): void {
+    navigator.clipboard.writeText(this.user.id).then(() => {
+      this.toast.success('User ID copied to clipboard!');
     });
   }
 }

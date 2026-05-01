@@ -20,6 +20,13 @@
     </div>
   </div>
 
+  <!-- Dealer Requests Alert -->
+  <div class="dealer-alert" *ngIf="pendingDealerRequests > 0">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+    <span>{{ pendingDealerRequests }} pending dealer request{{ pendingDealerRequests > 1 ? 's' : '' }} awaiting station assignment.</span>
+    <a routerLink="/admin/help-requests" class="alert-link">View Requests →</a>
+  </div>
+
   <!-- KPI Cards -->
   <div class="kpi-grid" *ngIf="!isLoading">
     <div class="kpi-card" *ngFor="let kpi of kpis; let i = index" [attr.id]="'kpi-card-' + i">
@@ -122,7 +129,7 @@
             <div class="risk-gauge-fill" [style.width.%]="(tank.daysUntilEmpty ?? 0) < 3 ? 90 : (tank.daysUntilEmpty ?? 0) < 7 ? 60 : 30"></div>
           </div>
           <div class="risk-info">
-            <span class="risk-station">Tank {{ tank.tankId?.substring(0, 8) || 'Unknown' }}</span>
+            <span class="risk-station">Tank {{ tank.tankId.substring(0, 8) || 'Unknown' }}</span>
             <span class="risk-days">{{ tank.daysUntilEmpty ?? '?' }}d until empty</span>
           </div>
         </div>

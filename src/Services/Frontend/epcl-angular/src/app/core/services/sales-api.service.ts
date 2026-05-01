@@ -167,13 +167,31 @@ export class SalesApiService {
   }
 
   getStationTransactions(stationId: string, page = 1, pageSize = 20, filters?: TransactionFilters): Observable<PaginatedResult<TransactionDto>> {
-    let params = new HttpParams().set('page', page).set('pageSize', pageSize);
-    if (filters?.dateFrom) params = params.set('dateFrom', filters.dateFrom);
-    if (filters?.dateTo) params = params.set('dateTo', filters.dateTo);
-    if (filters?.fuelTypeId) params = params.set('fuelTypeId', filters.fuelTypeId);
-    if (filters?.paymentMethod) params = params.set('paymentMethod', filters.paymentMethod);
+    // Use the general /transactions endpoint with stationId as query param.
+    // The /station/{id} endpoint ignores filter params.
+    let params = new HttpParams().set('page', page).set('pageSize', pageSize).set('stationId', stationId);
     if (filters?.status) params = params.set('status', filters.status);
-    return this.http.get<PaginatedResult<TransactionDto>>(`${this.base}/transactions/station/${stationId}`, { params });
+    return this.http.get<PaginatedResult<TransactionDto>>(`${this.base}/transactions`, { params }).pipe(
+      map(result => {
+        let items = result.items;
+        // Client-side filtering for params the backend doesn't support on this endpoint
+        if (filters?.dateFrom) {
+          const from = new Date(filters.dateFrom).getTime();
+          items = items.filter(t => new Date(t.timestamp).getTime() >= from);
+        }
+        if (filters?.dateTo) {
+          const to = new Date(filters.dateTo).getTime() + 86400000; // end of day
+          items = items.filter(t => new Date(t.timestamp).getTime() <= to);
+        }
+        if (filters?.fuelTypeId) {
+          items = items.filter(t => t.fuelTypeId === filters.fuelTypeId);
+        }
+        if (filters?.paymentMethod) {
+          items = items.filter(t => t.paymentMethod === filters.paymentMethod);
+        }
+        return { ...result, items, totalCount: items.length };
+      })
+    );
   }
 
   getTransactionById(id: string): Observable<TransactionDto> {

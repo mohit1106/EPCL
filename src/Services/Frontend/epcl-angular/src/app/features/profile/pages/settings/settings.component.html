@@ -15,6 +15,7 @@
         <div class="profile-row">
           <div class="avatar-block"><div class="avatar-img"><div class="avatar-placeholder">AV</div><button class="avatar-edit"><app-icon name="edit" [size]="14"></app-icon></button></div><span class="avatar-hint">JPG, PNG or GIF.<br/>Max size 2MB.</span></div>
           <div class="form-grid">
+            <div class="form-field full-width"><label class="form-label mono">USER ID</label><div class="form-input mono locked uid-row">{{ user.id }} <button class="btn-copy-sm" (click)="copyId()"><app-icon name="copy" [size]="12"></app-icon></button></div></div>
             <div class="form-field"><label class="form-label mono">FULL NAME</label><input type="text" class="form-input mono" [value]="user.fullName" /></div>
             <div class="form-field"><label class="form-label mono">WORK EMAIL</label><input type="email" class="form-input mono" [value]="user.email" /></div>
             <div class="form-field"><label class="form-label mono">PHONE NUMBER</label><input type="tel" class="form-input mono" [value]="user.phone" /></div>

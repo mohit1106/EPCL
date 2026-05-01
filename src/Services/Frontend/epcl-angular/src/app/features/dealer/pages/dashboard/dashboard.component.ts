@@ -1,10 +1,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { Subject, takeUntil, interval, combineLatest, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, switchMap } from 'rxjs/operators';
 import { selectUser } from '../../../../store/auth/auth.selectors';
 import { ReportsApiService } from '../../../../core/services/reports-api.service';
-import { StationsApiService, FuelTypeDto } from '../../../../core/services/stations-api.service';
+import { StationsApiService, StationDto, FuelTypeDto } from '../../../../core/services/stations-api.service';
 import { SalesApiService, TransactionDto, PumpDto } from '../../../../core/services/sales-api.service';
 import { SignalRService } from '../../../../core/services/signalr.service';
 import { InventoryApiService } from '../../../../core/services/inventory-api.service';
@@ -29,10 +29,18 @@ interface DisplayTransaction {
 })
 export class DealerDashboardComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
-  private stationId = '';
+  stationId = '';
+  userId = '';
   stationName = 'My Station';
   stationCode = '';
   hasStation = false;
+  isLoadingStation = true;
+
+  // Contact admin form
+  showContactAdmin = false;
+  contactMessage = '';
+  isSendingContact = false;
+  contactSent = false;
 
   lastSync = new Date().toLocaleTimeString();
   kpis: { label: string; value: string; sub: string; color: string }[] = [];
@@ -59,11 +67,30 @@ export class DealerDashboardComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.store.select(selectUser).pipe(takeUntil(this.destroy$)).subscribe(user => {
-      if (user) {
-        this.stationId = user.profile?.stationId || '';
-        this.hasStation = !!this.stationId;
-        if (this.hasStation) this.loadDashboard();
+    this.store.select(selectUser).pipe(
+      takeUntil(this.destroy$),
+      switchMap(user => {
+        if (!user) return of(null);
+        this.userId = user.id;
+
+        // Try profile.stationId first, then query by dealerUserId
+        if (user.profile?.stationId) {
+          return this.stationsApi.getStationById(user.profile.stationId).pipe(
+            catchError(() => this.stationsApi.getMyStation(user.id))
+          );
+        }
+        return this.stationsApi.getMyStation(user.id);
+      })
+    ).subscribe(station => {
+      this.isLoadingStation = false;
+      if (station) {
+        this.stationId = station.id;
+        this.stationName = station.stationName || station.name || 'My Station';
+        this.stationCode = station.stationCode || station.code || '';
+        this.hasStation = true;
+        this.loadDashboard();
+      } else {
+        this.hasStation = false;
       }
     });
 
@@ -81,10 +108,6 @@ export class DealerDashboardComponent implements OnInit, OnDestroy {
 
   private loadDashboard(): void {
     if (!this.stationId) return;
-    this.stationsApi.getStationById(this.stationId).pipe(takeUntil(this.destroy$), catchError(() => of(null))).subscribe(s => {
-      this.stationName = (s as any)?.stationName || (s as any)?.name || 'My Station';
-      this.stationCode = (s as any)?.stationCode || (s as any)?.code || '';
-    });
     this.stationsApi.getFuelTypes().pipe(takeUntil(this.destroy$), catchError(() => of([]))).subscribe(fts => {
       this.fuelTypes = fts;
       fts.forEach(ft => this.fuelTypeMap.set(ft.id, ft.name));
@@ -134,12 +157,15 @@ export class DealerDashboardComponent implements OnInit, OnDestroy {
 
   private loadTransactions(): void {
     this.salesApi.getStationTransactions(this.stationId, 1, 5).pipe(takeUntil(this.destroy$), catchError(() => of({ items: [], totalCount: 0, page: 1, pageSize: 5, totalPages: 0 }))).subscribe((result: any) => {
+      // Build pump name map from loaded pumps
+      const pumpMap = new Map<string, string>();
+      this.pumps.forEach(p => pumpMap.set(p.id, p.pumpName));
       this.transactions = result.items.map((t: TransactionDto) => ({
         id: t.receiptNumber || t.id.substring(0, 8),
         volume: `${t.quantityLitres.toFixed(2)} L`,
         product: this.fuelTypeMap.get(t.fuelTypeId) || t.fuelTypeName || 'Fuel',
         amount: `₹${t.totalAmount.toFixed(2)}`,
-        pump: 'Pump',
+        pump: pumpMap.get(t.pumpId) || `Pump ${t.pumpId?.substring(0, 4) || '??'}`,
         payment: t.paymentMethod,
         status: t.status,
         time: new Date(t.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -207,4 +233,46 @@ export class DealerDashboardComponent implements OnInit, OnDestroy {
 
   get activePumpCount(): number { return this.pumps.filter(p => p.isActive).length; }
   get maintenancePumpCount(): number { return this.pumps.filter(p => !p.isActive).length; }
+
+  // ═══ Contact Admin ═══
+  openContactAdmin(): void { this.showContactAdmin = true; this.contactMessage = ''; this.contactSent = false; }
+  closeContactAdmin(): void { this.showContactAdmin = false; }
+
+  sendContactRequest(): void {
+    if (!this.contactMessage.trim()) {
+      this.toast.error('Please enter your message.');
+      return;
+    }
+    this.isSendingContact = true;
+
+    // Store contact request in localStorage for admin to read
+    const requests = JSON.parse(localStorage.getItem('epcl_dealer_requests') || '[]');
+    requests.push({
+      id: crypto.randomUUID(),
+      dealerUserId: this.userId,
+      dealerEmail: '',
+      dealerName: '',
+      message: this.contactMessage.trim(),
+      category: 'Station Assignment',
+      status: 'Pending',
+      createdAt: new Date().toISOString(),
+    });
+    // Also get dealer email from store
+    this.store.select(selectUser).pipe(takeUntil(this.destroy$)).subscribe(u => {
+      if (u) {
+        requests[requests.length - 1].dealerEmail = u.email;
+        requests[requests.length - 1].dealerName = u.fullName;
+      }
+      localStorage.setItem('epcl_dealer_requests', JSON.stringify(requests));
+      this.isSendingContact = false;
+      this.contactSent = true;
+      this.toast.success('Request sent to admin! They will be notified.');
+    });
+  }
+
+  copyUserId(): void {
+    navigator.clipboard.writeText(this.userId).then(() => {
+      this.toast.success('User ID copied to clipboard!');
+    });
+  }
 }

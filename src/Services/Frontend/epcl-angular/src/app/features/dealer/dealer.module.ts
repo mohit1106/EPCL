@@ -11,6 +11,7 @@ import { InventoryComponent } from './pages/inventory/inventory.component';
 import { ShiftComponent } from './pages/shift/shift.component';
 import { ReplenishmentComponent } from './pages/replenishment/replenishment.component';
 import { DealerReportsComponent } from './pages/reports/reports.component';
+import { DealerContactAdminComponent } from './pages/contact-admin/contact-admin.component';
 
 const routes: Routes = [
   { path: 'dashboard', component: DealerDashboardComponent },
@@ -21,6 +22,7 @@ const routes: Routes = [
   { path: 'shift', component: ShiftComponent },
   { path: 'replenishment', component: ReplenishmentComponent },
   { path: 'reports', component: DealerReportsComponent },
+  { path: 'contact-admin', component: DealerContactAdminComponent },
 ];
 
 @NgModule({
@@ -33,6 +35,7 @@ const routes: Routes = [
     ShiftComponent,
     ReplenishmentComponent,
     DealerReportsComponent,
+    DealerContactAdminComponent,
   ],
   imports: [SharedModule, FormsModule, RouterModule.forChild(routes)],
 })

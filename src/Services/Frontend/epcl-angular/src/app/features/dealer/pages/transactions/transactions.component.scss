@@ -67,6 +67,16 @@
   background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px; margin-bottom: 18px;
 }
 
+.filter-hdr {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;
+}
+
+.filter-title {
+  display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: #0f172a;
+  svg { color: #2563eb; }
+}
+
+
 .filter-grid {
   display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; align-items: end;
   @media (max-width: 1100px) { grid-template-columns: repeat(3, 1fr); }

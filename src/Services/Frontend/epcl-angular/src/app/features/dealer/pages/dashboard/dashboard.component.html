@@ -1,15 +1,57 @@
 <div class="dealer-dashboard">
+  <!-- Loading Station State -->
+  <div class="loading" *ngIf="isLoadingStation">
+    <div class="spinner"></div>
+    <p>Discovering your station...</p>
+  </div>
+
   <!-- No Station State -->
-  <div class="no-station" *ngIf="!hasStation">
+  <div class="no-station" *ngIf="!isLoadingStation && !hasStation">
     <div class="no-station-card">
       <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
       <h2>No Station Assigned</h2>
-      <p>Contact your administrator to assign a station to your account. Once assigned, you can manage pumps, view transactions, and create new sales.</p>
+      <p>Your account does not have a station assigned yet. Contact your administrator to get a station assigned, or use the form below to send a request.</p>
+
+      <div class="user-id-box">
+        <span class="user-id-label">YOUR USER ID</span>
+        <div class="user-id-value">
+          <code>{{ userId }}</code>
+          <button class="btn-copy" (click)="copyUserId()" title="Copy User ID">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+        <span class="user-id-hint">Share this ID with your admin for station assignment</span>
+      </div>
+
+      <button class="btn-contact" (click)="openContactAdmin()" *ngIf="!contactSent">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        Contact Admin
+      </button>
+      <div class="contact-success" *ngIf="contactSent">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>Request sent successfully! Admin will review shortly.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact Admin Modal -->
+  <div class="modal-overlay" *ngIf="showContactAdmin" (click)="closeContactAdmin()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <h3>Contact Administrator</h3>
+      <p class="modal-sub">Send a request to the admin for station assignment or any other concern.</p>
+      <div class="form-field">
+        <label>Your Message</label>
+        <textarea [(ngModel)]="contactMessage" rows="4" placeholder="e.g. Please assign me a station. I am a new dealer at location XYZ..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-save" (click)="sendContactRequest()" [disabled]="isSendingContact">{{ isSendingContact ? 'Sending...' : 'Send Request' }}</button>
+        <button class="btn-cancel" (click)="closeContactAdmin()">Cancel</button>
+      </div>
     </div>
   </div>
 
   <!-- Dashboard Content -->
-  <div *ngIf="hasStation">
+  <div *ngIf="!isLoadingStation && hasStation">
     <!-- Header -->
     <div class="page-hdr">
       <div>
@@ -19,10 +61,16 @@
           {{ stationCode }} · Last sync: {{ lastSync }}
         </p>
       </div>
-      <a routerLink="/dealer/sales/new" class="btn-primary">
-        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-        New Sale
-      </a>
+      <div class="hdr-right">
+        <button class="btn-outline btn-sm-contact" (click)="openContactAdmin()" title="Contact Admin">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          Contact Admin
+        </button>
+        <a routerLink="/dealer/sales/new" class="btn-primary">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          New Sale
+        </a>
+      </div>
     </div>
 
     <!-- KPI -->
@@ -80,9 +128,7 @@
               </select>
             </div>
             <div class="form-actions">
-              <button class="btn-save" (click)="addPump()" [disabled]="isAddingPump">
-                {{ isAddingPump ? 'Creating...' : 'Create' }}
-              </button>
+              <button class="btn-save" (click)="addPump()" [disabled]="isAddingPump">{{ isAddingPump ? 'Creating...' : 'Create' }}</button>
               <button class="btn-cancel" (click)="closeAddPump()">Cancel</button>
             </div>
           </div>
@@ -101,9 +147,7 @@
               </div>
             </div>
             <div class="pump-controls">
-              <span class="pump-status" [class.active]="pump.isActive" [class.maint]="!pump.isActive">
-                {{ pump.isActive ? 'Active' : 'Maintenance' }}
-              </span>
+              <span class="pump-status" [class.active]="pump.isActive" [class.maint]="!pump.isActive">{{ pump.isActive ? 'Active' : 'Maintenance' }}</span>
               <button class="btn-toggle" (click)="togglePumpStatus(pump)" [disabled]="pump.updating" [title]="pump.isActive ? 'Set to Maintenance' : 'Set to Active'">
                 <span *ngIf="!pump.updating">{{ pump.isActive ? 'Disable' : 'Enable' }}</span>
                 <span *ngIf="pump.updating" class="btn-spin"></span>

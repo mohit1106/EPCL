@@ -1,0 +1,126 @@
+<div class="help-page">
+  <div class="page-hdr">
+    <div>
+      <h1 class="page-title">Help Requests</h1>
+      <p class="page-sub">Review and manage dealer requests · Showing requests addressed to you</p>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card"><span class="stat-num amber">{{ pendingCount }}</span><span class="stat-lbl">Pending</span></div>
+    <div class="stat-card"><span class="stat-num green">{{ resolvedCount }}</span><span class="stat-lbl">Resolved</span></div>
+    <div class="stat-card"><span class="stat-num gray">{{ dismissedCount }}</span><span class="stat-lbl">Dismissed</span></div>
+    <div class="stat-card"><span class="stat-num blue">{{ requests.length }}</span><span class="stat-lbl">Total</span></div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-row">
+    <div class="filter-group">
+      <label>Status</label>
+      <select [(ngModel)]="filterStatus" (ngModelChange)="applyFilters()">
+        <option value="All">All</option>
+        <option value="Pending">Pending</option>
+        <option value="Resolved">Resolved</option>
+        <option value="Dismissed">Dismissed</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Category</label>
+      <select [(ngModel)]="filterCategory" (ngModelChange)="applyFilters()">
+        <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Request Cards -->
+  <div class="req-list">
+    <div class="req-card" *ngFor="let r of filteredRequests" [class.pending]="r.status === 'Pending'" [class.resolved]="r.status === 'Resolved'" [class.expanded]="r.expanded">
+      <div class="rc-header" (click)="toggleExpand(r)">
+        <div class="rc-left">
+          <div class="rc-avatar" [ngClass]="getStatusClass(r.status)">{{ (r.dealerName || 'D').charAt(0) }}</div>
+        </div>
+        <div class="rc-summary">
+          <div class="rc-top">
+            <div>
+              <span class="rc-name">{{ r.dealerName || 'Unknown Dealer' }}</span>
+              <span class="rc-email">{{ r.dealerEmail }}</span>
+            </div>
+            <div class="rc-meta">
+              <span class="rc-cat">{{ r.category || 'General' }}</span>
+              <span class="rc-status" [ngClass]="getStatusClass(r.status)">{{ r.status }}</span>
+            </div>
+          </div>
+          <p class="rc-msg">{{ r.message }}</p>
+          <div class="rc-bottom">
+            <span class="rc-time">{{ formatDate(r.createdAt) }}</span>
+            <span class="rc-reply-count" *ngIf="(r.replies || []).length > 0">💬 {{ r.replies.length }} repl{{ r.replies.length === 1 ? 'y' : 'ies' }}</span>
+          </div>
+        </div>
+        <div class="rc-expand-icon">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" [attr.d]="r.expanded ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7'"/></svg>
+        </div>
+      </div>
+
+      <!-- Expanded thread + actions -->
+      <div class="rc-expanded" *ngIf="r.expanded">
+        <!-- Conversation thread -->
+        <div class="thread">
+          <div class="thread-msg thread-dealer">
+            <div class="tmsg-head"><span class="tmsg-from">{{ r.dealerName || 'Dealer' }}</span><span class="tmsg-time">{{ formatDate(r.createdAt) }}</span></div>
+            <p class="tmsg-body">{{ r.message }}</p>
+          </div>
+          <div class="thread-msg" *ngFor="let reply of r.replies || []" [class.thread-admin]="reply.from === 'admin'" [class.thread-dealer]="reply.from === 'dealer'">
+            <div class="tmsg-head"><span class="tmsg-from">{{ reply.from === 'admin' ? 'You (Admin)' : reply.fromName || 'Dealer' }}</span><span class="tmsg-time">{{ formatDate(reply.createdAt) }}</span></div>
+            <p class="tmsg-body">{{ reply.message }}</p>
+          </div>
+        </div>
+
+        <!-- Reply input -->
+        <div class="thread-reply">
+          <input type="text" [(ngModel)]="replyText[r.id]" placeholder="Type a reply to the dealer..." (keyup.enter)="sendReply(r)" />
+          <button class="btn-send" (click)="sendReply(r)" [disabled]="!(replyText[r.id] || '').trim()">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+            Reply
+          </button>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="rc-actions">
+          <button class="btn-action btn-assign" (click)="openAssignStation(r)" *ngIf="r.category === 'Station Assignment' && r.status === 'Pending'">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+            Assign Station
+          </button>
+          <button class="btn-action btn-resolve" (click)="resolveRequest(r)" *ngIf="r.status === 'Pending'">✓ Resolve</button>
+          <button class="btn-action btn-dismiss" (click)="dismissRequest(r)" *ngIf="r.status === 'Pending'">Dismiss</button>
+          <button class="btn-action btn-reopen" (click)="reopenRequest(r)" *ngIf="r.status !== 'Pending'">Reopen</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="filteredRequests.length === 0">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" width="40" height="40"><path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+      <p>No requests found{{ filterStatus !== 'All' ? ' with status "' + filterStatus + '"' : '' }}.</p>
+    </div>
+  </div>
+
+  <!-- Assign Station Modal -->
+  <div class="modal-overlay" *ngIf="showAssignModal" (click)="closeAssignModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <h3>Assign Station to Dealer</h3>
+      <p class="modal-sub">Assign an unassigned station to <strong>{{ currentRequest?.dealerName }}</strong> ({{ currentRequest?.dealerEmail }}).</p>
+      <div class="form-field" *ngIf="unassignedStations.length > 0">
+        <label>Select Station</label>
+        <select [(ngModel)]="selectedStationId">
+          <option value="">— Choose a station —</option>
+          <option *ngFor="let s of unassignedStations" [value]="s.id">{{ s.stationName || s.name }} ({{ s.stationCode || s.code }}) — {{ s.city }}</option>
+        </select>
+      </div>
+      <div class="no-stations-msg" *ngIf="unassignedStations.length === 0"><p>No unassigned stations available. Create a new station first.</p></div>
+      <div class="modal-actions">
+        <button class="btn-save" (click)="assignStation()" [disabled]="isAssigning || !selectedStationId">{{ isAssigning ? 'Assigning...' : 'Assign Station' }}</button>
+        <button class="btn-cancel" (click)="closeAssignModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>

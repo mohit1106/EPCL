@@ -1,71 +1,193 @@
-<div class="page-content">
-  <h1 class="page-title">Station <span class="accent">Management</span></h1>
-  <p class="page-subtitle"><span class="dot-ok">●</span> {{ activeStations }} ACTIVE STATIONS | <span class="dot-off">●</span> {{ offlineStations }} OFFLINE</p>
+<div class="stations-page">
+  <!-- Header -->
+  <div class="page-hdr">
+    <div>
+      <h1 class="page-title">Station Management</h1>
+      <p class="page-sub">Manage fuel stations, assign dealers, and monitor operations</p>
+    </div>
+    <button class="btn-primary" (click)="openAddStation()">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+      Add Station
+    </button>
+  </div>
 
-  <div class="main-grid">
-    <!-- Station Cards -->
-    <div class="stations-col">
-      <div class="station-card" *ngFor="let s of stations" [ngClass]="s.statusClass">
-        <div class="station-header"><h3>{{ s.name }}</h3><span class="station-status mono" [ngClass]="s.statusClass">{{ s.status }}</span></div>
-        <p class="station-code mono">{{ s.code }}</p>
-        <div class="station-stats">
-          <div class="stat"><span class="stat-label mono">ACTIVE PUMPS</span><span class="stat-value mono">{{ s.pumps }} <small>/ {{ s.totalPumps }}</small></span></div>
-          <div class="stat"><span class="stat-label mono">THROUGHPUT</span><span class="stat-value mono">{{ s.throughput }} <small>L/m</small></span></div>
+
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card"><span class="stat-num">{{ totalCount }}</span><span class="stat-lbl">Total Stations</span></div>
+    <div class="stat-card"><span class="stat-num green">{{ activeCount }}</span><span class="stat-lbl">Active</span></div>
+    <div class="stat-card"><span class="stat-num red">{{ offlineCount }}</span><span class="stat-lbl">Offline</span></div>
+    <div class="stat-card"><span class="stat-num blue">{{ totalPumps }}</span><span class="stat-lbl">Total Pumps</span></div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Loading stations...</p>
+  </div>
+
+  <!-- Station Cards -->
+  <div class="station-grid" *ngIf="!isLoading">
+    <div class="station-card" *ngFor="let s of stations" [class.inactive]="!s.isActive">
+      <!-- Card Header -->
+      <div class="sc-hdr">
+        <div>
+          <h3 class="sc-name">{{ s.name }}</h3>
+          <span class="sc-code mono">{{ s.code }}</span>
         </div>
+        <span class="sc-status" [class.online]="s.isActive" [class.offline]="!s.isActive">{{ s.isActive ? 'ACTIVE' : 'OFFLINE' }}</span>
+      </div>
 
-        <!-- Dealer Assignment -->
-        <div class="dealer-section">
-          <div class="dealer-row">
-            <span class="stat-label mono">ASSIGNED DEALER</span>
-            <span class="dealer-id mono" [class.unassigned]="!s.rawDto.dealerUserId || s.rawDto.dealerUserId === '00000000-0000-0000-0000-000000000000'">
-              {{ getDealerDisplay(s.rawDto.dealerUserId) }}
-            </span>
-          </div>
-          <div class="dealer-actions">
-            <button class="btn-sm btn-assign" (click)="openAssignDealer(s)">
-              {{ (!s.rawDto.dealerUserId || s.rawDto.dealerUserId === '00000000-0000-0000-0000-000000000000') ? 'Assign Dealer' : 'Reassign' }}
-            </button>
-            <button class="btn-sm btn-remove" *ngIf="s.rawDto.dealerUserId && s.rawDto.dealerUserId !== '00000000-0000-0000-0000-000000000000'" (click)="removeDealer(s.id)">
-              Remove
-            </button>
-          </div>
+      <!-- Info Grid -->
+      <div class="sc-info">
+        <div class="info-item">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+          <span>{{ s.city }}, {{ s.state }}</span>
         </div>
+        <div class="info-item">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span>{{ s.operatingHours }}</span>
+        </div>
+        <div class="info-item">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg>
+          <span>{{ s.pumpCount }} Pumps</span>
+        </div>
+      </div>
 
-        <div class="fuel-bars"><div class="fuel-item" *ngFor="let f of s.fuels"><div class="fuel-top"><span class="mono">{{ f.name }}</span><span class="mono">{{ f.pct }}%</span></div><div class="fuel-bar"><div class="fuel-fill" [style.width.%]="f.pct"></div></div></div></div>
-        <button class="btn-telemetry mono">VIEW TELEMETRY</button>
+      <!-- Fuel Types -->
+      <div class="sc-fuels" *ngIf="s.fuelTypesOnStation.length > 0">
+        <span class="fuel-badge" *ngFor="let ft of s.fuelTypesOnStation">{{ ft }}</span>
+      </div>
+      <div class="sc-fuels" *ngIf="s.fuelTypesOnStation.length === 0">
+        <span class="no-data-sm">No pumps configured</span>
+      </div>
+
+      <!-- Dealer Info -->
+      <div class="sc-dealer">
+        <span class="dealer-label">Dealer:</span>
+        <span class="dealer-val" [class.unassigned]="s.dealerDisplay === 'Unassigned'">{{ s.dealerDisplay }}</span>
+        <div class="dealer-btns">
+          <button class="btn-xs btn-assign" (click)="openAssignDealer(s)">{{ s.dealerDisplay === 'Unassigned' ? 'Assign' : 'Reassign' }}</button>
+          <button class="btn-xs btn-remove" *ngIf="s.dealerDisplay !== 'Unassigned'" (click)="removeDealer(s)">Remove</button>
+        </div>
+      </div>
+
+      <!-- Pump Toggle -->
+      <button class="btn-pumps" (click)="togglePumps(s)" *ngIf="s.pumpCount > 0">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        {{ s.showPumps ? 'Hide' : 'Show' }} {{ s.pumpCount }} Pumps
+      </button>
+
+      <!-- Pump List -->
+      <div class="pump-drawer" *ngIf="s.showPumps">
+        <div class="pump-item" *ngFor="let p of s.pumps">
+          <div class="pi-left">
+            <span class="pi-name">{{ p.pumpName }}</span>
+            <span class="pi-fuel">{{ fuelTypeMap.get(p.fuelTypeId) || 'Fuel' }}</span>
+          </div>
+          <span class="pi-status" [ngClass]="getPumpStatusClass(p.status)">{{ p.status }}</span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="sc-actions">
+        <button class="btn-action" (click)="openEditStation(s)" title="Edit">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          Edit
+        </button>
+        <button class="btn-action warning" (click)="deactivateStation(s)" *ngIf="s.isActive" title="Deactivate">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+          Deactivate
+        </button>
+        <button class="btn-action danger" (click)="permanentlyRemoveStation(s)" title="Permanently Remove">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          Remove
+        </button>
       </div>
     </div>
 
-    <!-- Telemetry Feed -->
-    <div class="telemetry-panel">
-      <div class="telemetry-header"><h3>Telemetry Feed</h3><button class="btn-close"><app-icon name="x" [size]="16"></app-icon></button></div>
-      <div class="telemetry-station"><app-icon name="fuel" [size]="20" color="var(--color-primary)"></app-icon><div><strong>{{ telemetryStation }}</strong><small class="mono text-muted">ACTIVE LINK: 00:04:22:94:AF</small></div></div>
-      <div class="tank-rings"><div class="tank-ring" *ngFor="let t of tankData"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" class="ring-bg"></circle><circle cx="40" cy="40" r="34" class="ring-fill" [style.stroke-dasharray]="(t.pct / 100) * 213.6 + ' 213.6'"></circle></svg><span class="ring-pct mono">{{ t.pct }}<small>%</small></span><span class="ring-label mono">{{ t.name }}</span></div></div>
-      <h4 class="mono">LIVE TRANSACTION STREAM</h4>
-      <div class="txn-list"><div class="txn-row" *ngFor="let t of liveTxns"><span class="mono">{{ t.time }}</span><span>{{ t.pump }} - {{ t.type }}</span><span class="mono text-success">{{ t.amount }}</span></div></div>
-      <div class="env-cards"><div class="env-card"><span class="env-label mono">ENVIRONMENTAL PRESSURE</span><span class="env-value mono">{{ envPressure }} <small>PSI</small></span><span class="env-status mono">NORMAL</span></div>
-        <div class="env-card"><span class="env-label mono">TEMPERATURE VARIANCE</span><span class="env-value mono">{{ tempVariance }} <small>°C</small></span><span class="env-status mono">STABLE</span></div></div>
-      <button class="btn-diagnostic mono"><app-icon name="cpu" [size]="14"></app-icon> INITIATE REMOTE DIAGNOSTIC</button>
+    <div class="empty-state" *ngIf="stations.length === 0">
+      <p>No stations found. Click "Add Station" to create one.</p>
     </div>
   </div>
 
-  <!-- Auxiliary Station Inventory -->
-  <div class="card"><h3 class="card-title mono">AUXILIARY STATION INVENTORY</h3>
-    <table><thead><tr><th>STATION NAME</th><th>REGION</th><th>STATUS</th></tr></thead>
-      <tbody><tr *ngFor="let inv of inventory"><td><strong>{{ inv.name }}</strong><br/><small class="mono text-muted">{{ inv.code }}</small></td><td>{{ inv.region }}</td><td><span class="status-pill" [ngClass]="inv.statusClass">{{ inv.status }}</span></td></tr></tbody></table>
+  <!-- Pagination -->
+  <div class="pager" *ngIf="totalPages > 1">
+    <span class="pager-info">Page {{ page }} of {{ totalPages }} ({{ totalCount }} stations)</span>
+    <div class="pager-btns">
+      <button class="pg-btn" [disabled]="page <= 1" (click)="onPageChange(page - 1)">‹</button>
+      <button class="pg-btn" *ngFor="let p of pageNumbers" [class.active]="p === page" (click)="onPageChange(p)">{{ p }}</button>
+      <button class="pg-btn" [disabled]="page >= totalPages" (click)="onPageChange(page + 1)">›</button>
+    </div>
+  </div>
+
+  <!-- Add/Edit Station Modal -->
+  <div class="modal-overlay" *ngIf="showStationModal" (click)="closeStationModal()">
+    <div class="modal-dialog modal-lg" (click)="$event.stopPropagation()">
+      <h3>{{ isEditMode ? 'Edit Station' : 'Add New Station' }}</h3>
+      <div class="modal-form">
+        <div class="form-row" *ngIf="!isEditMode">
+          <div class="form-field"><label>Station Code</label><input type="text" [(ngModel)]="stationForm.stationCode" placeholder="e.g. EPCL-MUM-001" /></div>
+          <div class="form-field"><label>License Number</label><input type="text" [(ngModel)]="stationForm.licenseNumber" placeholder="License #" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>Station Name</label><input type="text" [(ngModel)]="stationForm.stationName" placeholder="Station name" /></div>
+          <div class="form-field"><label>Address</label><input type="text" [(ngModel)]="stationForm.addressLine1" placeholder="Address line 1" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>City</label><input type="text" [(ngModel)]="stationForm.city" placeholder="City" /></div>
+          <div class="form-field"><label>State</label><input type="text" [(ngModel)]="stationForm.state" placeholder="State" /></div>
+          <div class="form-field"><label>PIN Code</label><input type="text" [(ngModel)]="stationForm.pinCode" placeholder="6 digits" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>Latitude</label><input type="number" [(ngModel)]="stationForm.latitude" step="0.0001" /></div>
+          <div class="form-field"><label>Longitude</label><input type="number" [(ngModel)]="stationForm.longitude" step="0.0001" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>Hours Start</label><input type="time" [(ngModel)]="stationForm.operatingHoursStart" /></div>
+          <div class="form-field"><label>Hours End</label><input type="time" [(ngModel)]="stationForm.operatingHoursEnd" /></div>
+          <div class="form-field"><label>24/7?</label><label class="toggle"><input type="checkbox" [(ngModel)]="stationForm.is24x7" /><span class="toggle-slider"></span></label></div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-save" (click)="saveStation()" [disabled]="isSubmitting">{{ isSubmitting ? 'Saving...' : (isEditMode ? 'Update' : 'Create') }}</button>
+        <button class="btn-cancel" (click)="closeStationModal()">Cancel</button>
+      </div>
+    </div>
   </div>
 
   <!-- Assign Dealer Modal -->
   <div class="modal-overlay" *ngIf="showAssignModal" (click)="closeAssignModal()">
     <div class="modal-dialog" (click)="$event.stopPropagation()">
-      <h3>Assign Dealer to Station</h3>
-      <p class="modal-sub">Enter the dealer's User ID (GUID) to assign them to this station.</p>
+      <h3>Assign Dealer</h3>
+      <p class="modal-sub">Search for a dealer by email or name. The selected dealer will be assigned to this station.</p>
       <div class="form-field">
-        <label>Dealer User ID</label>
-        <input type="text" [(ngModel)]="assignDealerUserId" placeholder="e.g. a1b2c3d4-e5f6-7890-abcd-ef1234567890" />
+        <label>Search Dealer (email or name)</label>
+        <div class="search-row">
+          <input type="text" [(ngModel)]="dealerSearchTerm" placeholder="e.g. dealer@example.com" (keyup.enter)="searchDealers()" />
+          <button class="btn-search" (click)="searchDealers()" [disabled]="isSearchingDealer">{{ isSearchingDealer ? '...' : 'Search' }}</button>
+        </div>
+      </div>
+      <!-- Search Results -->
+      <div class="dealer-results" *ngIf="dealerSearchResults.length > 0">
+        <div class="dr-item" *ngFor="let d of dealerSearchResults" [class.selected]="selectedDealerId === d.id" (click)="selectDealer(d)">
+          <div class="dr-info">
+            <strong>{{ d.fullName }}</strong>
+            <span class="dr-email">{{ d.email }}</span>
+          </div>
+          <span class="dr-check" *ngIf="selectedDealerId === d.id">✓</span>
+        </div>
+      </div>
+      <div class="no-results" *ngIf="dealerSearchResults.length === 0 && dealerSearchTerm.length >= 3 && !isSearchingDealer">
+        <span>No dealers found matching "{{ dealerSearchTerm }}"</span>
+      </div>
+      <div class="form-field" *ngIf="selectedDealerId">
+        <label>Selected Dealer ID</label>
+        <div class="selected-id mono">{{ selectedDealerId }}</div>
       </div>
       <div class="modal-actions">
-        <button class="btn-save" (click)="assignDealer()" [disabled]="isAssigning">{{ isAssigning ? 'Assigning...' : 'Assign Dealer' }}</button>
+        <button class="btn-save" (click)="assignDealer()" [disabled]="isAssigning || !selectedDealerId">{{ isAssigning ? 'Assigning...' : 'Assign' }}</button>
         <button class="btn-cancel" (click)="closeAssignModal()">Cancel</button>
       </div>
     </div>

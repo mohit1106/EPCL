@@ -101,12 +101,24 @@ export class NewSaleComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.store.select(selectUser).pipe(takeUntil(this.destroy$)).subscribe(user => {
-      if (user) {
+    this.store.select(selectUser).pipe(
+      takeUntil(this.destroy$),
+      switchMap(user => {
+        if (!user) return of(null);
         this.userId = user.id;
-        this.stationId = user.profile?.stationId || '';
-        this.loadData();
+        if (user.profile?.stationId) {
+          this.stationId = user.profile.stationId;
+          return of('resolved');
+        }
+        return this.stationsApi.getMyStation(user.id).pipe(
+          catchError(() => of(null))
+        );
+      })
+    ).subscribe(result => {
+      if (result && typeof result === 'object' && (result as any).id) {
+        this.stationId = (result as any).id;
       }
+      this.loadData();
     });
 
     // Vehicle lookup debounce

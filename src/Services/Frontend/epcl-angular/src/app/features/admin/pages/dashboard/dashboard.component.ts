@@ -38,6 +38,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   // System health — populated from API
   systemNodes: { name: string; value: string; status: string }[] = [];
 
+  // Dealer contact requests
+  pendingDealerRequests = 0;
+
   constructor(
     private reportsApi: ReportsApiService,
     private fraudApi: FraudApiService,
@@ -48,6 +51,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadDashboard();
+    this.loadDealerRequests();
 
     // Refresh every 60s
     interval(60000).pipe(startWith(0), takeUntil(this.destroy$)).subscribe(() => {
@@ -175,5 +179,13 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   getSeverityClass(severity: string): string {
     return severity === 'CRITICAL' ? 'severity-critical' : 'severity-warn';
+  }
+
+  private loadDealerRequests(): void {
+    const raw = localStorage.getItem('epcl_dealer_requests');
+    if (raw) {
+      const all = JSON.parse(raw);
+      this.pendingDealerRequests = all.filter((r: any) => r.status === 'Pending').length;
+    }
   }
 }
