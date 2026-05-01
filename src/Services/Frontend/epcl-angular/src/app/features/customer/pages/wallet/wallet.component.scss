@@ -292,3 +292,68 @@
   .form-row-2 { grid-template-columns: 1fr; }
   .amount { font-size: 32px; }
 }
+
+// ═══ Pending Payment Requests ═══
+.pending-badge {
+  font-size: 11px; font-weight: 700; color: white;
+  background: #EF4444; border-radius: 50%; min-width: 22px; height: 22px;
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-left: 8px; animation: pulse-badge 2s infinite;
+}
+@keyframes pulse-badge { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+
+.pending-requests-grid { display: grid; gap: 14px; }
+
+.pending-request-card {
+  background: var(--bg-secondary); border: 1px solid rgba(245,158,11,0.2);
+  border-left: 4px solid #F59E0B; border-radius: var(--radius-md);
+  padding: 20px; transition: all 0.2s ease;
+  &:hover { box-shadow: 0 4px 16px rgba(245,158,11,0.1); }
+}
+
+.pr-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;
+}
+
+.pr-amount {
+  font-family: 'JetBrains Mono','Fira Code',monospace;
+  font-size: 24px; font-weight: 800; color: var(--text-primary);
+}
+
+.pr-timer {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 12px; font-weight: 600; color: #D97706;
+  background: rgba(245,158,11,0.08); padding: 4px 10px;
+  border-radius: var(--radius-pill);
+}
+
+.pr-details { margin-bottom: 16px; }
+
+.pr-detail-row {
+  display: flex; justify-content: space-between; padding: 5px 0;
+  font-size: 13px; border-bottom: 1px solid var(--border-subtle);
+  &:last-child { border-bottom: none; }
+}
+.pr-label { color: var(--text-muted); }
+.pr-value { font-weight: 600; color: var(--text-primary); }
+
+.pr-actions { display: flex; gap: 10px; }
+
+.btn-approve {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px; background: linear-gradient(135deg, #059669, #10B981);
+  color: white; border: none; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s ease;
+  &:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.btn-reject {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px; background: none; color: var(--text-muted);
+  border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;
+  &:hover:not(:disabled) { border-color: #EF4444; color: #EF4444; background: rgba(239,68,68,0.04); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+

@@ -22,6 +22,7 @@ public class SalesDbContext : DbContext
     public DbSet<FuelPreAuthorization> FuelPreAuthorizations => Set<FuelPreAuthorization>();
     public DbSet<ParkingSlot> ParkingSlots => Set<ParkingSlot>();
     public DbSet<ParkingBooking> ParkingBookings => Set<ParkingBooking>();
+    public DbSet<WalletPaymentRequest> WalletPaymentRequests => Set<WalletPaymentRequest>();
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
@@ -230,6 +231,27 @@ public class SalesDbContext : DbContext
             b.HasOne(p => p.ParkingSlot).WithMany().HasForeignKey(p => p.ParkingSlotId);
             b.HasIndex(p => p.CustomerId);
             b.HasIndex(p => p.RazorpayOrderId);
+        });
+
+        // ── WalletPaymentRequest ─────────────────────────────
+        mb.Entity<WalletPaymentRequest>(b =>
+        {
+            b.ToTable("WalletPaymentRequests"); b.HasKey(r => r.Id);
+            b.Property(r => r.Id).HasDefaultValueSql("NEWID()");
+            b.Property(r => r.SaleTransactionId).IsRequired();
+            b.Property(r => r.CustomerId).IsRequired();
+            b.Property(r => r.DealerUserId).IsRequired();
+            b.Property(r => r.StationId).IsRequired();
+            b.Property(r => r.Amount).IsRequired().HasColumnType("DECIMAL(12,2)");
+            b.Property(r => r.Status).IsRequired().HasMaxLength(20).HasDefaultValue("Pending");
+            b.Property(r => r.Description).HasMaxLength(500);
+            b.Property(r => r.VehicleNumber).HasMaxLength(15);
+            b.Property(r => r.FuelTypeName).HasMaxLength(50);
+            b.Property(r => r.QuantityLitres).HasColumnType("DECIMAL(10,3)");
+            b.Property(r => r.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+            b.Property(r => r.ExpiresAt).IsRequired();
+            b.HasIndex(r => r.CustomerId);
+            b.HasIndex(r => r.SaleTransactionId);
         });
     }
 }

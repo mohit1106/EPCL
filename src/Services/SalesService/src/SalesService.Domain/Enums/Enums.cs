@@ -6,6 +6,7 @@ public enum TransactionStatus
     StockReserved,
     Completed,
     Voided,
+    Failed,
     FraudFlagged,
     FraudCleared
 }

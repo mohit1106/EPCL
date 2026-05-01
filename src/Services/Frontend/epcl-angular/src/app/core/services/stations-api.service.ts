@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export interface StationDto {
   id: string;
@@ -86,6 +87,21 @@ export class StationsApiService {
   getFuelTypes(): Observable<FuelTypeDto[]> {
     return this.http.get<FuelTypeDto[]>(`${this.base}/fuel-types`);
   }
+
+  assignDealerToStation(stationId: string, dealerUserId: string): Observable<StationDto> {
+    return this.http.put<StationDto>(`${this.base}/${stationId}/dealer`, { dealerUserId });
+  }
+
+  removeDealerFromStation(stationId: string): Observable<StationDto> {
+    return this.http.put<StationDto>(`${this.base}/${stationId}/dealer`, { dealerUserId: '00000000-0000-0000-0000-000000000000' });
+  }
+
+  getUnassignedStations(): Observable<StationDto[]> {
+    return this.getStations(1, 100).pipe(
+      map(res => res.items.filter(s => !s.dealerUserId || s.dealerUserId === '00000000-0000-0000-0000-000000000000'))
+    );
+  }
+
 
   // ── Parking ──────────────────────────────────────────
   getParkingSlots(stationId: string): Observable<ParkingSlotDto[]> {

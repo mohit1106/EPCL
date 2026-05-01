@@ -80,4 +80,13 @@ public class TransactionsController(IMediator mediator) : ControllerBase
     /// <summary>Get receipt data.</summary>
     [HttpGet("transactions/{id}/receipt")]
     public async Task<IActionResult> GetReceipt(Guid id) => Ok(await mediator.Send(new GetTransactionByIdQuery(id)));
+
+    /// <summary>Get daily transaction summary for a station.</summary>
+    [HttpGet("daily-summary/{stationId}")]
+    [Authorize(Roles = "Dealer,Admin,SuperAdmin")]
+    public async Task<IActionResult> GetDailySummary(Guid stationId, [FromQuery] string date)
+    {
+        var summary = await mediator.Send(new GetDailySummaryQuery(stationId, date));
+        return Ok(summary);
+    }
 }

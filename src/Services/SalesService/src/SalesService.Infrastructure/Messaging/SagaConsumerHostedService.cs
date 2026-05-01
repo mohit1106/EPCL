@@ -110,8 +110,13 @@ public class SagaConsumerHostedService : BackgroundService
         var tx = await txRepo.GetByIdAsync(evt.TransactionId);
         if (tx == null) { _logger.LogWarning("Transaction not found: {TxId}", evt.TransactionId); return; }
 
-        tx.Status = TransactionStatus.StockReserved;
-        // Immediately transition to Completed
+        // Don't overwrite if already completed (instant payment methods)
+        if (tx.Status == TransactionStatus.Completed)
+        {
+            _logger.LogInformation("Skipping saga completion for already-completed transaction: {TxId}", tx.Id);
+            return;
+        }
+
         tx.Status = TransactionStatus.Completed;
         await txRepo.UpdateAsync(tx);
 
@@ -140,6 +145,13 @@ public class SagaConsumerHostedService : BackgroundService
 
         var tx = await txRepo.GetByIdAsync(evt.TransactionId);
         if (tx == null) return;
+
+        // Don't void transactions that are already Completed (e.g., Cash/UPI instant payments)
+        if (tx.Status == TransactionStatus.Completed)
+        {
+            _logger.LogInformation("Skipping void for already-completed transaction: {TxId}", tx.Id);
+            return;
+        }
 
         tx.Status = TransactionStatus.Voided;
         tx.IsVoided = true;

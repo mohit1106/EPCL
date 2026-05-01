@@ -49,6 +49,56 @@ public class PaymentsController(IMediator mediator) : ControllerBase
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         return Ok(await mediator.Send(new GetWalletHistoryQuery(userId, page, pageSize)));
     }
+
+    /// <summary>Get pending wallet payment requests (customer).</summary>
+    [HttpGet("wallet/pending-requests")]
+    [Authorize(Roles = "Customer")]
+    public async Task<IActionResult> GetPendingRequests()
+    {
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        return Ok(await mediator.Send(new GetPendingPaymentRequestsQuery(userId)));
+    }
+
+    /// <summary>Approve a wallet payment request (customer).</summary>
+    [HttpPost("wallet/approve/{requestId}")]
+    [Authorize(Roles = "Customer")]
+    public async Task<IActionResult> ApproveRequest(Guid requestId)
+    {
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        return Ok(await mediator.Send(new ApproveWalletPaymentCommand(userId, requestId)));
+    }
+
+    /// <summary>Reject a wallet payment request (customer).</summary>
+    [HttpPost("wallet/reject/{requestId}")]
+    [Authorize(Roles = "Customer")]
+    public async Task<IActionResult> RejectRequest(Guid requestId)
+    {
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        return Ok(await mediator.Send(new RejectWalletPaymentCommand(userId, requestId)));
+    }
+
+    /// <summary>Create wallet payment request (dealer, during sale).</summary>
+    [HttpPost("wallet/request")]
+    [Authorize(Roles = "Dealer")]
+    public async Task<IActionResult> CreateWalletPaymentRequest([FromBody] CreateWalletPaymentRequestDto body)
+    {
+        var dealerId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var user = await mediator.Send(new GetActiveShiftQuery(dealerId));
+        var stationId = user?.StationId ?? Guid.Empty;
+        return Ok(await mediator.Send(new CreateWalletPaymentRequestCommand(
+            dealerId, stationId, body.SaleTransactionId, body.CustomerId,
+            body.Amount, body.Description, body.VehicleNumber, body.FuelTypeName, body.QuantityLitres)));
+    }
+
+    /// <summary>Get customer wallet balance (for dealers during sale).</summary>
+    [HttpGet("wallet/customer-balance/{customerId}")]
+    [Authorize(Roles = "Dealer,Admin,SuperAdmin")]
+    public async Task<IActionResult> GetCustomerBalance(Guid customerId)
+    {
+        var result = await mediator.Send(new GetCustomerWalletBalanceQuery(customerId));
+        if (result == null) return NotFound(new { message = "Customer has no wallet." });
+        return Ok(result);
+    }
 }
 
 /// <summary>Fleet account management.</summary>

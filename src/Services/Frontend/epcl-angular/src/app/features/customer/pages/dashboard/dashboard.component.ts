@@ -74,14 +74,24 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }).pipe(takeUntil(this.destroy$)).subscribe({
       next: ({ prices, transactions, loyalty, wallet }) => {
         this.mapPriceTicker(prices);
-        this.recentTransactions = (transactions.items || []).map((t: TransactionDto) => ({
-          id: t.id.substring(0, 8),
-          terminal: 'Station ' + (t.stationId ? t.stationId.substring(0, 4) : '—'),
-          fuelType: t.fuelTypeName || 'Fuel',
-          volume: t.quantityLitres + ' L',
-          cost: t.totalAmount,
-          status: t.status
-        }));
+        this.recentTransactions = (transactions.items || []).map((t: TransactionDto) => {
+          const item = {
+            id: t.id.substring(0, 8),
+            terminal: 'Station ' + (t.stationId ? t.stationId.substring(0, 4) : '—'),
+            fuelType: t.fuelTypeName || 'Fuel',
+            volume: t.quantityLitres + ' L',
+            cost: t.totalAmount,
+            status: t.status
+          };
+          if (t.stationId) {
+            this.stationsApi.getStationById(t.stationId).pipe(takeUntil(this.destroy$)).subscribe(s => {
+              if (s && s.name) {
+                item.terminal = s.name;
+              }
+            });
+          }
+          return item;
+        });
         this.loyaltyPoints = loyalty.points;
         this.memberTier = loyalty.tier;
         this.walletBalance = wallet.balance;

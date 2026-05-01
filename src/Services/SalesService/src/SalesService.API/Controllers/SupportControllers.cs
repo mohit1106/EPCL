@@ -18,7 +18,7 @@ public class PumpsController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> GetByStation(Guid stationId) => Ok(await mediator.Send(new GetPumpsByStationQuery(stationId)));
 
     [HttpPost]
-    [Authorize(Roles = "Admin,SuperAdmin")]
+    [Authorize(Roles = "Dealer,Admin,SuperAdmin")]
     public async Task<IActionResult> Register([FromBody] RegisterPumpRequest body)
         => CreatedAtAction(nameof(GetByStation), new { stationId = body.StationId },
             await mediator.Send(new RegisterPumpCommand(body.StationId, body.FuelTypeId, body.PumpName, body.NozzleCount)));
@@ -27,6 +27,14 @@ public class PumpsController(IMediator mediator) : ControllerBase
     [Authorize(Roles = "Dealer,Admin,SuperAdmin")]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdatePumpStatusRequest body)
         => Ok(await mediator.Send(new UpdatePumpStatusCommand(id, body.Status, body.Notes)));
+
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Dealer,Admin,SuperAdmin")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        await mediator.Send(new DeletePumpCommand(id));
+        return NoContent();
+    }
 }
 
 /// <summary>Fuel price management.</summary>

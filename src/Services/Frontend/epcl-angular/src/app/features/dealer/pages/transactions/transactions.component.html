@@ -1,31 +1,161 @@
-<div class="page-content">
-  <div class="page-top"><div><h1 class="page-title">Historical Ledger</h1><p class="page-subtitle mono">SYSTEM NODE: TX-TRANSACTION-LAKE-01</p></div>
-    <div class="kpi-row"><div class="kpi-mini"><span class="kpi-label mono">TOTAL VOLUME (24H)</span><span class="kpi-value mono">{{ totalVolume | number:'1.2-2' }} <small>LTR</small></span></div><div class="kpi-mini accent"><span class="kpi-label mono">GROSS REVENUE</span><span class="kpi-value mono">${{ grossRevenue | number:'1.2-2' }}</span></div></div>
-  </div>
-  <div class="filter-bar">
-    <div class="filter-item"><label class="filter-label mono">TEMPORAL RANGE</label><div class="date-range"><input type="date" class="filter-input" /><span>→</span><input type="date" class="filter-input" /></div></div>
-    <div class="filter-item"><label class="filter-label mono">TERMINAL ID</label><select class="filter-input"><option>ALL_PUMPS</option></select></div>
-    <div class="filter-item"><label class="filter-label mono">PRODUCT GRADE</label><select class="filter-input"><option>ALL_GRADES</option></select></div>
-    <div class="filter-item"><label class="filter-label mono">PROTOCOL</label><select class="filter-input"><option>ANY_PAYMENT</option></select></div>
-  </div>
-  <button class="btn-apply mono">▼ APPLY</button>
-  <div class="table-card">
-    <table>
-      <thead><tr><th>TRANSACTION HASH</th><th>TIMESTAMP</th><th>TERMINAL</th><th>PAYLOAD</th><th>VOLUME/AMOUNT</th><th>STATUS</th></tr></thead>
-      <tbody>
-        <tr *ngFor="let t of transactions">
-          <td class="mono"><span class="status-dot" [ngClass]="getStatusClass(t.status)"></span> {{ t.hash }}</td>
-          <td class="mono">{{ t.date }}<br/><small class="text-muted">{{ t.time }}</small></td>
-          <td><span class="terminal-badge mono">{{ t.terminal }}</span></td>
-          <td><strong>{{ t.payload }}</strong> <small class="text-muted">{{ t.payRef }}</small></td>
-          <td class="mono text-right">{{ t.volume | number:'1.2-2' }} L<br/><small>${{ t.amount | number:'1.2-2' }}</small></td>
-          <td><span class="status-pill" [ngClass]="getStatusClass(t.status)">{{ t.status }}</span></td>
-        </tr>
-      </tbody>
-    </table>
-    <div class="pagination"><span class="page-info mono">DISPLAYING 1-25 OF {{ totalRecords | number }} ENTRIES</span>
-      <div class="page-btns"><button class="page-btn">‹</button><button class="page-btn active">1</button><button class="page-btn">2</button><button class="page-btn">3</button><span>...</span><button class="page-btn">{{ totalPages }}</button><button class="page-btn">›</button></div>
+<div class="txn-page">
+  <!-- Header -->
+  <div class="page-hdr">
+    <div>
+      <h1 class="page-title">Transactions</h1>
+      <p class="page-sub">{{ stationName }} · Complete sales ledger</p>
+    </div>
+    <div class="hdr-actions">
+      <button class="btn-outline" id="btn-export-csv" (click)="exportCsv()">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        Export CSV
+      </button>
+      <button class="btn-outline" id="btn-print" (click)="printReport()">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+        Print Report
+      </button>
     </div>
   </div>
-  <div class="export-row"><button class="btn-export mono">↓ EXPORT CSV</button><button class="btn-export mono">🖨 PRINT DAILY REPORT</button></div>
+
+  <!-- KPI Summary Cards -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-icon blue"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div>
+      <div><span class="kpi-label">Total Records</span><span class="kpi-value">{{ totalRecords | number }}</span></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon teal"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg></div>
+      <div><span class="kpi-label">Volume Sold</span><span class="kpi-value">{{ totalVolume | number:'1.1-1' }} <small>L</small></span></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon indigo"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+      <div><span class="kpi-label">Revenue</span><span class="kpi-value">₹{{ grossRevenue | number:'1.0-0' }}</span></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon green"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+      <div><span class="kpi-label">Completed</span><span class="kpi-value">{{ completedCount }}</span></div>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="charts-row" *ngIf="paymentBreakdown.length > 0 || statusBreakdown.length > 0">
+    <div class="chart-card" *ngIf="paymentBreakdown.length > 0">
+      <h4>Payment Methods</h4>
+      <div class="bar-chart">
+        <div class="bar-item" *ngFor="let b of paymentBreakdown">
+          <span class="bar-label">{{ b.label }}</span>
+          <div class="bar-track"><div class="bar-fill" [style.width.%]="b.pct" [style.background]="b.color"></div></div>
+          <span class="bar-val">{{ b.count }} ({{ b.pct }}%)</span>
+        </div>
+      </div>
+    </div>
+    <div class="chart-card" *ngIf="statusBreakdown.length > 0">
+      <h4>Status Breakdown</h4>
+      <div class="bar-chart">
+        <div class="bar-item" *ngFor="let b of statusBreakdown">
+          <span class="bar-label">{{ b.label }}</span>
+          <div class="bar-track"><div class="bar-fill" [style.width.%]="b.pct" [style.background]="b.color"></div></div>
+          <span class="bar-val">{{ b.count }} ({{ b.pct }}%)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-panel">
+    <div class="filter-grid">
+      <div class="filter-item">
+        <label>From Date</label>
+        <input type="date" [(ngModel)]="filterDateFrom" />
+      </div>
+      <div class="filter-item">
+        <label>To Date</label>
+        <input type="date" [(ngModel)]="filterDateTo" />
+      </div>
+      <div class="filter-item">
+        <label>Fuel Type</label>
+        <select [(ngModel)]="filterFuelType">
+          <option value="">All Types</option>
+          <option *ngFor="let ft of fuelTypes" [value]="ft.id">{{ ft.name }}</option>
+        </select>
+      </div>
+      <div class="filter-item">
+        <label>Payment</label>
+        <select [(ngModel)]="filterPaymentMethod">
+          <option *ngFor="let p of paymentOptions" [value]="p">{{ p }}</option>
+        </select>
+      </div>
+      <div class="filter-item">
+        <label>Status</label>
+        <select [(ngModel)]="filterStatus">
+          <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+        </select>
+      </div>
+      <div class="filter-btns">
+        <button class="btn-apply" (click)="applyFilters()">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+          Apply
+        </button>
+        <button class="btn-clear" (click)="clearFilters()">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Loading transactions...</p>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card" *ngIf="!isLoading">
+    <div class="table-scroll">
+      <table id="txn-table">
+        <thead>
+          <tr>
+            <th>Receipt</th>
+            <th>Date & Time</th>
+            <th>Pump</th>
+            <th>Fuel</th>
+            <th>Vehicle</th>
+            <th class="text-right">Volume</th>
+            <th class="text-right">Amount</th>
+            <th>Payment</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of transactions" class="data-row">
+            <td class="mono cell-receipt">{{ t.receiptNumber }}</td>
+            <td>
+              <span class="cell-date">{{ t.date }}</span>
+              <span class="cell-time">{{ t.time }}</span>
+            </td>
+            <td><span class="badge badge-pump">{{ t.pumpName }}</span></td>
+            <td><span class="badge badge-fuel">{{ t.fuelType }}</span></td>
+            <td class="mono cell-vehicle">{{ t.vehicleNumber }}</td>
+            <td class="text-right mono">{{ t.volume | number:'1.2-2' }} L</td>
+            <td class="text-right mono cell-amount">₹{{ t.amount | number:'1.2-2' }}</td>
+            <td><span class="badge badge-pay">{{ t.paymentMethod }}</span></td>
+            <td><span class="status-pill" [ngClass]="getStatusClass(t.status)">{{ t.status }}</span></td>
+          </tr>
+          <tr *ngIf="transactions.length === 0">
+            <td colspan="9" class="empty-td">No transactions found.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pager" *ngIf="totalPages > 0">
+      <span class="pager-info">Showing {{ displayStart }}–{{ displayEnd }} of {{ totalRecords | number }}</span>
+      <div class="pager-btns">
+        <button class="pg-btn" [disabled]="page <= 1" (click)="onPageChange(1)" title="First">«</button>
+        <button class="pg-btn" [disabled]="page <= 1" (click)="onPageChange(page - 1)" title="Previous">‹</button>
+        <button class="pg-btn" *ngFor="let p of pageNumbers" [class.active]="p === page" (click)="onPageChange(p)">{{ p }}</button>
+        <button class="pg-btn" [disabled]="page >= totalPages" (click)="onPageChange(page + 1)" title="Next">›</button>
+        <button class="pg-btn" [disabled]="page >= totalPages" (click)="onPageChange(totalPages)" title="Last">»</button>
+      </div>
+    </div>
+  </div>
 </div>

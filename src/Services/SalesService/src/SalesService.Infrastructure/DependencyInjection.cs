@@ -33,6 +33,7 @@ public static class DependencyInjection
         services.AddScoped<IFuelPreAuthorizationRepository, FuelPreAuthorizationRepository>();
         services.AddScoped<IParkingSlotRepository, ParkingSlotRepository>();
         services.AddScoped<IParkingBookingRepository, ParkingBookingRepository>();
+        services.AddScoped<IWalletPaymentRequestRepository, WalletPaymentRequestRepository>();
 
         // Messaging
         services.AddSingleton<IRabbitMqPublisher, RabbitMqPublisher>();

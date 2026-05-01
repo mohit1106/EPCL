@@ -8,8 +8,29 @@
       <div class="station-card" *ngFor="let s of stations" [ngClass]="s.statusClass">
         <div class="station-header"><h3>{{ s.name }}</h3><span class="station-status mono" [ngClass]="s.statusClass">{{ s.status }}</span></div>
         <p class="station-code mono">{{ s.code }}</p>
-        <div class="station-stats"><div class="stat"><span class="stat-label mono">ACTIVE PUMPS</span><span class="stat-value mono">{{ s.pumps }} <small>/ {{ s.totalPumps }}</small></span></div>
-          <div class="stat"><span class="stat-label mono">THROUGHPUT</span><span class="stat-value mono">{{ s.throughput }} <small>L/m</small></span></div></div>
+        <div class="station-stats">
+          <div class="stat"><span class="stat-label mono">ACTIVE PUMPS</span><span class="stat-value mono">{{ s.pumps }} <small>/ {{ s.totalPumps }}</small></span></div>
+          <div class="stat"><span class="stat-label mono">THROUGHPUT</span><span class="stat-value mono">{{ s.throughput }} <small>L/m</small></span></div>
+        </div>
+
+        <!-- Dealer Assignment -->
+        <div class="dealer-section">
+          <div class="dealer-row">
+            <span class="stat-label mono">ASSIGNED DEALER</span>
+            <span class="dealer-id mono" [class.unassigned]="!s.rawDto.dealerUserId || s.rawDto.dealerUserId === '00000000-0000-0000-0000-000000000000'">
+              {{ getDealerDisplay(s.rawDto.dealerUserId) }}
+            </span>
+          </div>
+          <div class="dealer-actions">
+            <button class="btn-sm btn-assign" (click)="openAssignDealer(s)">
+              {{ (!s.rawDto.dealerUserId || s.rawDto.dealerUserId === '00000000-0000-0000-0000-000000000000') ? 'Assign Dealer' : 'Reassign' }}
+            </button>
+            <button class="btn-sm btn-remove" *ngIf="s.rawDto.dealerUserId && s.rawDto.dealerUserId !== '00000000-0000-0000-0000-000000000000'" (click)="removeDealer(s.id)">
+              Remove
+            </button>
+          </div>
+        </div>
+
         <div class="fuel-bars"><div class="fuel-item" *ngFor="let f of s.fuels"><div class="fuel-top"><span class="mono">{{ f.name }}</span><span class="mono">{{ f.pct }}%</span></div><div class="fuel-bar"><div class="fuel-fill" [style.width.%]="f.pct"></div></div></div></div>
         <button class="btn-telemetry mono">VIEW TELEMETRY</button>
       </div>
@@ -32,5 +53,21 @@
   <div class="card"><h3 class="card-title mono">AUXILIARY STATION INVENTORY</h3>
     <table><thead><tr><th>STATION NAME</th><th>REGION</th><th>STATUS</th></tr></thead>
       <tbody><tr *ngFor="let inv of inventory"><td><strong>{{ inv.name }}</strong><br/><small class="mono text-muted">{{ inv.code }}</small></td><td>{{ inv.region }}</td><td><span class="status-pill" [ngClass]="inv.statusClass">{{ inv.status }}</span></td></tr></tbody></table>
+  </div>
+
+  <!-- Assign Dealer Modal -->
+  <div class="modal-overlay" *ngIf="showAssignModal" (click)="closeAssignModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <h3>Assign Dealer to Station</h3>
+      <p class="modal-sub">Enter the dealer's User ID (GUID) to assign them to this station.</p>
+      <div class="form-field">
+        <label>Dealer User ID</label>
+        <input type="text" [(ngModel)]="assignDealerUserId" placeholder="e.g. a1b2c3d4-e5f6-7890-abcd-ef1234567890" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn-save" (click)="assignDealer()" [disabled]="isAssigning">{{ isAssigning ? 'Assigning...' : 'Assign Dealer' }}</button>
+        <button class="btn-cancel" (click)="closeAssignModal()">Cancel</button>
+      </div>
+    </div>
   </div>
 </div>

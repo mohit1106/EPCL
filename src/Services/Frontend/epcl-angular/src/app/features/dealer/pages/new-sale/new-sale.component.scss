@@ -563,6 +563,67 @@
 }
 
 // ═══════════════════════════════════════════════════════
+// Fuel Chips Selection
+// ═══════════════════════════════════════════════════════
+.fuel-selection-section {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.fuel-chips-container {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.fuel-chip {
+  position: relative;
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: var(--shadow-sm);
+
+  &:hover {
+    border-color: var(--brand-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  &.selected {
+    border-color: var(--brand-primary);
+    background: rgba(37, 99, 235, 0.04);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+  }
+}
+
+.fuel-chip-name {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.fuel-chip-check {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 20px;
+  height: 20px;
+  background: var(--brand-primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  animation: scaleIn 0.2s ease;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+}
+
+// ═══════════════════════════════════════════════════════
 // Step Actions
 // ═══════════════════════════════════════════════════════
 .step-actions {
@@ -976,3 +1037,74 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+// ═══════════════════════════════════════════════════════
+// Pump Price Tag
+// ═══════════════════════════════════════════════════════
+.pump-price-tag {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(30, 64, 175, 0.1);
+}
+
+// ═══════════════════════════════════════════════════════
+// Rate Info Bar
+// ═══════════════════════════════════════════════════════
+.rate-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  margin-top: 16px;
+  margin-bottom: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-secondary);
+
+  svg { flex-shrink: 0; color: var(--text-muted); }
+  strong { color: var(--color-primary); font-weight: 700; }
+}
+
+// ═══════════════════════════════════════════════════════
+// Payment Notices & Restrictions
+// ═══════════════════════════════════════════════════════
+.payment-notice.warning {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.2);
+  color: #B45309;
+}
+
+.payment-card.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      -45deg, transparent, transparent 4px, rgba(0,0,0,0.03) 4px, rgba(0,0,0,0.03) 8px
+    );
+    border-radius: inherit;
+  }
+}
+
+.payment-locked {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-danger);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 4px;
+}
+

@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { PaymentsApiService, WalletBalanceDto, WalletTransactionDto } from '../../../../core/services/payments-api.service';
+import { WalletPaymentRequestDto } from '../../../../core/services/sales-api.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { environment } from '../../../../../environments/environment';
 import { Chart, registerables } from 'chart.js';
@@ -63,6 +64,10 @@ export class WalletComponent implements OnInit, OnDestroy, AfterViewInit {
   // Recent activity (derived from transactions)
   recentActivity: { date: string; desc: string; amount: number; type: string; icon: string }[] = [];
 
+  // Pending payment requests from dealers
+  pendingRequests: WalletPaymentRequestDto[] = [];
+  processingRequestId: string | null = null;
+
   // Spending chart data
   monthLabels: string[] = [];
   monthData: number[] = [];
@@ -87,6 +92,7 @@ export class WalletComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnInit(): void {
     this.loadSavedCards();
     this.loadWalletData();
+    this.loadPendingRequests();
   }
 
   ngAfterViewInit(): void {
@@ -368,5 +374,51 @@ export class WalletComponent implements OnInit, OnDestroy, AfterViewInit {
     const last = this.monthData[this.monthData.length - 1];
     const prev = this.monthData[this.monthData.length - 2];
     return prev > 0 ? ((last - prev) / prev) * 100 : 0;
+  }
+
+  // ── Pending Payment Requests ──────────────────────────
+  loadPendingRequests(): void {
+    this.paymentsApi.getPendingPaymentRequests().pipe(takeUntil(this.destroy$)).subscribe({
+      next: (requests) => this.pendingRequests = requests,
+      error: () => {} // silently fail if no requests
+    });
+  }
+
+  approveRequest(requestId: string): void {
+    this.processingRequestId = requestId;
+    this.paymentsApi.approvePaymentRequest(requestId).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (res) => {
+        this.toast.success(res.message);
+        this.pendingRequests = this.pendingRequests.filter(r => r.id !== requestId);
+        this.processingRequestId = null;
+        this.loadWalletData(); // refresh balance
+      },
+      error: (err) => {
+        this.toast.error(err?.error?.message || 'Failed to approve request.');
+        this.processingRequestId = null;
+      }
+    });
+  }
+
+  rejectRequest(requestId: string): void {
+    this.processingRequestId = requestId;
+    this.paymentsApi.rejectPaymentRequest(requestId).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (res) => {
+        this.toast.success(res.message);
+        this.pendingRequests = this.pendingRequests.filter(r => r.id !== requestId);
+        this.processingRequestId = null;
+      },
+      error: (err) => {
+        this.toast.error(err?.error?.message || 'Failed to reject request.');
+        this.processingRequestId = null;
+      }
+    });
+  }
+
+  getTimeRemaining(expiresAt: string): string {
+    const diff = new Date(expiresAt).getTime() - Date.now();
+    if (diff <= 0) return 'Expired';
+    const mins = Math.floor(diff / 60000);
+    return mins > 0 ? `${mins} min left` : 'Less than a minute';
   }
 }

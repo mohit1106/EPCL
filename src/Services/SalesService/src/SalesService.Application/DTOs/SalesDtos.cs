@@ -81,3 +81,21 @@ public record ParkingBookingDto(
 
 public record CreateParkingBookingRequest(Guid StationId, string SlotType, int DurationHours);
 public record ConfirmParkingPaymentRequest(string OrderId, string PaymentId, string Signature);
+
+// ── Wallet Payment Request DTOs ────────────────────────────────────
+public record WalletPaymentRequestDto(
+    Guid Id, Guid SaleTransactionId, Guid CustomerId, Guid DealerUserId,
+    Guid StationId, decimal Amount, string Status, string Description,
+    string? VehicleNumber, string? FuelTypeName, decimal? QuantityLitres,
+    DateTimeOffset CreatedAt, DateTimeOffset ExpiresAt);
+
+public record CreateWalletPaymentRequestDto(
+    Guid SaleTransactionId, Guid CustomerId, decimal Amount,
+    string Description, string? VehicleNumber, string? FuelTypeName, decimal? QuantityLitres);
+
+// ── Daily Summary DTO ──────────────────────────────────────────────
+public record DailySummaryDto(
+    string Date, int TotalTransactions, decimal TotalLitres, decimal TotalRevenue,
+    IReadOnlyList<HourlyDataDto> HourlyData);
+
+public record HourlyDataDto(int Hour, int Transactions, decimal Litres, decimal Revenue);

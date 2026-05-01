@@ -136,4 +136,53 @@ export class AdminStationsComponent implements OnInit, OnDestroy {
       error: () => this.toast.error('Failed to deactivate station.'),
     });
   }
+
+  // ═══ Dealer Assignment ═══
+  showAssignModal = false;
+  assignStationId = '';
+  assignDealerUserId = '';
+  isAssigning = false;
+
+  openAssignDealer(station: DisplayAdminStation): void {
+    this.assignStationId = station.id;
+    this.assignDealerUserId = station.rawDto.dealerUserId || '';
+    this.showAssignModal = true;
+  }
+
+  closeAssignModal(): void { this.showAssignModal = false; }
+
+  assignDealer(): void {
+    if (!this.assignDealerUserId.trim()) {
+      this.toast.error('Please enter the dealer User ID.');
+      return;
+    }
+    this.isAssigning = true;
+    this.stationsApi.assignDealerToStation(this.assignStationId, this.assignDealerUserId.trim()).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: () => {
+        this.toast.success('Dealer assigned successfully!');
+        this.isAssigning = false;
+        this.showAssignModal = false;
+        this.loadStations();
+      },
+      error: (err) => {
+        this.toast.error(err?.error?.message || 'Failed to assign dealer.');
+        this.isAssigning = false;
+      },
+    });
+  }
+
+  removeDealer(stationId: string): void {
+    if (!confirm('Remove dealer from this station?')) return;
+    this.stationsApi.removeDealerFromStation(stationId).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { this.toast.success('Dealer removed.'); this.loadStations(); },
+      error: () => this.toast.error('Failed to remove dealer.'),
+    });
+  }
+
+  getDealerDisplay(dealerUserId: string | undefined): string {
+    if (!dealerUserId || dealerUserId === '00000000-0000-0000-0000-000000000000') return 'Unassigned';
+    return dealerUserId.substring(0, 8) + '...';
+  }
 }

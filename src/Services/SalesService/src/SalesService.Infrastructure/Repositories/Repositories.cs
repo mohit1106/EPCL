@@ -51,6 +51,7 @@ public class PumpRepository(SalesDbContext ctx) : IPumpRepository
         => await ctx.Pumps.Where(p => p.StationId == stationId).OrderBy(p => p.PumpName).ToListAsync(ct);
     public async Task<Pump> AddAsync(Pump pump, CancellationToken ct) { await ctx.Pumps.AddAsync(pump, ct); await ctx.SaveChangesAsync(ct); return pump; }
     public async Task UpdateAsync(Pump pump, CancellationToken ct) { ctx.Pumps.Update(pump); await ctx.SaveChangesAsync(ct); }
+    public async Task DeleteAsync(Pump pump, CancellationToken ct) { ctx.Pumps.Remove(pump); await ctx.SaveChangesAsync(ct); }
 }
 
 public class FuelPriceRepository(SalesDbContext ctx) : IFuelPriceRepository
@@ -159,4 +160,18 @@ public class ParkingBookingRepository(SalesDbContext ctx) : IParkingBookingRepos
     { ctx.ParkingBookings.Update(booking); await ctx.SaveChangesAsync(ct); }
     public async Task<IReadOnlyList<ParkingBooking>> GetByCustomerAsync(Guid customerId, int page, int pageSize, CancellationToken ct)
         => await ctx.ParkingBookings.Include(b => b.ParkingSlot).Where(b => b.CustomerId == customerId).OrderByDescending(b => b.BookedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+}
+
+public class WalletPaymentRequestRepository(SalesDbContext ctx) : IWalletPaymentRequestRepository
+{
+    public async Task<WalletPaymentRequest> AddAsync(WalletPaymentRequest request, CancellationToken ct)
+    { await ctx.WalletPaymentRequests.AddAsync(request, ct); await ctx.SaveChangesAsync(ct); return request; }
+    public async Task<WalletPaymentRequest?> GetByIdAsync(Guid id, CancellationToken ct)
+        => await ctx.WalletPaymentRequests.FirstOrDefaultAsync(r => r.Id == id, ct);
+    public async Task UpdateAsync(WalletPaymentRequest request, CancellationToken ct)
+    { ctx.WalletPaymentRequests.Update(request); await ctx.SaveChangesAsync(ct); }
+    public async Task<IReadOnlyList<WalletPaymentRequest>> GetPendingByCustomerAsync(Guid customerId, CancellationToken ct)
+        => await ctx.WalletPaymentRequests.Where(r => r.CustomerId == customerId && r.Status == "Pending" && r.ExpiresAt > DateTimeOffset.UtcNow).OrderByDescending(r => r.CreatedAt).ToListAsync(ct);
+    public async Task<WalletPaymentRequest?> GetBySaleTransactionIdAsync(Guid saleTransactionId, CancellationToken ct)
+        => await ctx.WalletPaymentRequests.FirstOrDefaultAsync(r => r.SaleTransactionId == saleTransactionId, ct);
 }

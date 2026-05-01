@@ -1,95 +1,149 @@
 <div class="dealer-dashboard">
-  <!-- Header -->
-  <div class="page-header">
-    <div class="page-header-left">
-      <h1 class="page-header__title">Station Command Center</h1>
-      <p class="page-header__subtitle">
-        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" width="14" height="14" style="display:inline;vertical-align:middle;margin-right:4px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        Last sync: {{ lastSync }}
-      </p>
+  <!-- No Station State -->
+  <div class="no-station" *ngIf="!hasStation">
+    <div class="no-station-card">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
+      <h2>No Station Assigned</h2>
+      <p>Contact your administrator to assign a station to your account. Once assigned, you can manage pumps, view transactions, and create new sales.</p>
     </div>
-    <div class="page-header-right">
+  </div>
+
+  <!-- Dashboard Content -->
+  <div *ngIf="hasStation">
+    <!-- Header -->
+    <div class="page-hdr">
+      <div>
+        <h1 class="page-title">{{ stationName }}</h1>
+        <p class="page-sub">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          {{ stationCode }} · Last sync: {{ lastSync }}
+        </p>
+      </div>
       <a routerLink="/dealer/sales/new" class="btn-primary">
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
         New Sale
       </a>
     </div>
-  </div>
 
-  <!-- KPI Cards -->
-  <div class="kpi-grid">
-    <div class="kpi-card" *ngFor="let kpi of kpis">
-      <span class="kpi-label">{{ kpi.label }}</span>
-      <div class="kpi-value">{{ kpi.value }}</div>
-      <span class="kpi-trend" [ngClass]="kpi.trendClass">{{ kpi.trend }}</span>
-    </div>
-  </div>
-
-  <!-- Main Grid -->
-  <div class="dashboard-grid">
-    <!-- Tank Levels -->
-    <div class="card tanks-card">
-      <div class="card-header">
-        <h3>Tank Levels</h3>
-        <a routerLink="/dealer/inventory" class="card-link">Manage →</a>
-      </div>
-      <div class="tank-list">
-        <div class="tank-item" *ngFor="let tank of tanks">
-          <div class="tank-header">
-            <span class="tank-name">{{ tank.name }}</span>
-            <span class="tank-pct" [style.color]="tank.color">{{ tank.pct }}%</span>
-          </div>
-          <div class="tank-gauge">
-            <div class="tank-gauge-fill" [style.width.%]="tank.pct" [style.background]="tank.color"></div>
-          </div>
-          <div class="tank-meta">
-            <span>{{ tank.current | number }} / {{ tank.capacity | number }} {{ tank.unit }}</span>
-            <span class="tank-days" *ngIf="tank.daysUntilEmpty">~{{ tank.daysUntilEmpty }}d remaining</span>
-          </div>
-        </div>
-        <div class="empty-state" *ngIf="tanks.length === 0">
-          <p class="empty-state__subtitle">No tanks configured</p>
-        </div>
+    <!-- KPI -->
+    <div class="kpi-grid">
+      <div class="kpi-card" *ngFor="let kpi of kpis">
+        <span class="kpi-label">{{ kpi.label }}</span>
+        <div class="kpi-value" [style.color]="kpi.color">{{ kpi.value }}</div>
+        <span class="kpi-sub">{{ kpi.sub }}</span>
       </div>
     </div>
 
-    <!-- Pump Status -->
-    <div class="card pumps-card">
-      <div class="card-header">
-        <h3>Pump Status</h3>
-        <span class="card-badge">{{ pumps.length }} pumps</span>
-      </div>
-      <div class="pump-grid">
-        <div class="pump-node" *ngFor="let pump of pumps" [ngClass]="pump.isMaintenance ? 'pump-maintenance' : 'pump-active'">
-          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg>
-          <span class="pump-id">{{ pump.id }}</span>
-          <span class="pump-status badge" [ngClass]="pump.isMaintenance ? 'badge-warning' : 'badge-success'">{{ pump.status }}</span>
+    <!-- Main Grid -->
+    <div class="dash-grid">
+      <!-- Tank Levels -->
+      <div class="card">
+        <div class="card-hdr">
+          <h3><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg> Tank Levels</h3>
+          <a routerLink="/dealer/inventory" class="card-link">View →</a>
         </div>
-        <div class="empty-state" *ngIf="pumps.length === 0">
-          <p class="empty-state__subtitle">No pumps configured</p>
+        <div class="tank-list">
+          <div class="tank-item" *ngFor="let tank of tanks">
+            <div class="tank-top"><span class="tank-name">{{ tank.name }}</span><span class="tank-pct" [style.color]="tank.color">{{ tank.pct }}%</span></div>
+            <div class="tank-gauge"><div class="tank-fill" [style.width.%]="tank.pct" [style.background]="tank.color"></div></div>
+            <div class="tank-meta"><span>{{ tank.current | number:'1.0-0' }} / {{ tank.capacity | number:'1.0-0' }} L</span><span *ngIf="tank.daysUntilEmpty" class="tank-days">~{{ tank.daysUntilEmpty }}d</span></div>
+          </div>
+          <div class="empty-msg" *ngIf="tanks.length === 0">No tanks configured</div>
         </div>
       </div>
-    </div>
 
-    <!-- Recent Transactions -->
-    <div class="card txn-card">
-      <div class="card-header">
-        <h3>Recent Sales</h3>
-        <a routerLink="/dealer/transactions" class="card-link">View all →</a>
-      </div>
-      <div class="txn-list">
-        <div class="txn-item" *ngFor="let txn of transactions">
-          <div class="txn-left">
-            <div class="txn-id">{{ txn.id }}</div>
-            <div class="txn-meta">{{ txn.product }} · {{ txn.volume }}</div>
-          </div>
-          <div class="txn-right">
-            <span class="txn-amount">{{ txn.amount }}</span>
-            <span class="txn-time">{{ txn.time }}</span>
+      <!-- Pump Management -->
+      <div class="card">
+        <div class="card-hdr">
+          <h3><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg> Pump Management</h3>
+          <div class="card-hdr-right">
+            <span class="count-badge green">{{ activePumpCount }} Active</span>
+            <span class="count-badge amber" *ngIf="maintenancePumpCount > 0">{{ maintenancePumpCount }} Maint.</span>
+            <button class="btn-add-pump" (click)="openAddPump()">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+              Add Pump
+            </button>
           </div>
         </div>
-        <div class="empty-state" *ngIf="transactions.length === 0">
-          <p class="empty-state__subtitle">No transactions today</p>
+
+        <!-- Add Pump Form -->
+        <div class="add-pump-form" *ngIf="showAddPump">
+          <div class="form-row">
+            <div class="form-field">
+              <label>Pump Name</label>
+              <input type="text" [(ngModel)]="newPumpName" placeholder="e.g. Pump 01" />
+            </div>
+            <div class="form-field">
+              <label>Fuel Type</label>
+              <select [(ngModel)]="newPumpFuelTypeId">
+                <option *ngFor="let ft of fuelTypes" [value]="ft.id">{{ ft.name }}</option>
+              </select>
+            </div>
+            <div class="form-actions">
+              <button class="btn-save" (click)="addPump()" [disabled]="isAddingPump">
+                {{ isAddingPump ? 'Creating...' : 'Create' }}
+              </button>
+              <button class="btn-cancel" (click)="closeAddPump()">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pump List -->
+        <div class="pump-list">
+          <div class="pump-row" *ngFor="let pump of pumps" [class.pump-active]="pump.isActive" [class.pump-maint]="!pump.isActive">
+            <div class="pump-info">
+              <div class="pump-icon" [class.active]="pump.isActive" [class.maint]="!pump.isActive">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg>
+              </div>
+              <div>
+                <span class="pump-name">{{ pump.pumpName }}</span>
+                <span class="pump-fuel">{{ pump.fuelTypeName }}</span>
+              </div>
+            </div>
+            <div class="pump-controls">
+              <span class="pump-status" [class.active]="pump.isActive" [class.maint]="!pump.isActive">
+                {{ pump.isActive ? 'Active' : 'Maintenance' }}
+              </span>
+              <button class="btn-toggle" (click)="togglePumpStatus(pump)" [disabled]="pump.updating" [title]="pump.isActive ? 'Set to Maintenance' : 'Set to Active'">
+                <span *ngIf="!pump.updating">{{ pump.isActive ? 'Disable' : 'Enable' }}</span>
+                <span *ngIf="pump.updating" class="btn-spin"></span>
+              </button>
+              <button class="btn-delete" (click)="deletePump(pump)" [disabled]="pump.updating" title="Delete pump">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="empty-msg" *ngIf="pumps.length === 0 && !showAddPump">
+            <p>No pumps configured. Click "Add Pump" to create one.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Transactions -->
+      <div class="card full-width">
+        <div class="card-hdr">
+          <h3><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg> Recent Sales</h3>
+          <a routerLink="/dealer/transactions" class="card-link">View all →</a>
+        </div>
+        <div class="txn-table-wrap">
+          <table class="txn-tbl">
+            <thead><tr><th>Receipt</th><th>Fuel</th><th>Volume</th><th>Amount</th><th>Payment</th><th>Status</th><th>Time</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let txn of transactions">
+                <td class="mono">{{ txn.id }}</td>
+                <td><span class="badge badge-fuel">{{ txn.product }}</span></td>
+                <td class="mono">{{ txn.volume }}</td>
+                <td class="mono fw-bold">{{ txn.amount }}</td>
+                <td><span class="badge badge-pay">{{ txn.payment }}</span></td>
+                <td>
+                  <span class="dot" [class.completed]="txn.status === 'Completed'" [class.pending]="txn.status === 'Initiated'" [class.failed]="txn.status === 'Failed' || txn.status === 'Voided'"></span>
+                  {{ txn.status }}
+                </td>
+                <td class="text-muted">{{ txn.time }}</td>
+              </tr>
+              <tr *ngIf="transactions.length === 0"><td colspan="7" class="empty-msg">No transactions today</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

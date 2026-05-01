@@ -23,6 +23,7 @@ public interface IPumpRepository
     Task<IReadOnlyList<Pump>> GetByStationIdAsync(Guid stationId, CancellationToken ct = default);
     Task<Pump> AddAsync(Pump pump, CancellationToken ct = default);
     Task UpdateAsync(Pump pump, CancellationToken ct = default);
+    Task DeleteAsync(Pump pump, CancellationToken ct = default);
 }
 
 public interface IFuelPriceRepository
@@ -106,4 +107,13 @@ public interface IParkingBookingRepository
     Task<ParkingBooking?> GetByRazorpayOrderIdAsync(string orderId, CancellationToken ct = default);
     Task UpdateAsync(ParkingBooking booking, CancellationToken ct = default);
     Task<IReadOnlyList<ParkingBooking>> GetByCustomerAsync(Guid customerId, int page, int pageSize, CancellationToken ct = default);
+}
+
+public interface IWalletPaymentRequestRepository
+{
+    Task<WalletPaymentRequest> AddAsync(WalletPaymentRequest request, CancellationToken ct = default);
+    Task<WalletPaymentRequest?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task UpdateAsync(WalletPaymentRequest request, CancellationToken ct = default);
+    Task<IReadOnlyList<WalletPaymentRequest>> GetPendingByCustomerAsync(Guid customerId, CancellationToken ct = default);
+    Task<WalletPaymentRequest?> GetBySaleTransactionIdAsync(Guid saleTransactionId, CancellationToken ct = default);
 }

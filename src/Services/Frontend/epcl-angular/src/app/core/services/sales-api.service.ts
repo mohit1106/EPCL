@@ -37,6 +37,30 @@ export interface RecordSaleCommand {
   paymentReferenceId?: string;
 }
 
+export interface WalletPaymentRequestDto {
+  id: string;
+  saleTransactionId: string;
+  customerId: string;
+  dealerUserId: string;
+  stationId: string;
+  amount: number;
+  status: string;
+  description: string;
+  vehicleNumber?: string;
+  fuelTypeName?: string;
+  quantityLitres?: number;
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface CustomerWalletDto {
+  id: string;
+  customerId: string;
+  balance: number;
+  totalLoaded: number;
+  isActive: boolean;
+}
+
 export interface FuelPriceDto {
   id: string;
   fuelTypeId: string;
@@ -201,6 +225,18 @@ export class SalesApiService {
     );
   }
 
+  updatePumpStatus(pumpId: string, status: string, notes?: string): Observable<PumpDto> {
+    return this.http.put<PumpDto>(`${this.base}/pumps/${pumpId}/status`, { status, notes });
+  }
+
+  createPump(stationId: string, fuelTypeId: string, pumpName: string, nozzleCount: number = 1): Observable<PumpDto> {
+    return this.http.post<PumpDto>(`${this.base}/pumps`, { stationId, fuelTypeId, pumpName, nozzleCount });
+  }
+
+  deletePump(pumpId: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/pumps/${pumpId}`);
+  }
+
   // Shifts
   getActiveShift(): Observable<ShiftDto | null> {
     return this.http.get<ShiftDto | null>(`${this.base}/shifts/active`);
@@ -222,6 +258,18 @@ export class SalesApiService {
     return this.http.get<DailySummaryDto>(`${this.base}/daily-summary/${stationId}`, {
       params: new HttpParams().set('date', date),
     });
+  }
+
+  // Wallet Payment Requests (dealer-initiated)
+  createWalletPaymentRequest(body: {
+    saleTransactionId: string; customerId: string; amount: number;
+    description: string; vehicleNumber?: string; fuelTypeName?: string; quantityLitres?: number;
+  }): Observable<WalletPaymentRequestDto> {
+    return this.http.post<WalletPaymentRequestDto>('/gateway/payments/wallet/request', body);
+  }
+
+  getCustomerWalletBalance(customerId: string): Observable<CustomerWalletDto> {
+    return this.http.get<CustomerWalletDto>(`/gateway/payments/wallet/customer-balance/${customerId}`);
   }
 
   // Vehicles (separate controller at /api/vehicles)

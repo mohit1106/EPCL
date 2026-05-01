@@ -147,3 +147,60 @@ public class GetWalletHistoryHandler(ICustomerWalletRepository walletRepo, IWall
             t.SaleTransactionId, t.Description, t.CreatedAt)).ToList();
     }
 }
+
+// ── Pending Wallet Payment Requests ────────────────────────────────
+public record GetPendingPaymentRequestsQuery(Guid CustomerId) : IRequest<IReadOnlyList<WalletPaymentRequestDto>>;
+
+public class GetPendingPaymentRequestsHandler(IWalletPaymentRequestRepository reqRepo)
+    : IRequestHandler<GetPendingPaymentRequestsQuery, IReadOnlyList<WalletPaymentRequestDto>>
+{
+    public async Task<IReadOnlyList<WalletPaymentRequestDto>> Handle(GetPendingPaymentRequestsQuery q, CancellationToken ct)
+    {
+        var requests = await reqRepo.GetPendingByCustomerAsync(q.CustomerId, ct);
+        return requests.Select(r => new WalletPaymentRequestDto(r.Id, r.SaleTransactionId, r.CustomerId,
+            r.DealerUserId, r.StationId, r.Amount, r.Status, r.Description,
+            r.VehicleNumber, r.FuelTypeName, r.QuantityLitres, r.CreatedAt, r.ExpiresAt)).ToList();
+    }
+}
+
+// ── Daily Summary ──────────────────────────────────────────────────
+public record GetDailySummaryQuery(Guid StationId, string Date) : IRequest<DailySummaryDto>;
+
+public class GetDailySummaryHandler(ITransactionRepository txRepo)
+    : IRequestHandler<GetDailySummaryQuery, DailySummaryDto>
+{
+    public async Task<DailySummaryDto> Handle(GetDailySummaryQuery q, CancellationToken ct)
+    {
+        var date = DateTimeOffset.Parse(q.Date);
+        var dayStart = new DateTimeOffset(date.Year, date.Month, date.Day, 0, 0, 0, TimeSpan.Zero);
+        var dayEnd = dayStart.AddDays(1);
+
+        var (items, _) = await txRepo.GetPagedAsync(1, 10000, q.StationId,
+            dateFrom: dayStart, dateTo: dayEnd, ct: ct);
+
+        var totalTx = items.Count;
+        var totalLitres = items.Sum(t => t.QuantityLitres);
+        var totalRevenue = items.Sum(t => t.TotalAmount);
+
+        var hourlyData = Enumerable.Range(0, 24).Select(h =>
+        {
+            var hourTx = items.Where(t => t.Timestamp.Hour == h).ToList();
+            return new HourlyDataDto(h, hourTx.Count, hourTx.Sum(t => t.QuantityLitres), hourTx.Sum(t => t.TotalAmount));
+        }).ToList();
+
+        return new DailySummaryDto(q.Date, totalTx, totalLitres, totalRevenue, hourlyData);
+    }
+}
+
+// ── Get Wallet Balance for Dealer (to show during sale) ────────────
+public record GetCustomerWalletBalanceQuery(Guid CustomerId) : IRequest<WalletDto?>;
+
+public class GetCustomerWalletBalanceHandler(ICustomerWalletRepository walletRepo)
+    : IRequestHandler<GetCustomerWalletBalanceQuery, WalletDto?>
+{
+    public async Task<WalletDto?> Handle(GetCustomerWalletBalanceQuery q, CancellationToken ct)
+    {
+        var w = await walletRepo.GetByCustomerIdAsync(q.CustomerId, ct);
+        return w == null ? null : new WalletDto(w.Id, w.CustomerId, w.Balance, w.TotalLoaded, w.IsActive);
+    }
+}

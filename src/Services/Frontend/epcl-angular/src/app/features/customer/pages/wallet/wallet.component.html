@@ -65,6 +65,52 @@
     </div>
   </div>
 
+  <!-- ═══ Pending Payment Requests ═══ -->
+  <div class="section-block" *ngIf="pendingRequests.length > 0">
+    <div class="section-header">
+      <h2 class="section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Pending Payment Requests
+        <span class="pending-badge">{{ pendingRequests.length }}</span>
+      </h2>
+    </div>
+    <div class="pending-requests-grid">
+      <div class="pending-request-card" *ngFor="let req of pendingRequests">
+        <div class="pr-header">
+          <div class="pr-amount">₹{{ req.amount | number:'1.2-2' }}</div>
+          <span class="pr-timer">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            {{ getTimeRemaining(req.expiresAt) }}
+          </span>
+        </div>
+        <div class="pr-details">
+          <div class="pr-detail-row" *ngIf="req.fuelTypeName">
+            <span class="pr-label">Fuel</span>
+            <span class="pr-value">{{ req.fuelTypeName }} — {{ req.quantityLitres | number:'1.2-2' }}L</span>
+          </div>
+          <div class="pr-detail-row" *ngIf="req.vehicleNumber">
+            <span class="pr-label">Vehicle</span>
+            <span class="pr-value">{{ req.vehicleNumber }}</span>
+          </div>
+          <div class="pr-detail-row">
+            <span class="pr-label">Description</span>
+            <span class="pr-value">{{ req.description }}</span>
+          </div>
+        </div>
+        <div class="pr-actions">
+          <button class="btn-approve" (click)="approveRequest(req.id)" [disabled]="processingRequestId === req.id">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>
+            {{ processingRequestId === req.id ? 'Processing...' : 'Approve' }}
+          </button>
+          <button class="btn-reject" (click)="rejectRequest(req.id)" [disabled]="processingRequestId === req.id">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 18L18 6M6 6l12 12"/></svg>
+            Reject
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ═══ Saved Payment Methods (PVC Cards) ═══ -->
   <div class="section-block">
     <div class="section-header">

@@ -140,18 +140,35 @@ public class RecordFuelSaleHandler(
                 await preAuthRepo.UpdateAsync(preAuth, ct);
             }
         }
-
-        // Saga Step 1: Publish SaleInitiatedEvent
-        await publisher.PublishAsync(new SaleInitiatedEvent
+        // ── Saga & Auto-Completion Logic ──
+        // Cash, UPI, Card: Instant payment at the pump → mark Completed immediately.
+        // Wallet: Needs customer approval → stays Initiated until approved via WalletPaymentRequest.
+        // FleetCard: Has pre-auth saga flow → publish SaleInitiatedEvent for inventory reservation.
+        if (paymentMethod == PaymentMethod.Cash || paymentMethod == PaymentMethod.UPI || paymentMethod == PaymentMethod.Card)
         {
-            EventType = nameof(SaleInitiatedEvent),
-            TransactionId = tx.Id, StationId = cmd.StationId,
-            TankId = cmd.TankId, FuelTypeId = cmd.FuelTypeId,
-            QuantityLitres = cmd.QuantityLitres, DealerUserId = cmd.DealerUserId
-        }, "sales.initiated", ct);
-
-        logger.LogInformation("Sale initiated. Tx: {TxId}, Receipt: {Receipt}, Qty: {Qty}L, Total: ₹{Total}",
-            tx.Id, receiptNumber, cmd.QuantityLitres, totalAmount);
+            tx.Status = TransactionStatus.Completed;
+            await txRepo.UpdateAsync(tx, ct);
+            logger.LogInformation("Sale completed (instant). Tx: {TxId}, Receipt: {Receipt}, Qty: {Qty}L, Total: ₹{Total}",
+                tx.Id, receiptNumber, cmd.QuantityLitres, totalAmount);
+        }
+        else if (paymentMethod == PaymentMethod.FleetCard)
+        {
+            // Only FleetCard uses the full saga with inventory reservation
+            await publisher.PublishAsync(new SaleInitiatedEvent
+            {
+                EventType = nameof(SaleInitiatedEvent),
+                TransactionId = tx.Id, StationId = cmd.StationId,
+                TankId = cmd.TankId, FuelTypeId = cmd.FuelTypeId,
+                QuantityLitres = cmd.QuantityLitres, DealerUserId = cmd.DealerUserId
+            }, "sales.initiated", ct);
+            logger.LogInformation("Sale initiated (FleetCard saga). Tx: {TxId}, Receipt: {Receipt}", tx.Id, receiptNumber);
+        }
+        else
+        {
+            // Wallet: stays Initiated — completed when customer approves
+            logger.LogInformation("Sale initiated (Wallet pending). Tx: {TxId}, Receipt: {Receipt}, Qty: {Qty}L, Total: ₹{Total}",
+                tx.Id, receiptNumber, cmd.QuantityLitres, totalAmount);
+        }
 
         return MapToDto(tx);
     }
@@ -239,6 +256,19 @@ public class UpdatePumpStatusHandler(IPumpRepository pumpRepo) : IRequestHandler
         await pumpRepo.UpdateAsync(pump, ct);
         return new PumpDto(pump.Id, pump.StationId, pump.FuelTypeId, pump.PumpName,
             pump.NozzleCount, pump.Status.ToString(), pump.LastServiced, pump.NextServiceDue, pump.CreatedAt);
+    }
+}
+
+// ── Delete Pump ──
+public record DeletePumpCommand(Guid PumpId) : IRequest;
+
+public class DeletePumpHandler(IPumpRepository pumpRepo) : IRequestHandler<DeletePumpCommand>
+{
+    public async Task Handle(DeletePumpCommand cmd, CancellationToken ct)
+    {
+        var pump = await pumpRepo.GetByIdAsync(cmd.PumpId, ct)
+            ?? throw new NotFoundException("Pump", cmd.PumpId);
+        await pumpRepo.DeleteAsync(pump, ct);
     }
 }
 
@@ -445,5 +475,145 @@ public class VerifyWalletPaymentHandler(
         logger.LogInformation("Wallet top-up verified. Customer: {CustId}, Amount: ₹{Amt}, Balance: ₹{Bal}",
             cmd.CustomerId, wt.Amount, wallet.Balance);
         return new MessageResponseDto($"Wallet topped up by ₹{wt.Amount:F2}. New balance: ₹{wallet.Balance:F2}.");
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// Wallet Payment Requests (Dealer-initiated, Customer-approved)
+// ══════════════════════════════════════════════════════════════════
+public record CreateWalletPaymentRequestCommand(
+    Guid DealerUserId, Guid StationId, Guid SaleTransactionId, Guid CustomerId,
+    decimal Amount, string Description, string? VehicleNumber,
+    string? FuelTypeName, decimal? QuantityLitres) : IRequest<WalletPaymentRequestDto>;
+
+public class CreateWalletPaymentRequestHandler(
+    IWalletPaymentRequestRepository reqRepo, ICustomerWalletRepository walletRepo,
+    ILogger<CreateWalletPaymentRequestHandler> logger) : IRequestHandler<CreateWalletPaymentRequestCommand, WalletPaymentRequestDto>
+{
+    public async Task<WalletPaymentRequestDto> Handle(CreateWalletPaymentRequestCommand cmd, CancellationToken ct)
+    {
+        // Verify customer has a wallet
+        var wallet = await walletRepo.GetByCustomerIdAsync(cmd.CustomerId, ct)
+            ?? throw new DomainException("Customer does not have a wallet.");
+
+        var request = new WalletPaymentRequest
+        {
+            Id = Guid.NewGuid(),
+            SaleTransactionId = cmd.SaleTransactionId,
+            CustomerId = cmd.CustomerId,
+            DealerUserId = cmd.DealerUserId,
+            StationId = cmd.StationId,
+            Amount = cmd.Amount,
+            Status = "Pending",
+            Description = cmd.Description,
+            VehicleNumber = cmd.VehicleNumber,
+            FuelTypeName = cmd.FuelTypeName,
+            QuantityLitres = cmd.QuantityLitres,
+            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(30), // 30-minute expiry
+        };
+
+        await reqRepo.AddAsync(request, ct);
+        logger.LogInformation("Wallet payment request created: {ReqId} for ₹{Amount} from customer {CustId}",
+            request.Id, cmd.Amount, cmd.CustomerId);
+
+        return new WalletPaymentRequestDto(request.Id, request.SaleTransactionId, request.CustomerId,
+            request.DealerUserId, request.StationId, request.Amount, request.Status, request.Description,
+            request.VehicleNumber, request.FuelTypeName, request.QuantityLitres, request.CreatedAt, request.ExpiresAt);
+    }
+}
+
+public record ApproveWalletPaymentCommand(Guid CustomerId, Guid RequestId) : IRequest<MessageResponseDto>;
+
+public class ApproveWalletPaymentHandler(
+    IWalletPaymentRequestRepository reqRepo, ICustomerWalletRepository walletRepo,
+    IWalletTransactionRepository wtRepo, ITransactionRepository txRepo,
+    ILogger<ApproveWalletPaymentHandler> logger) : IRequestHandler<ApproveWalletPaymentCommand, MessageResponseDto>
+{
+    public async Task<MessageResponseDto> Handle(ApproveWalletPaymentCommand cmd, CancellationToken ct)
+    {
+        var request = await reqRepo.GetByIdAsync(cmd.RequestId, ct)
+            ?? throw new NotFoundException("WalletPaymentRequest", cmd.RequestId);
+
+        if (request.CustomerId != cmd.CustomerId)
+            throw new DomainException("Unauthorized: this request does not belong to you.");
+        if (request.Status != "Pending")
+            throw new DomainException($"Request is already {request.Status}.");
+        if (request.ExpiresAt < DateTimeOffset.UtcNow)
+        {
+            request.Status = "Expired";
+            await reqRepo.UpdateAsync(request, ct);
+            throw new DomainException("Payment request has expired.");
+        }
+
+        var wallet = await walletRepo.GetByCustomerIdAsync(cmd.CustomerId, ct)
+            ?? throw new NotFoundException("Wallet", cmd.CustomerId);
+
+        if (wallet.Balance < request.Amount)
+            throw new DomainException($"Insufficient balance. Available: ₹{wallet.Balance:F2}, Required: ₹{request.Amount:F2}.");
+
+        // Debit wallet
+        wallet.Balance -= request.Amount;
+        wallet.UpdatedAt = DateTimeOffset.UtcNow;
+        await walletRepo.UpdateAsync(wallet, ct);
+
+        // Record wallet transaction
+        await wtRepo.AddAsync(new WalletTransaction
+        {
+            Id = Guid.NewGuid(), WalletId = wallet.Id,
+            Type = WalletTransactionType.Debit, Amount = request.Amount,
+            BalanceAfter = wallet.Balance, SaleTransactionId = request.SaleTransactionId,
+            Status = WalletTransactionStatus.Captured,
+            Description = request.Description
+        }, ct);
+
+        // Update sale transaction status to Completed
+        var tx = await txRepo.GetByIdAsync(request.SaleTransactionId, ct);
+        if (tx != null)
+        {
+            tx.Status = TransactionStatus.Completed;
+            tx.PaymentReferenceId = $"WALLET-{request.Id.ToString()[..8].ToUpper()}";
+            await txRepo.UpdateAsync(tx, ct);
+        }
+
+        // Mark request as approved
+        request.Status = "Approved";
+        await reqRepo.UpdateAsync(request, ct);
+
+        logger.LogInformation("Wallet payment approved: {ReqId}, Customer: {CustId}, Amount: ₹{Amt}, New Balance: ₹{Bal}",
+            request.Id, cmd.CustomerId, request.Amount, wallet.Balance);
+
+        return new MessageResponseDto($"Payment of ₹{request.Amount:F2} approved. New balance: ₹{wallet.Balance:F2}.");
+    }
+}
+
+public record RejectWalletPaymentCommand(Guid CustomerId, Guid RequestId) : IRequest<MessageResponseDto>;
+
+public class RejectWalletPaymentHandler(
+    IWalletPaymentRequestRepository reqRepo, ITransactionRepository txRepo,
+    ILogger<RejectWalletPaymentHandler> logger) : IRequestHandler<RejectWalletPaymentCommand, MessageResponseDto>
+{
+    public async Task<MessageResponseDto> Handle(RejectWalletPaymentCommand cmd, CancellationToken ct)
+    {
+        var request = await reqRepo.GetByIdAsync(cmd.RequestId, ct)
+            ?? throw new NotFoundException("WalletPaymentRequest", cmd.RequestId);
+
+        if (request.CustomerId != cmd.CustomerId)
+            throw new DomainException("Unauthorized: this request does not belong to you.");
+        if (request.Status != "Pending")
+            throw new DomainException($"Request is already {request.Status}.");
+
+        request.Status = "Rejected";
+        await reqRepo.UpdateAsync(request, ct);
+
+        // Mark sale transaction as failed
+        var tx = await txRepo.GetByIdAsync(request.SaleTransactionId, ct);
+        if (tx != null)
+        {
+            tx.Status = TransactionStatus.Failed;
+            await txRepo.UpdateAsync(tx, ct);
+        }
+
+        logger.LogInformation("Wallet payment rejected: {ReqId} by customer {CustId}", request.Id, cmd.CustomerId);
+        return new MessageResponseDto("Payment request rejected.");
     }
 }

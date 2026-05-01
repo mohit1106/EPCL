@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { WalletPaymentRequestDto } from './sales-api.service';
 
 export interface WalletBalanceDto {
   balance: number;
@@ -51,5 +52,18 @@ export class PaymentsApiService {
 
   verifyPayment(request: VerifyPaymentRequest): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(`${this.base}/wallet/verify`, request);
+  }
+
+  // Wallet Payment Requests (customer approval flow)
+  getPendingPaymentRequests(): Observable<WalletPaymentRequestDto[]> {
+    return this.http.get<WalletPaymentRequestDto[]>(`${this.base}/wallet/pending-requests`);
+  }
+
+  approvePaymentRequest(requestId: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/wallet/approve/${requestId}`, {});
+  }
+
+  rejectPaymentRequest(requestId: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/wallet/reject/${requestId}`, {});
   }
 }

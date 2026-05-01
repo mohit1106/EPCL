@@ -200,3 +200,21 @@ public class ParkingBooking
 
     public ParkingSlot ParkingSlot { get; set; } = null!;
 }
+
+// ── WalletPaymentRequest ──────────────────────────────────────────
+public class WalletPaymentRequest
+{
+    public Guid Id { get; set; }
+    public Guid SaleTransactionId { get; set; }
+    public Guid CustomerId { get; set; }
+    public Guid DealerUserId { get; set; }
+    public Guid StationId { get; set; }
+    public decimal Amount { get; set; }
+    public string Status { get; set; } = "Pending"; // Pending, Approved, Rejected, Expired
+    public string Description { get; set; } = string.Empty;
+    public string? VehicleNumber { get; set; }
+    public string? FuelTypeName { get; set; }
+    public decimal? QuantityLitres { get; set; }
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset ExpiresAt { get; set; }
+}
