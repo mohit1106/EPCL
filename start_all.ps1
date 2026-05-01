@@ -21,6 +21,9 @@ Get-Content -Path "d:\projects\epcl-fuel-management-system\.env" | ForEach-Objec
 }
 [Environment]::SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development", "Process")
 
+Write-Host "Starting Docker Infrastructure (Redis, ElasticSearch, etc.)..."
+Start-Process -FilePath "docker-compose" -ArgumentList "up -d" -WorkingDirectory "d:\projects\epcl-fuel-management-system" -Wait
+
 foreach ($service in $services) {
     Write-Host "Starting $service..."
     $serviceName = $service.Split('/')[-1]
@@ -31,5 +34,8 @@ foreach ($service in $services) {
 
 Write-Host "Starting Angular Frontend..."
 Start-Process -FilePath "npx.cmd" -ArgumentList "ng serve" -WorkingDirectory "d:\projects\epcl-fuel-management-system\src\Services\Frontend\epcl-angular" -WindowStyle Hidden -RedirectStandardOutput "d:\projects\epcl-fuel-management-system\tmp\angular.log" -RedirectStandardError "d:\projects\epcl-fuel-management-system\tmp\angular.err.log"
+
+Write-Host "Starting Landing Page..."
+Start-Process -FilePath "npx.cmd" -ArgumentList "serve -l 5500" -WorkingDirectory "d:\projects\epcl-fuel-management-system\landing" -WindowStyle Hidden -RedirectStandardOutput "d:\projects\epcl-fuel-management-system\tmp\landing.log" -RedirectStandardError "d:\projects\epcl-fuel-management-system\tmp\landing.err.log"
 
 Write-Host "All services started."

@@ -49,7 +49,7 @@ export class PaymentsApiService {
     return this.http.post<CreateOrderResponse>(`${this.base}/wallet/create-order`, { amount });
   }
 
-  verifyPayment(request: VerifyPaymentRequest): Observable<{ success: boolean; newBalance: number }> {
-    return this.http.post<{ success: boolean; newBalance: number }>(`${this.base}/wallet/verify`, request);
+  verifyPayment(request: VerifyPaymentRequest): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/wallet/verify`, request);
   }
 }
