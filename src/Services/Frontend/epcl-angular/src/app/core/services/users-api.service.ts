@@ -38,6 +38,11 @@ export class UsersApiService {
     return this.http.get<PaginatedResult<UserListDto>>(this.base, { params });
   }
 
+  /** Get admin users list — accessible by ALL authenticated users (including dealers). */
+  getAdmins(): Observable<AdminSummaryDto[]> {
+    return this.http.get<AdminSummaryDto[]>(`${this.base}/admins`);
+  }
+
   getUserById(id: string): Observable<UserListDto> {
     return this.http.get<UserListDto>(`${this.base}/${id}`);
   }
@@ -65,4 +70,10 @@ export class UsersApiService {
   softDeleteUser(userId: string): Observable<void> {
     return this.http.put<void>(`${this.base}/${userId}`, { isActive: false });
   }
+}
+
+export interface AdminSummaryDto {
+  id: string;
+  fullName: string;
+  email: string;
 }

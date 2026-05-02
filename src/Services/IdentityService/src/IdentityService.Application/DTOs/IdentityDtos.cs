@@ -70,3 +70,45 @@ public record UserProfileDto
 public record MessageResponseDto(string Message);
 public record RegisterResponseDto(Guid UserId, string Message);
 public record VerifyOtpResponseDto(bool IsValid, string Message);
+
+/// <summary>Minimal admin info for dealer contact feature.</summary>
+public record AdminSummaryDto(Guid Id, string FullName, string Email);
+
+// ── Help Request DTOs ──────────────────────────────────────────────
+
+public record CreateHelpRequestDto(
+    Guid? TargetAdminId,
+    string TargetAdminName,
+    string Category,
+    string Message
+);
+
+public record HelpRequestReplyDto
+{
+    public Guid Id { get; set; }
+    public string FromRole { get; set; } = string.Empty;
+    public string FromName { get; set; } = string.Empty;
+    public Guid FromUserId { get; set; }
+    public string Message { get; set; } = string.Empty;
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
+public record HelpRequestDto
+{
+    public Guid Id { get; set; }
+    public Guid DealerUserId { get; set; }
+    public string DealerEmail { get; set; } = string.Empty;
+    public string DealerName { get; set; } = string.Empty;
+    public Guid? TargetAdminId { get; set; }
+    public string TargetAdminName { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? ResolvedAt { get; set; }
+    public List<HelpRequestReplyDto> Replies { get; set; } = new();
+}
+
+public record CreateHelpReplyDto(string Message);
+
+public record UpdateHelpRequestStatusDto(string Status);

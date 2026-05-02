@@ -12,6 +12,8 @@ public class IdentityDbContext : DbContext
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<OtpRequest> OtpRequests => Set<OtpRequest>();
     public DbSet<ProcessedEvent> ProcessedEvents => Set<ProcessedEvent>();
+    public DbSet<HelpRequest> HelpRequests => Set<HelpRequest>();
+    public DbSet<HelpRequestReply> HelpRequestReplies => Set<HelpRequestReply>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

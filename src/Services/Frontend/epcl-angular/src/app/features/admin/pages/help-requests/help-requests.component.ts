@@ -4,29 +4,8 @@ import { Subject, takeUntil, of, interval } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { selectUser } from '../../../../store/auth/auth.selectors';
 import { StationsApiService, StationDto } from '../../../../core/services/stations-api.service';
+import { HelpRequestsApiService, HelpRequestDto } from '../../../../core/services/help-requests-api.service';
 import { ToastService } from '../../../../shared/services/toast.service';
-
-interface HelpReply {
-  from: string;
-  fromName: string;
-  message: string;
-  createdAt: string;
-}
-
-interface HelpRequest {
-  id: string;
-  dealerUserId: string;
-  dealerEmail: string;
-  dealerName: string;
-  targetAdminId: string;
-  targetAdminName: string;
-  message: string;
-  category: string;
-  status: string;
-  createdAt: string;
-  replies: HelpReply[];
-  expanded?: boolean;
-}
 
 @Component({
   selector: 'app-admin-help-requests',
@@ -38,8 +17,8 @@ export class AdminHelpRequestsComponent implements OnInit, OnDestroy {
   adminId = '';
   adminName = '';
 
-  requests: HelpRequest[] = [];
-  filteredRequests: HelpRequest[] = [];
+  requests: HelpRequestDto[] = [];
+  filteredRequests: HelpRequestDto[] = [];
   filterStatus = 'All';
   filterCategory = 'All';
 
@@ -49,19 +28,21 @@ export class AdminHelpRequestsComponent implements OnInit, OnDestroy {
 
   // Assignment modal
   showAssignModal = false;
-  currentRequest: HelpRequest | null = null;
+  currentRequest: HelpRequestDto | null = null;
   unassignedStations: StationDto[] = [];
   selectedStationId = '';
   isAssigning = false;
 
   // Reply
   replyText: { [reqId: string]: string } = {};
+  expandedIds = new Set<string>();
 
   categories = ['All', 'Station Assignment', 'Technical Support', 'Billing Issue', 'Pump Malfunction', 'Inventory Problem', 'Account Issue', 'Other'];
 
   constructor(
     private store: Store,
     private stationsApi: StationsApiService,
+    private helpApi: HelpRequestsApiService,
     private toast: ToastService
   ) {}
 
@@ -82,16 +63,16 @@ export class AdminHelpRequestsComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 
   loadRequests(): void {
-    const raw = localStorage.getItem('epcl_dealer_requests');
-    const all: HelpRequest[] = raw ? JSON.parse(raw) : [];
-    // Show only requests targeted to THIS admin (or older ones without targetAdminId for backward compat)
-    this.requests = all
-      .filter(r => !r.targetAdminId || r.targetAdminId === this.adminId)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    this.pendingCount = this.requests.filter(r => r.status === 'Pending').length;
-    this.resolvedCount = this.requests.filter(r => r.status === 'Resolved').length;
-    this.dismissedCount = this.requests.filter(r => r.status === 'Dismissed').length;
-    this.applyFilters();
+    this.helpApi.getAll().pipe(
+      takeUntil(this.destroy$),
+      catchError(() => of([]))
+    ).subscribe(requests => {
+      this.requests = requests;
+      this.pendingCount = this.requests.filter(r => r.status === 'Pending').length;
+      this.resolvedCount = this.requests.filter(r => r.status === 'Resolved').length;
+      this.dismissedCount = this.requests.filter(r => r.status === 'Dismissed').length;
+      this.applyFilters();
+    });
   }
 
   applyFilters(): void {
@@ -108,51 +89,55 @@ export class AdminHelpRequestsComponent implements OnInit, OnDestroy {
     });
   }
 
-  resolveRequest(req: HelpRequest): void {
-    this.updateRequestStatus(req, 'Resolved');
-    this.toast.success('Request marked as resolved.');
+  resolveRequest(req: HelpRequestDto): void {
+    this.helpApi.updateStatus(req.id, 'Resolved').pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { this.toast.success('Request marked as resolved.'); this.loadRequests(); },
+      error: () => this.toast.error('Failed to update status.'),
+    });
   }
 
-  dismissRequest(req: HelpRequest): void {
-    this.updateRequestStatus(req, 'Dismissed');
-    this.toast.success('Request dismissed.');
+  dismissRequest(req: HelpRequestDto): void {
+    this.helpApi.updateStatus(req.id, 'Dismissed').pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { this.toast.success('Request dismissed.'); this.loadRequests(); },
+      error: () => this.toast.error('Failed to update status.'),
+    });
   }
 
-  reopenRequest(req: HelpRequest): void {
-    this.updateRequestStatus(req, 'Pending');
-    this.toast.success('Request reopened.');
+  reopenRequest(req: HelpRequestDto): void {
+    this.helpApi.updateStatus(req.id, 'Pending').pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { this.toast.success('Request reopened.'); this.loadRequests(); },
+      error: () => this.toast.error('Failed to update status.'),
+    });
   }
 
-  private updateRequestStatus(req: HelpRequest, status: string): void {
-    const all: HelpRequest[] = JSON.parse(localStorage.getItem('epcl_dealer_requests') || '[]');
-    const idx = all.findIndex(r => r.id === req.id);
-    if (idx >= 0) all[idx].status = status;
-    localStorage.setItem('epcl_dealer_requests', JSON.stringify(all));
-    this.loadRequests();
-  }
-
-  // Reply to a request
-  sendReply(req: HelpRequest): void {
+  sendReply(req: HelpRequestDto): void {
     const text = (this.replyText[req.id] || '').trim();
     if (!text) return;
 
-    const reply: HelpReply = { from: 'admin', fromName: this.adminName, message: text, createdAt: new Date().toISOString() };
-    const all: HelpRequest[] = JSON.parse(localStorage.getItem('epcl_dealer_requests') || '[]');
-    const idx = all.findIndex(r => r.id === req.id);
-    if (idx >= 0) {
-      if (!all[idx].replies) all[idx].replies = [];
-      all[idx].replies.push(reply);
-      localStorage.setItem('epcl_dealer_requests', JSON.stringify(all));
-    }
-    req.replies = req.replies || [];
-    req.replies.push(reply);
-    this.replyText[req.id] = '';
-    this.toast.success('Reply sent to dealer!');
+    this.helpApi.addReply(req.id, text).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (reply) => {
+        req.replies = req.replies || [];
+        req.replies.push(reply);
+        this.replyText[req.id] = '';
+        this.toast.success('Reply sent to dealer!');
+      },
+      error: () => this.toast.error('Failed to send reply.'),
+    });
   }
 
-  toggleExpand(req: HelpRequest): void { req.expanded = !req.expanded; }
+  toggleExpand(req: HelpRequestDto): void {
+    if (this.expandedIds.has(req.id)) {
+      this.expandedIds.delete(req.id);
+    } else {
+      this.expandedIds.add(req.id);
+    }
+  }
 
-  openAssignStation(req: HelpRequest): void {
+  isExpanded(req: HelpRequestDto): boolean {
+    return this.expandedIds.has(req.id);
+  }
+
+  openAssignStation(req: HelpRequestDto): void {
     this.currentRequest = req;
     this.selectedStationId = '';
     this.showAssignModal = true;
@@ -172,23 +157,17 @@ export class AdminHelpRequestsComponent implements OnInit, OnDestroy {
       next: () => {
         this.toast.success(`Station assigned to ${this.currentRequest!.dealerName || 'dealer'} successfully!`);
         // Auto-reply about assignment
-        const reply: HelpReply = {
-          from: 'admin', fromName: this.adminName,
-          message: `A station has been assigned to you. Please refresh your dashboard to see the assigned station.`,
-          createdAt: new Date().toISOString()
-        };
-        const all: HelpRequest[] = JSON.parse(localStorage.getItem('epcl_dealer_requests') || '[]');
-        const idx = all.findIndex(r => r.id === this.currentRequest!.id);
-        if (idx >= 0) {
-          if (!all[idx].replies) all[idx].replies = [];
-          all[idx].replies.push(reply);
-          all[idx].status = 'Resolved';
-          localStorage.setItem('epcl_dealer_requests', JSON.stringify(all));
-        }
+        this.helpApi.addReply(this.currentRequest!.id, 'A station has been assigned to you. Please refresh your dashboard.').pipe(
+          takeUntil(this.destroy$)
+        ).subscribe();
+        // Mark as resolved
+        this.helpApi.updateStatus(this.currentRequest!.id, 'Resolved').pipe(
+          takeUntil(this.destroy$)
+        ).subscribe(() => this.loadRequests());
+
         this.isAssigning = false;
         this.showAssignModal = false;
         this.loadUnassignedStations();
-        this.loadRequests();
       },
       error: (err) => {
         this.toast.error(err?.error?.message || 'Failed to assign station.');

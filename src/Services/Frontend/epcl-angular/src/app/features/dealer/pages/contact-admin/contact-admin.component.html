@@ -63,7 +63,7 @@
       </h3>
 
       <div class="req-list" *ngIf="myRequests.length > 0">
-        <div class="req-item" *ngFor="let r of myRequests" [class.expanded]="r.expanded">
+        <div class="req-item" *ngFor="let r of myRequests" [class.expanded]="isExpanded(r)">
           <div class="req-header" (click)="toggleExpand(r)">
             <div class="req-top-row">
               <span class="req-cat">{{ r.category }}</span>
@@ -77,7 +77,7 @@
           </div>
 
           <!-- Expanded conversation thread -->
-          <div class="req-thread" *ngIf="r.expanded">
+          <div class="req-thread" *ngIf="isExpanded(r)">
             <div class="thread-msg thread-original">
               <div class="tmsg-head">
                 <span class="tmsg-from">You</span>
@@ -86,9 +86,9 @@
               <p class="tmsg-body">{{ r.message }}</p>
             </div>
 
-            <div class="thread-msg" *ngFor="let reply of r.replies || []" [class.thread-admin]="reply.from === 'admin'" [class.thread-dealer]="reply.from === 'dealer'">
+            <div class="thread-msg" *ngFor="let reply of r.replies || []" [class.thread-admin]="reply.fromRole === 'admin'" [class.thread-dealer]="reply.fromRole === 'dealer'">
               <div class="tmsg-head">
-                <span class="tmsg-from">{{ reply.from === 'admin' ? reply.fromName + ' (Admin)' : 'You' }}</span>
+                <span class="tmsg-from">{{ reply.fromRole === 'admin' ? reply.fromName + ' (Admin)' : 'You' }}</span>
                 <span class="tmsg-time">{{ getTimeAgo(reply.createdAt) }}</span>
               </div>
               <p class="tmsg-body">{{ reply.message }}</p>

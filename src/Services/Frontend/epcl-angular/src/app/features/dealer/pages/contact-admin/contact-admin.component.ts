@@ -3,30 +3,9 @@ import { Store } from '@ngrx/store';
 import { Subject, takeUntil, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { selectUser } from '../../../../store/auth/auth.selectors';
-import { UsersApiService, UserListDto } from '../../../../core/services/users-api.service';
+import { UsersApiService, AdminSummaryDto } from '../../../../core/services/users-api.service';
+import { HelpRequestsApiService, HelpRequestDto } from '../../../../core/services/help-requests-api.service';
 import { ToastService } from '../../../../shared/services/toast.service';
-
-interface HelpReply {
-  from: string;
-  fromName: string;
-  message: string;
-  createdAt: string;
-}
-
-interface HelpRequest {
-  id: string;
-  dealerUserId: string;
-  dealerEmail: string;
-  dealerName: string;
-  targetAdminId: string;
-  targetAdminName: string;
-  message: string;
-  category: string;
-  status: string;
-  createdAt: string;
-  replies: HelpReply[];
-  expanded?: boolean;
-}
 
 @Component({
   selector: 'app-dealer-contact-admin',
@@ -46,7 +25,7 @@ export class DealerContactAdminComponent implements OnInit, OnDestroy {
   isSubmitting = false;
 
   // Admin list
-  admins: UserListDto[] = [];
+  admins: AdminSummaryDto[] = [];
   isLoadingAdmins = true;
 
   categories = [
@@ -54,14 +33,17 @@ export class DealerContactAdminComponent implements OnInit, OnDestroy {
     'Pump Malfunction', 'Inventory Problem', 'Account Issue', 'Other',
   ];
 
-  myRequests: HelpRequest[] = [];
+  myRequests: HelpRequestDto[] = [];
+  isLoadingRequests = true;
 
   // Reply form
   replyText: { [reqId: string]: string } = {};
+  expandedIds = new Set<string>();
 
   constructor(
     private store: Store,
     private usersApi: UsersApiService,
+    private helpApi: HelpRequestsApiService,
     private toast: ToastService
   ) {}
 
@@ -81,11 +63,11 @@ export class DealerContactAdminComponent implements OnInit, OnDestroy {
 
   private loadAdmins(): void {
     this.isLoadingAdmins = true;
-    this.usersApi.getUsers(1, 50, { role: 'Admin' }).pipe(
+    this.usersApi.getAdmins().pipe(
       takeUntil(this.destroy$),
-      catchError(() => of({ items: [], totalCount: 0, page: 1, pageSize: 50, totalPages: 0 }))
-    ).subscribe(result => {
-      this.admins = result.items;
+      catchError(() => of([]))
+    ).subscribe(admins => {
+      this.admins = admins;
       if (this.admins.length > 0 && !this.selectedAdminId) {
         this.selectedAdminId = this.admins[0].id;
       }
@@ -94,13 +76,14 @@ export class DealerContactAdminComponent implements OnInit, OnDestroy {
   }
 
   loadMyRequests(): void {
-    const raw = localStorage.getItem('epcl_dealer_requests');
-    if (raw) {
-      const all: HelpRequest[] = JSON.parse(raw);
-      this.myRequests = all
-        .filter(r => r.dealerUserId === this.userId)
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }
+    this.isLoadingRequests = true;
+    this.helpApi.getAll().pipe(
+      takeUntil(this.destroy$),
+      catchError(() => of([]))
+    ).subscribe(requests => {
+      this.myRequests = requests;
+      this.isLoadingRequests = false;
+    });
   }
 
   submitRequest(): void {
@@ -110,49 +93,51 @@ export class DealerContactAdminComponent implements OnInit, OnDestroy {
 
     const admin = this.admins.find(a => a.id === this.selectedAdminId);
 
-    const request: HelpRequest = {
-      id: crypto.randomUUID(),
-      dealerUserId: this.userId,
-      dealerEmail: this.userEmail,
-      dealerName: this.userName,
+    this.helpApi.create({
       targetAdminId: this.selectedAdminId,
       targetAdminName: admin?.fullName || 'Admin',
-      message: this.message.trim(),
       category: this.category,
-      status: 'Pending',
-      createdAt: new Date().toISOString(),
-      replies: [],
-    };
-
-    const all = JSON.parse(localStorage.getItem('epcl_dealer_requests') || '[]');
-    all.push(request);
-    localStorage.setItem('epcl_dealer_requests', JSON.stringify(all));
-
-    this.myRequests.unshift(request);
-    this.message = '';
-    this.isSubmitting = false;
-    this.toast.success(`Request sent to ${request.targetAdminName}!`);
+      message: this.message.trim(),
+    }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (created) => {
+        this.myRequests.unshift(created);
+        this.message = '';
+        this.isSubmitting = false;
+        this.toast.success(`Request sent to ${created.targetAdminName}!`);
+      },
+      error: (err) => {
+        this.toast.error(err?.error?.message || err?.error || 'Failed to send request.');
+        this.isSubmitting = false;
+      },
+    });
   }
 
-  sendReply(req: HelpRequest): void {
+  sendReply(req: HelpRequestDto): void {
     const text = (this.replyText[req.id] || '').trim();
     if (!text) return;
 
-    const reply: HelpReply = { from: 'dealer', fromName: this.userName, message: text, createdAt: new Date().toISOString() };
-    const all: HelpRequest[] = JSON.parse(localStorage.getItem('epcl_dealer_requests') || '[]');
-    const idx = all.findIndex(r => r.id === req.id);
-    if (idx >= 0) {
-      if (!all[idx].replies) all[idx].replies = [];
-      all[idx].replies.push(reply);
-      localStorage.setItem('epcl_dealer_requests', JSON.stringify(all));
-    }
-    req.replies = req.replies || [];
-    req.replies.push(reply);
-    this.replyText[req.id] = '';
-    this.toast.success('Reply sent!');
+    this.helpApi.addReply(req.id, text).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (reply) => {
+        req.replies = req.replies || [];
+        req.replies.push(reply);
+        this.replyText[req.id] = '';
+        this.toast.success('Reply sent!');
+      },
+      error: () => this.toast.error('Failed to send reply.'),
+    });
   }
 
-  toggleExpand(req: HelpRequest): void { req.expanded = !req.expanded; }
+  toggleExpand(req: HelpRequestDto): void {
+    if (this.expandedIds.has(req.id)) {
+      this.expandedIds.delete(req.id);
+    } else {
+      this.expandedIds.add(req.id);
+    }
+  }
+
+  isExpanded(req: HelpRequestDto): boolean {
+    return this.expandedIds.has(req.id);
+  }
 
   getStatusClass(status: string): string {
     switch (status) {

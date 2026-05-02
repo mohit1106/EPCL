@@ -29,6 +29,20 @@ public class UsersController(IMediator mediator) : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Get list of admin users (accessible by all authenticated users for contact purposes).</summary>
+    [HttpGet("admins")]
+    [ProducesResponseType(typeof(IReadOnlyList<AdminSummaryDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAdminList()
+    {
+        // Fetch both Admin and SuperAdmin users so dealers can contact either
+        var admins = await mediator.Send(new GetAllUsersQuery(1, 50, UserRole.Admin, true, null));
+        var superAdmins = await mediator.Send(new GetAllUsersQuery(1, 50, UserRole.SuperAdmin, true, null));
+        var all = admins.Items.Concat(superAdmins.Items)
+            .Select(u => new AdminSummaryDto(u.Id, u.FullName, u.Email))
+            .ToList();
+        return Ok(all);
+    }
+
     /// <summary>Get all users (Admin only, paginated).</summary>
     [HttpGet]
     [Authorize(Roles = "Admin,SuperAdmin")]

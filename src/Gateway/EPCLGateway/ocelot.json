@@ -80,6 +80,32 @@
     },
 
     {
+      "UpstreamPathTemplate": "/gateway/help-requests/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
+      "DownstreamPathTemplate": "/api/help-requests/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5217 }],
+      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 5,
+        "DurationOfBreak": 30000,
+        "TimeoutValue": 15000
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/gateway/help-requests",
+      "UpstreamHttpMethod": [ "GET", "POST" ],
+      "DownstreamPathTemplate": "/api/help-requests",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5217 }],
+      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 5,
+        "DurationOfBreak": 30000,
+        "TimeoutValue": 15000
+      }
+    },
+    {
       "UpstreamPathTemplate": "/gateway/stations/nearby",
       "UpstreamHttpMethod": [ "GET" ],
       "DownstreamPathTemplate": "/api/stations/nearby",
