@@ -21,7 +21,15 @@ public record ReplenishmentRequestDto(
     Guid Id, Guid StationId, Guid TankId, Guid RequestedByUserId,
     decimal RequestedQuantityLitres, string UrgencyLevel, string Status,
     DateTimeOffset RequestedAt, Guid? ReviewedByUserId, DateTimeOffset? ReviewedAt,
-    string? RejectionReason, string? Notes);
+    string? RejectionReason, string? Notes,
+    // Extended fields
+    string OrderNumber, string? TargetPumpName, string? FuelTypeName,
+    string Priority, string? RequestedWindow,
+    // Driver
+    Guid? AssignedDriverId, string? AssignedDriverName,
+    string? AssignedDriverPhone, string? AssignedDriverCode,
+    // Verification
+    DateTimeOffset? DealerVerifiedAt, string? DealerVerifiedDriverCode);
 
 public record StockSummaryDto(
     int TotalTanks, decimal TotalCapacity, decimal TotalCurrentStock,
@@ -44,9 +52,18 @@ public record RecordDipReadingRequest(Guid TankId, decimal DipValueLitres, strin
 
 public record SubmitReplenishmentRequest(
     Guid StationId, Guid TankId, decimal RequestedQuantityLitres,
-    string UrgencyLevel, string? Notes);
+    string UrgencyLevel, string? Notes,
+    string? TargetPumpName, string? FuelTypeName,
+    string? Priority, string? RequestedWindow);
 
 public record ReviewReplenishmentRequest(string? Notes);
 public record RejectReplenishmentRequest(string Reason);
+
+public record AssignDriverRequest(
+    Guid DriverId, string DriverName, string DriverPhone, string DriverCode);
+
+public record UpdateReplenishmentStatusRequest(string Status);
+
+public record VerifyOffloadingRequest(string OrderNumber, string DriverCode);
 
 public record MessageResponseDto(string Message);

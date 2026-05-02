@@ -80,6 +80,7 @@ export interface PumpDto {
   id: string;
   stationId: string;
   fuelTypeId: string;
+  fuelTypeName?: string;
   pumpName: string;
   nozzleCount: number;
   status: string;

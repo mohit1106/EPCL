@@ -77,6 +77,32 @@ public class ReplenishmentRequest
     public string? RejectionReason { get; set; }
     public string? Notes { get; set; }
 
+    // ── Extended fields ────────────────────────────────────────────
+    /// <summary>Auto-generated order number (e.g., ORD-A1B2C3).</summary>
+    public string OrderNumber { get; set; } = string.Empty;
+
+    /// <summary>Target pump name for display purposes.</summary>
+    public string? TargetPumpName { get; set; }
+
+    /// <summary>Fuel type name for display purposes.</summary>
+    public string? FuelTypeName { get; set; }
+
+    /// <summary>Priority label (Standard, High, Urgent).</summary>
+    public string Priority { get; set; } = "Standard";
+
+    /// <summary>Requested delivery window.</summary>
+    public string? RequestedWindow { get; set; }
+
+    // ── Driver assignment ──────────────────────────────────────────
+    public Guid? AssignedDriverId { get; set; }
+    public string? AssignedDriverName { get; set; }
+    public string? AssignedDriverPhone { get; set; }
+    public string? AssignedDriverCode { get; set; }
+
+    // ── Dealer offloading verification ─────────────────────────────
+    public DateTimeOffset? DealerVerifiedAt { get; set; }
+    public string? DealerVerifiedDriverCode { get; set; }
+
     // Navigation
     public Tank Tank { get; set; } = null!;
 }

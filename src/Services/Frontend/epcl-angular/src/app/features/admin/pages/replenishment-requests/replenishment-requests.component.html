@@ -1,0 +1,115 @@
+<div class="admin-repl">
+  <div class="page-header">
+    <div><h1 class="page-title">Replenishment Requests</h1><p class="page-subtitle">Manage fuel procurement, driver assignments, and delivery tracking</p></div>
+    <div class="header-controls">
+      <select class="filter-select" [(ngModel)]="statusFilter" (ngModelChange)="applyFilter()">
+        <option value="">All Statuses</option>
+        <ng-container *ngFor="let s of statusOptions">
+          <option *ngIf="s" [value]="s">{{ getStatusLabel(s) }}</option>
+        </ng-container>
+      </select>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="loading"><div class="spinner"></div><span>Loading requests...</span></div>
+
+  <div *ngIf="!isLoading && filteredRequests.length === 0" class="empty-state">
+    <p>No replenishment requests found</p>
+  </div>
+
+  <div class="request-list">
+    <div class="req-card" *ngFor="let req of filteredRequests; trackBy: trackById">
+      <!-- Card Header -->
+      <div class="req-header">
+        <div class="req-meta">
+          <span class="order-id mono">{{ req.orderNumber || 'N/A' }}</span>
+          <span class="req-fuel">{{ req.fuelTypeName || 'Unknown Fuel' }}</span>
+          <span class="req-vol mono">{{ req.requestedQuantityLitres | number }} L</span>
+          <span class="req-pump" *ngIf="req.targetPumpName">Pump: {{ req.targetPumpName }}</span>
+        </div>
+        <div class="req-badges">
+          <span class="status-badge" [ngClass]="getStatusClass(req.status)">{{ getStatusLabel(req.status) }}</span>
+          <span class="priority-badge" [ngClass]="getPriorityClass(req.priority)">{{ req.priority }}</span>
+        </div>
+      </div>
+
+      <!-- Details Row -->
+      <div class="req-details">
+        <div class="detail"><span class="detail-label">Window</span><span>{{ req.requestedWindow || 'Not specified' }}</span></div>
+        <div class="detail"><span class="detail-label">Requested</span><span class="mono">{{ req.requestedAt | date:'medium' }}</span></div>
+        <div class="detail" *ngIf="req.assignedDriverName"><span class="detail-label">Driver</span><span>{{ req.assignedDriverName }} ({{ req.assignedDriverCode }})</span></div>
+        <div class="detail" *ngIf="req.dealerVerifiedAt"><span class="detail-label">Dealer Verified</span><span class="verified-text">Yes</span></div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="req-actions">
+        <!-- Submitted → Approve / Reject -->
+        <ng-container *ngIf="req.status === 'Submitted'">
+          <button class="btn-action approve" (click)="approve(req)">Approve</button>
+          <button class="btn-action reject" (click)="reject(req)">Reject</button>
+        </ng-container>
+
+        <!-- Approved → Assign Driver -->
+        <ng-container *ngIf="req.status === 'Approved'">
+          <button class="btn-action assign" (click)="openAssignModal(req)">Assign Driver</button>
+          <button class="btn-action reject" (click)="reject(req)">Reject</button>
+        </ng-container>
+
+        <!-- TankerAssigned → Mark In Transit -->
+        <ng-container *ngIf="req.status === 'TankerAssigned'">
+          <button class="btn-action transit" (click)="updateStatus(req, 'InTransit')">Mark In Transit</button>
+        </ng-container>
+
+        <!-- InTransit → Mark Offloading -->
+        <ng-container *ngIf="req.status === 'InTransit'">
+          <button class="btn-action offload" (click)="updateStatus(req, 'Offloading')">Mark Offloading</button>
+        </ng-container>
+
+        <!-- Offloading → Complete (only if dealer verified) -->
+        <ng-container *ngIf="req.status === 'Offloading'">
+          <button class="btn-action complete" (click)="completeRequest(req)" [disabled]="!req.dealerVerifiedAt">
+            {{ req.dealerVerifiedAt ? 'Mark Complete' : 'Awaiting Dealer Verification' }}
+          </button>
+        </ng-container>
+
+        <!-- Complete / Rejected = read-only -->
+        <span *ngIf="req.status === 'Complete'" class="done-label">Completed</span>
+        <span *ngIf="req.status === 'Rejected'" class="done-label rejected-label">Rejected: {{ req.rejectionReason }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Driver Assignment Modal -->
+  <div class="modal-backdrop" *ngIf="showAssignModal" (click)="closeAssignModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Assign Driver</h2>
+        <button class="modal-close" (click)="closeAssignModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Select Available Driver</label>
+          <select class="form-select" [(ngModel)]="selectedDriverId">
+            <option value="">Choose a driver...</option>
+            <option *ngFor="let d of availableDrivers" [value]="d.id">{{ d.fullName }} — {{ d.vehicleNumber }} ({{ d.driverCode }})</option>
+          </select>
+        </div>
+        <div class="driver-preview" *ngIf="selectedDriverId">
+          <ng-container *ngFor="let d of availableDrivers">
+            <ng-container *ngIf="d.id === selectedDriverId">
+              <div class="preview-row"><span>Name</span><strong>{{ d.fullName }}</strong></div>
+              <div class="preview-row"><span>Phone</span><strong class="mono">{{ d.phone }}</strong></div>
+              <div class="preview-row"><span>License</span><strong class="mono">{{ d.licenseNumber }}</strong></div>
+              <div class="preview-row"><span>Vehicle</span><strong>{{ d.vehicleNumber }}</strong></div>
+              <div class="preview-row"><span>Driver Code</span><strong class="mono highlight">{{ d.driverCode }}</strong></div>
+            </ng-container>
+          </ng-container>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeAssignModal()">Cancel</button>
+        <button class="btn-confirm" (click)="confirmAssignDriver()" [disabled]="!selectedDriverId">Assign Driver</button>
+      </div>
+    </div>
+  </div>
+</div>

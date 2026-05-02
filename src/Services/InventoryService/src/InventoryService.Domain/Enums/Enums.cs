@@ -16,8 +16,12 @@ public enum ReplenishmentStatus
     Submitted,
     UnderReview,
     Approved,
-    Dispatched,
-    Delivered,
+    TankerAssigned,
+    InTransit,
+    Offloading,
+    Complete,
+    Dispatched,    // Legacy — kept for backward compat
+    Delivered,     // Legacy — kept for backward compat
     Rejected
 }
 

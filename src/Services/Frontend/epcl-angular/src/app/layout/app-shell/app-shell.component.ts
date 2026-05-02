@@ -86,6 +86,8 @@ export class AppShellComponent implements OnInit {
     { label: 'Documents', icon: ICONS.documents, route: '/admin/documents', roles: ['Admin', 'SuperAdmin'] },
     { label: 'System Health', icon: ICONS.health, route: '/admin/system-health', roles: ['Admin', 'SuperAdmin'] },
     { label: 'Help Requests', icon: ICONS.helpRequests, route: '/admin/help-requests', roles: ['Admin', 'SuperAdmin'] },
+    { label: 'Replenishment', icon: ICONS.replenishment, route: '/admin/replenishment-requests', roles: ['Admin', 'SuperAdmin'] },
+    { label: 'Drivers', icon: ICONS.vehicles, route: '/admin/drivers', roles: ['Admin', 'SuperAdmin'] },
   ];
 
   filteredNavItems: NavItem[] = [];

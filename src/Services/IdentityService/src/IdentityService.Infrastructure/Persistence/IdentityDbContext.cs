@@ -14,6 +14,7 @@ public class IdentityDbContext : DbContext
     public DbSet<ProcessedEvent> ProcessedEvents => Set<ProcessedEvent>();
     public DbSet<HelpRequest> HelpRequests => Set<HelpRequest>();
     public DbSet<HelpRequestReply> HelpRequestReplies => Set<HelpRequestReply>();
+    public DbSet<Driver> Drivers => Set<Driver>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

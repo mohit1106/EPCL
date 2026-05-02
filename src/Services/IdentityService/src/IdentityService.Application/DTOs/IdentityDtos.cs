@@ -112,3 +112,32 @@ public record HelpRequestDto
 public record CreateHelpReplyDto(string Message);
 
 public record UpdateHelpRequestStatusDto(string Status);
+
+// ── Driver DTOs ────────────────────────────────────────────────────
+
+public record DriverDto
+{
+    public Guid Id { get; set; }
+    public string DriverCode { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string LicenseNumber { get; set; } = string.Empty;
+    public string VehicleNumber { get; set; } = string.Empty;
+    public bool IsAvailable { get; set; }
+    public Guid? CurrentRequestId { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
+public record CreateDriverDto(
+    string FullName,
+    string Phone,
+    string LicenseNumber,
+    string VehicleNumber
+);
+
+public record UpdateDriverDto(
+    string? FullName,
+    string? Phone,
+    string? LicenseNumber,
+    string? VehicleNumber
+);

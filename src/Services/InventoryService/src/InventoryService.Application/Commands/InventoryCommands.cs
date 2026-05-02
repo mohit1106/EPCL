@@ -239,7 +239,8 @@ public class RecordDipReadingHandler(
 // ── Replenishment CRUD ─────────────────────────────────────────────
 public record SubmitReplenishmentCommand(
     Guid StationId, Guid TankId, Guid RequestedByUserId,
-    decimal RequestedQuantityLitres, string UrgencyLevel, string? Notes
+    decimal RequestedQuantityLitres, string UrgencyLevel, string? Notes,
+    string? TargetPumpName, string? FuelTypeName, string? Priority, string? RequestedWindow
 ) : IRequest<ReplenishmentRequestDto>;
 
 public class SubmitReplenishmentHandler(
@@ -254,6 +255,7 @@ public class SubmitReplenishmentHandler(
 
         Enum.TryParse<UrgencyLevel>(cmd.UrgencyLevel, out var urgency);
 
+        var orderNumber = GenerateOrderNumber();
         var req = new ReplenishmentRequest
         {
             Id = Guid.NewGuid(),
@@ -264,7 +266,12 @@ public class SubmitReplenishmentHandler(
             UrgencyLevel = urgency,
             Status = ReplenishmentStatus.Submitted,
             Notes = cmd.Notes,
-            RequestedAt = DateTimeOffset.UtcNow
+            RequestedAt = DateTimeOffset.UtcNow,
+            OrderNumber = orderNumber,
+            TargetPumpName = cmd.TargetPumpName,
+            FuelTypeName = cmd.FuelTypeName,
+            Priority = cmd.Priority ?? "Standard",
+            RequestedWindow = cmd.RequestedWindow,
         };
         await replRepo.AddAsync(req, ct);
 
@@ -276,12 +283,27 @@ public class SubmitReplenishmentHandler(
             RequestedByUserId = cmd.RequestedByUserId
         }, "inventory.replenishment.requested", ct);
 
-        logger.LogInformation("Replenishment requested. Id: {Id}, Tank: {TankId}", req.Id, req.TankId);
+        logger.LogInformation("Replenishment requested. Id: {Id}, Order: {Order}, Tank: {TankId}", req.Id, orderNumber, req.TankId);
 
-        return new ReplenishmentRequestDto(req.Id, req.StationId, req.TankId,
-            req.RequestedByUserId, req.RequestedQuantityLitres, req.UrgencyLevel.ToString(),
-            req.Status.ToString(), req.RequestedAt, null, null, null, req.Notes);
+        return MapToDto(req);
     }
+
+    private static string GenerateOrderNumber()
+    {
+        var chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        var rng = new Random();
+        var code = new char[6];
+        for (int i = 0; i < 6; i++) code[i] = chars[rng.Next(chars.Length)];
+        return $"ORD-{new string(code)}";
+    }
+
+    private static ReplenishmentRequestDto MapToDto(ReplenishmentRequest r) => new(
+        r.Id, r.StationId, r.TankId, r.RequestedByUserId,
+        r.RequestedQuantityLitres, r.UrgencyLevel.ToString(), r.Status.ToString(),
+        r.RequestedAt, r.ReviewedByUserId, r.ReviewedAt, r.RejectionReason, r.Notes,
+        r.OrderNumber, r.TargetPumpName, r.FuelTypeName, r.Priority, r.RequestedWindow,
+        r.AssignedDriverId, r.AssignedDriverName, r.AssignedDriverPhone, r.AssignedDriverCode,
+        r.DealerVerifiedAt, r.DealerVerifiedDriverCode);
 }
 
 public record ApproveReplenishmentCommand(Guid RequestId, Guid ReviewedByUserId, string? Notes) : IRequest<MessageResponseDto>;
@@ -368,5 +390,146 @@ public class MarkDeliveredHandler(IReplenishmentRequestRepository replRepo)
         req.Status = ReplenishmentStatus.Delivered;
         await replRepo.UpdateAsync(req, ct);
         return new MessageResponseDto("Replenishment marked as delivered.");
+    }
+}
+
+// ── New Extended Commands ──────────────────────────────────────────
+
+public record AssignDriverCommand(
+    Guid RequestId, Guid DriverId, string DriverName, string DriverPhone, string DriverCode
+) : IRequest<MessageResponseDto>;
+
+public class AssignDriverHandler(IReplenishmentRequestRepository replRepo)
+    : IRequestHandler<AssignDriverCommand, MessageResponseDto>
+{
+    public async Task<MessageResponseDto> Handle(AssignDriverCommand cmd, CancellationToken ct)
+    {
+        var req = await replRepo.GetByIdAsync(cmd.RequestId, ct)
+            ?? throw new NotFoundException("ReplenishmentRequest", cmd.RequestId);
+        if (req.Status != ReplenishmentStatus.Approved)
+            throw new DomainException($"Can only assign driver when status is 'Approved'. Current: '{req.Status}'.");
+
+        req.AssignedDriverId = cmd.DriverId;
+        req.AssignedDriverName = cmd.DriverName;
+        req.AssignedDriverPhone = cmd.DriverPhone;
+        req.AssignedDriverCode = cmd.DriverCode;
+        req.Status = ReplenishmentStatus.TankerAssigned;
+        await replRepo.UpdateAsync(req, ct);
+        return new MessageResponseDto("Driver assigned and status updated to TankerAssigned.");
+    }
+}
+
+public record UpdateReplenishmentStatusCommand(Guid RequestId, string NewStatus) : IRequest<MessageResponseDto>;
+
+public class UpdateReplenishmentStatusHandler(IReplenishmentRequestRepository replRepo)
+    : IRequestHandler<UpdateReplenishmentStatusCommand, MessageResponseDto>
+{
+    private static readonly Dictionary<ReplenishmentStatus, ReplenishmentStatus[]> ValidTransitions = new()
+    {
+        [ReplenishmentStatus.TankerAssigned] = [ReplenishmentStatus.InTransit],
+        [ReplenishmentStatus.InTransit] = [ReplenishmentStatus.Offloading],
+    };
+
+    public async Task<MessageResponseDto> Handle(UpdateReplenishmentStatusCommand cmd, CancellationToken ct)
+    {
+        var req = await replRepo.GetByIdAsync(cmd.RequestId, ct)
+            ?? throw new NotFoundException("ReplenishmentRequest", cmd.RequestId);
+
+        if (!Enum.TryParse<ReplenishmentStatus>(cmd.NewStatus, out var newStatus))
+            throw new DomainException($"Invalid status: '{cmd.NewStatus}'.");
+
+        if (!ValidTransitions.TryGetValue(req.Status, out var allowed) || !allowed.Contains(newStatus))
+            throw new DomainException($"Cannot transition from '{req.Status}' to '{newStatus}'.");
+
+        req.Status = newStatus;
+        await replRepo.UpdateAsync(req, ct);
+        return new MessageResponseDto($"Status updated to {newStatus}.");
+    }
+}
+
+public record VerifyOffloadingCommand(Guid RequestId, string OrderNumber, string DriverCode, Guid VerifiedByUserId) : IRequest<MessageResponseDto>;
+
+public class VerifyOffloadingHandler(
+    IReplenishmentRequestRepository replRepo, ITankRepository tankRepo,
+    IStockLoadingRepository loadingRepo, ILogger<VerifyOffloadingHandler> logger)
+    : IRequestHandler<VerifyOffloadingCommand, MessageResponseDto>
+{
+    public async Task<MessageResponseDto> Handle(VerifyOffloadingCommand cmd, CancellationToken ct)
+    {
+        var req = await replRepo.GetByIdAsync(cmd.RequestId, ct)
+            ?? throw new NotFoundException("ReplenishmentRequest", cmd.RequestId);
+
+        if (req.Status != ReplenishmentStatus.Offloading)
+            throw new DomainException($"Can only verify offloading when status is 'Offloading'. Current: '{req.Status}'.");
+
+        if (!string.Equals(req.OrderNumber, cmd.OrderNumber, StringComparison.OrdinalIgnoreCase))
+            throw new DomainException("Invalid Order Number.");
+
+        if (!string.Equals(req.AssignedDriverCode, cmd.DriverCode, StringComparison.OrdinalIgnoreCase))
+            throw new DomainException("Invalid Driver Code. Please ask the driver for their identification code.");
+
+        // Record stock loading into the tank
+        var tank = await tankRepo.GetByIdAsync(req.TankId, ct)
+            ?? throw new NotFoundException("Tank", req.TankId);
+
+        var stockBefore = tank.CurrentStockLitres;
+        tank.CurrentStockLitres += req.RequestedQuantityLitres;
+        if (tank.CurrentStockLitres > tank.CapacityLitres)
+            tank.CurrentStockLitres = tank.CapacityLitres; // Cap at capacity
+        tank.LastReplenishedAt = DateTimeOffset.UtcNow;
+        tank.UpdatedAt = DateTimeOffset.UtcNow;
+        if (tank.CurrentStockLitres >= tank.MinThresholdLitres)
+            tank.Status = TankStatus.Available;
+        await tankRepo.UpdateAsync(tank, ct);
+
+        // Record stock loading entry
+        var loading = new StockLoading
+        {
+            Id = Guid.NewGuid(),
+            TankId = req.TankId,
+            QuantityLoadedLitres = req.RequestedQuantityLitres,
+            LoadedByUserId = cmd.VerifiedByUserId,
+            TankerNumber = req.AssignedDriverName ?? "N/A",
+            InvoiceNumber = req.OrderNumber,
+            SupplierName = "EPCL Replenishment",
+            StockBefore = stockBefore,
+            StockAfter = tank.CurrentStockLitres,
+            Notes = $"Verified offloading for order {req.OrderNumber}",
+            Timestamp = DateTimeOffset.UtcNow
+        };
+        await loadingRepo.AddAsync(loading, ct);
+
+        // Mark verification on request
+        req.DealerVerifiedAt = DateTimeOffset.UtcNow;
+        req.DealerVerifiedDriverCode = cmd.DriverCode;
+        await replRepo.UpdateAsync(req, ct);
+
+        logger.LogInformation("Offloading verified. Order: {Order}, Tank: {TankId}, Qty: {Qty}L",
+            req.OrderNumber, req.TankId, req.RequestedQuantityLitres);
+
+        return new MessageResponseDto($"Offloading verified. {req.RequestedQuantityLitres}L loaded into tank.");
+    }
+}
+
+public record CompleteReplenishmentCommand(Guid RequestId) : IRequest<MessageResponseDto>;
+
+public class CompleteReplenishmentHandler(IReplenishmentRequestRepository replRepo)
+    : IRequestHandler<CompleteReplenishmentCommand, MessageResponseDto>
+{
+    public async Task<MessageResponseDto> Handle(CompleteReplenishmentCommand cmd, CancellationToken ct)
+    {
+        var req = await replRepo.GetByIdAsync(cmd.RequestId, ct)
+            ?? throw new NotFoundException("ReplenishmentRequest", cmd.RequestId);
+
+        if (req.Status != ReplenishmentStatus.Offloading)
+            throw new DomainException($"Can only complete from 'Offloading' status. Current: '{req.Status}'.");
+
+        if (req.DealerVerifiedAt == null)
+            throw new DomainException("Cannot complete: dealer has not yet verified the offloading.");
+
+        req.Status = ReplenishmentStatus.Complete;
+        req.ReviewedAt = DateTimeOffset.UtcNow;
+        await replRepo.UpdateAsync(req, ct);
+        return new MessageResponseDto("Replenishment completed successfully.");
     }
 }

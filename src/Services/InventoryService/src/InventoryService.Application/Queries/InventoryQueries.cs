@@ -91,7 +91,10 @@ public class GetReplenishmentRequestsHandler(IReplenishmentRequestRepository rep
             Items = items.Select(r => new ReplenishmentRequestDto(r.Id, r.StationId, r.TankId,
                 r.RequestedByUserId, r.RequestedQuantityLitres, r.UrgencyLevel.ToString(),
                 r.Status.ToString(), r.RequestedAt, r.ReviewedByUserId, r.ReviewedAt,
-                r.RejectionReason, r.Notes)).ToList(),
+                r.RejectionReason, r.Notes,
+                r.OrderNumber, r.TargetPumpName, r.FuelTypeName, r.Priority, r.RequestedWindow,
+                r.AssignedDriverId, r.AssignedDriverName, r.AssignedDriverPhone, r.AssignedDriverCode,
+                r.DealerVerifiedAt, r.DealerVerifiedDriverCode)).ToList(),
             TotalCount = total, Page = q.Page, PageSize = q.PageSize
         };
     }
