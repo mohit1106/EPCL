@@ -1,70 +1,301 @@
-<div class="page-content">
-  <div class="page-top"><div><h1 class="page-title">User Operations</h1><p class="page-subtitle"><span class="dot-online">●</span> <span class="mono">842 ACTIVE NODES</span> | GLOBAL PETROLEUM NETWORK</p></div>
-    <button class="btn-create mono"><app-icon name="user-plus" [size]="14"></app-icon> CREATE USER</button></div>
+<div class="users-page" [class.animate-in]="!isLoading">
 
-  <div class="top-row">
-    <div class="kpi-card" *ngFor="let k of kpis"><span class="kpi-label mono">{{ k.label }}</span><div class="kpi-value mono">{{ k.value }} <small class="kpi-trend" [ngClass]="k.trendClass">{{ k.trend }}</small></div></div>
-    <div class="kpi-card security"><span class="kpi-label mono">SECURITY PULSE</span><div class="security-value">{{ securityPulse }} <span class="check-icon">✓</span></div><span class="kpi-sub mono">NEXT AUDIT: {{ nextAudit }}</span></div>
-  </div>
-
-  <div class="search-bar"><app-icon name="search" [size]="16" color="var(--text-muted)"></app-icon><input type="text" class="search-input mono" placeholder="SEARCH IDENTITIES, ROLES, OR STATUS..." [(ngModel)]="searchTerm" (keyup.enter)="onSearch()" />
-    <div class="filter-controls">
-      <select class="filter-select mono" (change)="onRoleFilter($any($event.target).value)">
-        <option value="">ALL ROLES</option>
-        <option *ngFor="let r of roles" [value]="r">{{ r | uppercase }}</option>
-      </select>
-      <select class="filter-select mono">
-        <option value="">STATUS: ALL</option>
-        <option value="true">ACTIVE</option>
-        <option value="false">LOCKED</option>
-      </select>
-      <button class="filter-btn" (click)="onSearch()"><app-icon name="filter" [size]="14"></app-icon></button>
+  <!-- Page Header -->
+  <div class="page-header-bar">
+    <div class="page-header-text">
+      <h1 class="page-title">User Management</h1>
+      <p class="page-subtitle">Manage identities, roles, and access across the EPCL platform</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary" id="btn-create-user" (click)="openCreateModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+        Create User
+      </button>
     </div>
   </div>
 
-  <div class="card">
-    <table>
-      <thead><tr><th>IDENTIFIER &amp; ENTITY</th><th>ACCESS TIER</th><th>CONNECTIVITY</th><th>LAST TELEMETRY</th><th>OPERATIONS</th></tr></thead>
-      <tbody>
-        <tr *ngFor="let u of users">
-          <td><div class="user-row"><span class="avatar mono">{{ u.initials }}</span><div><strong>{{ u.name }}</strong><small class="mono text-muted">{{ u.uid }}</small></div></div></td>
-          <td><span class="role-badge" [ngClass]="u.roleClass">{{ u.role }}</span></td>
-          <td><span class="status-indicator" [ngClass]="u.statusClass">● {{ u.status }}</span></td>
-          <td class="mono">{{ u.lastTelemetry }}</td>
-          <td style="position: relative;">
-            <button class="btn-ops" (click)="toggleActionMenu(u.id, $event)">
-              <app-icon name="more-horizontal" [size]="16"></app-icon>
-            </button>
-            <div class="action-dropdown" *ngIf="actionMenuOpenForId === u.id">
-              <button class="action-item" (click)="viewUser(u.rawDto)">View Profile</button>
-              <button class="action-item" (click)="changeRole(u.id, 'Dealer')">Make Dealer</button>
-              <button class="action-item" *ngIf="u.rawDto.isActive" (click)="lockUser(u.id)">Lock Account</button>
-              <button class="action-item" *ngIf="!u.rawDto.isActive" (click)="unlockUser(u.id)">Unlock Account</button>
-              <div class="action-divider"></div>
-              <button class="action-item text-danger" (click)="deactivateUser(u.id)">Deactivate</button>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <div class="pagination"><span class="page-info mono">SHOWING 4 OF {{ totalIdentities | number }} GLOBAL IDENTITIES</span>
-      <div class="page-btns"><button class="page-btn">‹</button><button class="page-btn active">1</button><button class="page-btn">2</button><button class="page-btn">3</button><button class="page-btn">›</button></div>
+  <!-- Loading -->
+  <div class="loading-container" *ngIf="isLoading">
+    <div class="skeleton-grid">
+      <div class="skeleton" style="height: 100px;" *ngFor="let i of [1,2,3]"></div>
     </div>
+    <div class="skeleton" style="height: 400px; margin-top: 20px;"></div>
   </div>
 
-  <div class="bottom-grid">
-    <div class="card"><h3 class="card-title mono">SYSTEM LOG OVERVIEW</h3>
-      <div class="log-item" *ngFor="let l of systemLogs"><app-icon [name]="l.icon" [size]="16" color="var(--text-muted)"></app-icon><div><p class="log-text"><strong>{{ l.text.split(' ')[0] }} {{ l.text.split(' ')[1] }}</strong> {{ l.text.split(' ').slice(2).join(' ') }}</p><span class="log-meta mono">{{ l.time }} | {{ l.meta }}</span></div></div>
-    </div>
-    <div class="card"><h3 class="card-title">ROLE DISTRIBUTION</h3>
-      <div class="chart-container" style="position: relative; height:200px; margin-bottom: 16px;">
-        <canvas baseChart
-          [data]="pieChartData"
-          [options]="pieChartOptions"
-          [type]="pieChartType">
-        </canvas>
+  <div *ngIf="!isLoading">
+
+    <!-- KPI Row -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap blue">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Total Users</span>
+          <span class="kpi-value">{{ totalCount | number }}</span>
+        </div>
       </div>
-      <button class="btn-audit mono" routerLink="/admin/audit">VIEW DETAILED AUDIT</button>
+
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap green">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Active Users</span>
+          <span class="kpi-value kpi-success">{{ activeCount }}</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap amber">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Pending Verification</span>
+          <span class="kpi-value">{{ pendingCount }}</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap red">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Locked Accounts</span>
+          <span class="kpi-value kpi-danger">{{ lockedCount }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search & Filters -->
+    <div class="search-filter-bar">
+      <div class="search-input-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" class="search-input" placeholder="Search by name, email, or ID..." [(ngModel)]="searchTerm" (keyup.enter)="onSearch()" id="search-users" />
+      </div>
+      <div class="filter-group">
+        <select class="filter-select" id="role-filter" [value]="selectedRole" (change)="onRoleFilter($any($event.target).value)">
+          <option value="">All Roles</option>
+          <option *ngFor="let r of roles" [value]="r">{{ r }}</option>
+        </select>
+        <select class="filter-select" id="status-filter" [value]="selectedStatus" (change)="onStatusFilter($any($event.target).value)">
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="locked">Locked</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" (click)="onSearch()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+          Apply
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="content-grid">
+
+      <!-- Users Table -->
+      <div class="card table-card">
+        <div class="table-header-bar">
+          <h3 class="table-title">All Users</h3>
+          <span class="table-count">{{ users.length }} of {{ totalCount | number }} users</span>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table" *ngIf="users.length > 0">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Last Login</th>
+                <th>Joined</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let u of users" class="user-row-tr">
+                <td>
+                  <div class="user-cell">
+                    <div class="user-avatar" [ngClass]="u.roleClass">{{ u.initials }}</div>
+                    <div class="user-info-cell">
+                      <span class="user-name-cell">{{ u.name }}</span>
+                      <span class="user-email-cell">{{ u.email }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="role-badge" [ngClass]="u.roleClass">{{ u.role }}</span></td>
+                <td><span class="status-badge" [ngClass]="u.statusClass">{{ u.status }}</span></td>
+                <td class="text-muted">{{ u.lastLogin }}</td>
+                <td class="text-muted">{{ u.createdAt }}</td>
+                <td style="position: relative;">
+                  <button class="action-trigger" (click)="toggleActionMenu(u.id, $event)" [id]="'action-btn-' + u.uid">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                  </button>
+                  <div class="action-dropdown" *ngIf="actionMenuOpenForId === u.id">
+                    <button class="action-item" (click)="viewUser(u.rawDto)">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      View Profile
+                    </button>
+                    <button class="action-item" (click)="openRoleModal(u)">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                      Change Role
+                    </button>
+                    <button class="action-item" *ngIf="u.rawDto.isActive" (click)="lockUser(u.id)">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                      Lock Account
+                    </button>
+                    <button class="action-item" *ngIf="!u.rawDto.isActive" (click)="unlockUser(u.id)">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 019.9-1"/></svg>
+                      Unlock Account
+                    </button>
+                    <div class="action-divider"></div>
+                    <button class="action-item action-danger" (click)="deactivateUser(u.id)">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                      Deactivate
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <!-- Empty State -->
+          <div class="empty-state-inline" *ngIf="users.length === 0">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            <p>No users match your filters.</p>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination-bar" *ngIf="totalPages > 1">
+          <span class="page-info">Page {{ page }} of {{ totalPages }} ({{ totalCount | number }} total)</span>
+          <div class="page-btns">
+            <button class="page-btn" [disabled]="page === 1" (click)="onPageChange(page - 1)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <button class="page-btn" *ngFor="let p of pageNumbers" [class.active]="p === page" (click)="onPageChange(p)">{{ p }}</button>
+            <button class="page-btn" [disabled]="page === totalPages" (click)="onPageChange(page + 1)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Role Distribution Chart -->
+      <div class="card chart-card">
+        <h3 class="card-section-title">Role Distribution</h3>
+        <div class="chart-container">
+          <canvas baseChart
+            [data]="pieChartData"
+            [options]="pieChartOptions"
+            [type]="pieChartType">
+          </canvas>
+        </div>
+        <div class="chart-legend-extra">
+          <div class="legend-row" *ngFor="let item of chartLegendItems">
+            <span class="legend-dot" [style.background]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+            <span class="legend-val">{{ item.value }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ User Detail Side Panel ═══ -->
+  <div class="overlay" *ngIf="selectedUser" (click)="closeDetail()"></div>
+  <div class="detail-panel" *ngIf="selectedUser">
+    <div class="detail-header">
+      <h3>User Profile</h3>
+      <button class="close-btn" (click)="closeDetail()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="detail-body">
+      <div class="detail-avatar" [ngClass]="getRoleClass(selectedUser.role)">
+        {{ getInitials(selectedUser.fullName) }}
+      </div>
+      <h4 class="detail-name">{{ selectedUser.fullName }}</h4>
+      <span class="role-badge" [ngClass]="getRoleClass(selectedUser.role)">{{ selectedUser.role }}</span>
+
+      <div class="detail-fields">
+        <div class="detail-field"><span class="field-label">Email</span><span class="field-value">{{ selectedUser.email }}</span></div>
+        <div class="detail-field"><span class="field-label">Phone</span><span class="field-value">{{ selectedUser.phoneNumber || '—' }}</span></div>
+        <div class="detail-field"><span class="field-label">User ID</span><span class="field-value mono">{{ selectedUser.id }}</span></div>
+        <div class="detail-field"><span class="field-label">Status</span><span class="field-value">{{ selectedUser.isActive ? (selectedUser.isEmailVerified ? 'Active' : 'Pending') : 'Locked' }}</span></div>
+        <div class="detail-field"><span class="field-label">Joined</span><span class="field-value">{{ selectedUser.createdAt | date:'dd MMM yyyy' }}</span></div>
+        <div class="detail-field" *ngIf="selectedUser.lastLoginAt"><span class="field-label">Last Login</span><span class="field-value">{{ selectedUser.lastLoginAt | date:'dd MMM yyyy, hh:mm a' }}</span></div>
+        <div class="detail-field"><span class="field-label">Auth Provider</span><span class="field-value">{{ selectedUser.authProvider || 'Email' }}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Create User Modal ═══ -->
+  <div class="overlay" *ngIf="showCreateModal" (click)="closeCreateModal()"></div>
+  <div class="modal" *ngIf="showCreateModal">
+    <div class="modal-header">
+      <h3>Create New User</h3>
+      <button class="close-btn" (click)="closeCreateModal()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Full Name *</label>
+        <input class="form-input" type="text" [(ngModel)]="createForm.fullName" placeholder="John Doe" id="create-fullname" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email *</label>
+        <input class="form-input" type="email" [(ngModel)]="createForm.email" placeholder="john@example.com" id="create-email" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone Number</label>
+        <input class="form-input" type="text" [(ngModel)]="createForm.phoneNumber" placeholder="+91 9876543210" id="create-phone" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Password *</label>
+          <input class="form-input" type="password" [(ngModel)]="createForm.password" placeholder="Min 8 characters" id="create-password" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm Password *</label>
+          <input class="form-input" type="password" [(ngModel)]="createForm.confirmPassword" placeholder="Repeat password" id="create-confirm-password" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Role</label>
+        <select class="form-input" [(ngModel)]="createForm.role" id="create-role">
+          <option *ngFor="let r of roles" [value]="r">{{ r }}</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeCreateModal()">Cancel</button>
+      <button class="btn btn-primary" [class.loading]="isCreating" [disabled]="isCreating" (click)="submitCreateUser()" id="btn-submit-create">
+        {{ isCreating ? 'Creating...' : 'Create User' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ Role Change Modal ═══ -->
+  <div class="overlay" *ngIf="showRoleModal" (click)="closeRoleModal()"></div>
+  <div class="modal modal-sm" *ngIf="showRoleModal">
+    <div class="modal-header">
+      <h3>Change Role</h3>
+      <button class="close-btn" (click)="closeRoleModal()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-info">Change role for <strong>{{ roleChangeUserName }}</strong></p>
+      <div class="form-group">
+        <label class="form-label">New Role</label>
+        <select class="form-input" [(ngModel)]="newRole">
+          <option *ngFor="let r of roles" [value]="r">{{ r }}</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeRoleModal()">Cancel</button>
+      <button class="btn btn-primary" (click)="submitRoleChange()">Save Role</button>
     </div>
   </div>
 </div>

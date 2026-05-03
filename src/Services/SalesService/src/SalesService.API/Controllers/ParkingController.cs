@@ -16,6 +16,7 @@ namespace SalesService.API.Controllers;
 public class ParkingController(
     IParkingSlotRepository slotRepo,
     IParkingBookingRepository bookingRepo,
+    IShiftRepository shiftRepo,
     IRazorpayService razorpay,
     IRabbitMqPublisher publisher) : ControllerBase
 {
@@ -171,4 +172,60 @@ public class ParkingController(
             b.RazorpayOrderId, b.RazorpayPaymentId, b.BookedAt, b.ExpiresAt)).ToList();
         return Ok(dtos);
     }
+
+    /// <summary>Get parking bookings for dealer's active station.</summary>
+    [HttpGet("station-bookings")]
+    [Authorize(Roles = "Dealer")]
+    public async Task<IActionResult> GetStationBookings([FromQuery] Guid? stationId = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
+    {
+        var dealerId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        var resolvedStationId = stationId;
+
+        if (!resolvedStationId.HasValue || resolvedStationId == Guid.Empty)
+        {
+            var shift = await shiftRepo.GetActiveShiftAsync(dealerId);
+            if (shift != null)
+                resolvedStationId = shift.StationId;
+        }
+
+        if (!resolvedStationId.HasValue || resolvedStationId == Guid.Empty)
+            return Ok(new List<ParkingBookingDto>()); // Return empty if no station found
+
+        var bookings = await bookingRepo.GetByStationAsync(resolvedStationId.Value, page, pageSize);
+        var dtos = bookings.Select(b => new ParkingBookingDto(
+            b.Id, b.ParkingSlotId, b.StationId, b.CustomerId,
+            b.SlotType.ToString(), b.DurationHours, b.Amount, b.Status.ToString(),
+            b.RazorpayOrderId, b.RazorpayPaymentId, b.BookedAt, b.ExpiresAt)).ToList();
+        return Ok(dtos);
+    }
+
+    /// <summary>Toggle parking availability for the dealer's station.</summary>
+    [HttpPost("toggle-availability")]
+    [Authorize(Roles = "Dealer")]
+    public async Task<IActionResult> ToggleAvailability([FromBody] ToggleParkingRequest req)
+    {
+        var dealerId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        Guid? resolvedStationId = req.StationId;
+
+        if (!resolvedStationId.HasValue || resolvedStationId == Guid.Empty)
+        {
+            var shift = await shiftRepo.GetActiveShiftAsync(dealerId);
+            if (shift != null)
+                resolvedStationId = shift.StationId;
+        }
+
+        if (!resolvedStationId.HasValue || resolvedStationId == Guid.Empty)
+            return BadRequest(new { message = "Could not determine station. Please start a shift or ensure a station is assigned." });
+
+        var slots = await slotRepo.GetByStationAsync(resolvedStationId.Value);
+        foreach (var slot in slots)
+        {
+            slot.IsAvailable = req.IsAvailable;
+            await slotRepo.UpdateAsync(slot);
+        }
+
+        return Ok(new { message = $"Parking availability set to {(req.IsAvailable ? "Available" : "Disabled")} for all slots." });
+    }
 }
+
+public record ToggleParkingRequest(bool IsAvailable, Guid? StationId = null);

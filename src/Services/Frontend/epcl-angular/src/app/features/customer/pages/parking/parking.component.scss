@@ -1,0 +1,321 @@
+// Customer Parking Page — Uses EPCL design system tokens only
+.parking-page {
+  animation: fadeIn 0.4s ease;
+}
+
+.animate-in {
+  animation: fadeIn 0.4s ease;
+}
+
+// ── Page Header ──
+.page-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+}
+
+.page-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+// ── KPI Row ──
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: var(--transition-base);
+
+  &:hover {
+    border-color: rgba(30, 64, 175, 0.2);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+}
+
+.kpi-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.blue { background: rgba(30, 64, 175, 0.08); color: var(--color-primary); }
+  &.green { background: rgba(16, 185, 129, 0.08); color: var(--color-success); }
+  &.purple { background: rgba(139, 92, 246, 0.08); color: #8B5CF6; }
+}
+
+.kpi-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.kpi-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.kpi-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.kpi-success {
+  color: var(--color-success);
+}
+
+// ── Ticket Grid ──
+.ticket-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.ticket-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: var(--transition-base);
+
+  &:hover {
+    border-color: rgba(30, 64, 175, 0.2);
+    box-shadow: 0 4px 16px rgba(30, 64, 175, 0.06);
+    transform: translateY(-2px);
+  }
+}
+
+.ticket-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16px 18px 12px;
+}
+
+.ticket-card-vehicle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vehicle-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.two-wheeler { background: rgba(59, 130, 246, 0.08); color: var(--color-info); }
+  &.four-wheeler { background: rgba(16, 185, 129, 0.08); color: var(--color-success); }
+  &.hgv { background: rgba(245, 158, 11, 0.08); color: var(--color-warning); }
+}
+
+.ticket-card-type {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.ticket-card-duration {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+
+// ── Tear-off Separator ──
+.ticket-card-tear {
+  display: flex;
+  align-items: center;
+  margin: 0 -1px;
+}
+
+.mini-circle {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+
+  &.left {
+    margin-left: -6px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-subtle);
+    border-left: none;
+  }
+  &.right {
+    margin-right: -6px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-subtle);
+    border-right: none;
+  }
+}
+
+.mini-dash {
+  flex: 1;
+  border-top: 1.5px dashed var(--border-subtle);
+}
+
+// ── Ticket Bottom ──
+.ticket-card-bottom {
+  padding: 12px 18px 16px;
+}
+
+.ticket-card-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.ticket-card-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.ticket-card-val {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+
+  &.mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-secondary);
+    background: var(--bg-surface);
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+}
+
+.ticket-card-amount-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.1) 100%);
+  border-radius: 6px;
+  border: 1px solid rgba(16, 185, 129, 0.15);
+
+  span:first-child {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+}
+
+.ticket-card-amount {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  font-weight: 800;
+  color: #059669;
+}
+
+// ── Empty State ──
+.empty-state-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  text-align: center;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+
+  .empty-state__icon {
+    width: 64px;
+    height: 64px;
+    background: var(--bg-surface);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    color: var(--text-muted);
+  }
+
+  .empty-state__title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 8px;
+  }
+
+  .empty-state__subtitle {
+    font-size: 14px;
+    color: var(--text-muted);
+    max-width: 400px;
+    margin: 0 0 24px;
+  }
+}
+
+// ── Loading ──
+.loading-container {
+  .skeleton-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+}
+
+// ── Responsive ──
+@media (max-width: 1200px) {
+  .ticket-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .kpi-row {
+    grid-template-columns: 1fr;
+  }
+  .ticket-grid {
+    grid-template-columns: 1fr;
+  }
+  .page-header-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .loading-container .skeleton-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -13,6 +13,7 @@ public interface IStationRepository
         Guid? fuelTypeId = null, CancellationToken ct = default);
     Task<Station> AddAsync(Station station, CancellationToken ct = default);
     Task UpdateAsync(Station station, CancellationToken ct = default);
+    Task DeleteAsync(Station station, CancellationToken ct = default);
     Task<bool> ExistsByCodeAsync(string stationCode, CancellationToken ct = default);
     Task<bool> ExistsByLicenseAsync(string licenseNumber, CancellationToken ct = default);
 }

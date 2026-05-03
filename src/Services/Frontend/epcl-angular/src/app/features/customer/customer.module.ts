@@ -12,6 +12,7 @@ import { LoyaltyComponent } from './pages/loyalty/loyalty.component';
 import { VehiclesComponent } from './pages/vehicles/vehicles.component';
 import { ReferralComponent } from './pages/referral/referral.component';
 import { PaymentRequestsComponent } from './pages/payment-requests/payment-requests.component';
+import { ParkingComponent } from './pages/parking/parking.component';
 
 const routes: Routes = [
   { path: 'dashboard', component: DashboardComponent },
@@ -20,6 +21,7 @@ const routes: Routes = [
   { path: 'prices', component: PricesComponent },
   { path: 'transactions', component: TransactionsComponent },
   { path: 'stations', component: StationsComponent },
+  { path: 'parking', component: ParkingComponent },
   { path: 'loyalty', component: LoyaltyComponent },
   { path: 'vehicles', component: VehiclesComponent },
   { path: 'referral', component: ReferralComponent },
@@ -33,6 +35,7 @@ const routes: Routes = [
     PricesComponent,
     TransactionsComponent,
     StationsComponent,
+    ParkingComponent,
     LoyaltyComponent,
     VehiclesComponent,
     ReferralComponent,

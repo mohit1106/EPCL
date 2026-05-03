@@ -27,9 +27,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   priceTicker: { name: string; price: number; change: number; direction: string }[] = [];
   nearestStation: { name: string; distance: string; hours: string } | null = null;
   recentTransactions: { id: string; terminal: string; fuelType: string; volume: string; cost: number; status: string }[] = [];
-  parkingBookings: ParkingBookingDto[] = [];
-  activeParkingCount = 0;
-  totalParkingSpent = 0;
 
   constructor(
     private store: Store,
@@ -99,7 +96,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
           this.lastVolume = transactions.items[0].quantityLitres;
         }
         this.isLoading = false;
-        this.loadParkingBookings();
       },
       error: () => { this.isLoading = false; },
     });
@@ -143,21 +139,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }));
   }
 
-  private loadParkingBookings(): void {
-    this.stationsApi.getMyParkingBookings(1, 6).pipe(
-      takeUntil(this.destroy$),
-      catchError(() => of([]))
-    ).subscribe(bookings => {
-      this.parkingBookings = bookings;
-      const now = new Date();
-      this.activeParkingCount = bookings.filter(
-        b => b.status === 'Confirmed' && new Date(b.expiresAt) > now
-      ).length;
-      this.totalParkingSpent = bookings
-        .filter(b => b.status === 'Confirmed')
-        .reduce((sum, b) => sum + b.amount, 0);
-    });
-  }
+
 
   getStatusClass(status: string): string {
     switch (status?.toLowerCase()) {
@@ -168,32 +150,5 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  getParkingStatusClass(booking: ParkingBookingDto): string {
-    if (booking.status === 'Confirmed') {
-      return new Date(booking.expiresAt) > new Date() ? 'status-success' : 'status-default';
-    }
-    return this.getStatusClass(booking.status);
-  }
 
-  getParkingStatusLabel(booking: ParkingBookingDto): string {
-    if (booking.status === 'Confirmed') {
-      return new Date(booking.expiresAt) > new Date() ? 'Active' : 'Expired';
-    }
-    return booking.status;
-  }
-
-  getVehicleIcon(slotType: string): string {
-    const icons: Record<string, string> = { TwoWheeler: '🏍️', FourWheeler: '🚗', HGV: '🚛' };
-    return icons[slotType] || '🚗';
-  }
-
-  getVehicleLabel(slotType: string): string {
-    const labels: Record<string, string> = { TwoWheeler: '2-Wheeler', FourWheeler: '4-Wheeler', HGV: 'HGV' };
-    return labels[slotType] || slotType;
-  }
-
-  getDurationLabel(hours: number): string {
-    if (hours >= 24) return 'Full Day';
-    return hours === 1 ? '1 Hr' : `${hours} Hrs`;
-  }
 }

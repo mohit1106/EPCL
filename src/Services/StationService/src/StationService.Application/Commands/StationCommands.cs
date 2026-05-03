@@ -150,20 +150,19 @@ public class DeactivateStationHandler(
         var station = await stationRepo.GetByIdAsync(cmd.StationId, ct)
             ?? throw new NotFoundException("Station", cmd.StationId);
 
-        station.IsActive = false;
-        station.UpdatedAt = DateTimeOffset.UtcNow;
-        await stationRepo.UpdateAsync(station, ct);
+        var stationCode = station.StationCode;
+        await stationRepo.DeleteAsync(station, ct);
 
         await publisher.PublishAsync(new StationDeactivatedEvent
         {
             EventType = nameof(StationDeactivatedEvent),
-            StationId = station.Id,
-            StationCode = station.StationCode,
+            StationId = cmd.StationId,
+            StationCode = stationCode,
             DeactivatedByUserId = cmd.DeactivatedByUserId
         }, "station.deactivated", ct);
 
-        logger.LogInformation("Station deactivated. StationId: {StationId}", station.Id);
-        return new MessageResponseDto($"Station {station.StationCode} has been deactivated.");
+        logger.LogInformation("Station permanently deleted. StationId: {StationId}", cmd.StationId);
+        return new MessageResponseDto($"Station {stationCode} has been permanently removed.");
     }
 }
 

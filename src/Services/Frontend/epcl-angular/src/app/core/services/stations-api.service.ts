@@ -136,6 +136,16 @@ export class StationsApiService {
       params: { page: page.toString(), pageSize: pageSize.toString() }
     });
   }
+
+  getStationParkingBookings(stationId: string, page = 1, pageSize = 50): Observable<ParkingBookingDto[]> {
+    return this.http.get<ParkingBookingDto[]>('/gateway/sales/parking/station-bookings', {
+      params: { stationId, page: page.toString(), pageSize: pageSize.toString() }
+    });
+  }
+
+  toggleStationParkingAvailability(isAvailable: boolean, stationId: string): Observable<any> {
+    return this.http.post('/gateway/sales/parking/toggle-availability', { isAvailable, stationId });
+  }
 }
 
 export interface ParkingSlotDto {

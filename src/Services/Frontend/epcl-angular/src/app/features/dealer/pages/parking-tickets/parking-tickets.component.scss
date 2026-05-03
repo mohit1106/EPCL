@@ -1,0 +1,344 @@
+// Dealer Parking Tickets — Uses EPCL design system tokens only
+.parking-page {
+  animation: fadeIn 0.4s ease;
+}
+
+.animate-in {
+  animation: fadeIn 0.4s ease;
+}
+
+// ── Page Header ──
+.page-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+}
+
+.page-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+// ── Toggle Button ──
+.toggle-availability-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  line-height: 1;
+
+  &.is-enabled {
+    background: var(--color-danger);
+    color: white;
+    &:hover:not(:disabled) { background: #DC2626; }
+  }
+
+  &.is-disabled {
+    background: var(--color-success);
+    color: white;
+    &:hover:not(:disabled) { background: #059669; }
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &:active:not(:disabled) { transform: scale(0.97); }
+}
+
+// ── No Station State ──
+.no-station-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  text-align: center;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+
+  .no-station-icon {
+    width: 80px;
+    height: 80px;
+    background: var(--bg-surface);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    color: var(--text-muted);
+  }
+
+  h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 8px;
+  }
+
+  p {
+    font-size: 14px;
+    color: var(--text-muted);
+    max-width: 400px;
+    margin: 0;
+  }
+}
+
+// ── KPI Row ──
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.kpi-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: var(--transition-base);
+
+  &:hover {
+    border-color: rgba(30, 64, 175, 0.2);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+}
+
+.kpi-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.blue { background: rgba(30, 64, 175, 0.08); color: var(--color-primary); }
+  &.green { background: rgba(16, 185, 129, 0.08); color: var(--color-success); }
+  &.amber { background: rgba(245, 158, 11, 0.08); color: var(--color-warning); }
+  &.purple { background: rgba(139, 92, 246, 0.08); color: #8B5CF6; }
+}
+
+.kpi-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.kpi-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.kpi-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.kpi-success {
+  color: var(--color-success);
+}
+
+// ── Parking Status Bar ──
+.parking-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+  border: 1px solid;
+  transition: var(--transition-base);
+
+  &.is-active {
+    background: rgba(16, 185, 129, 0.06);
+    border-color: rgba(16, 185, 129, 0.2);
+  }
+
+  &.is-inactive {
+    background: rgba(239, 68, 68, 0.06);
+    border-color: rgba(239, 68, 68, 0.2);
+  }
+}
+
+.status-dot-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+
+  .is-active & {
+    background: var(--color-success);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+  }
+
+  .is-inactive & {
+    background: var(--color-danger);
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+  }
+}
+
+.status-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+
+  strong {
+    color: var(--text-primary);
+    font-weight: 700;
+  }
+}
+
+// ── Data Table ──
+.table-wrapper {
+  padding: 0;
+  overflow: hidden;
+}
+
+.table-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-card);
+}
+
+.table-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.table-count {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.mono-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--text-primary);
+
+  &.muted {
+    color: var(--text-secondary);
+  }
+}
+
+.amount-cell {
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--color-primary);
+}
+
+// ── Empty State ──
+.empty-state-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  text-align: center;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+
+  .empty-state__icon {
+    width: 64px;
+    height: 64px;
+    background: var(--bg-surface);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    color: var(--text-muted);
+  }
+
+  .empty-state__title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 8px;
+  }
+
+  .empty-state__subtitle {
+    font-size: 14px;
+    color: var(--text-muted);
+    max-width: 400px;
+    margin: 0;
+  }
+}
+
+// ── Loading Skeleton ──
+.loading-container {
+  .skeleton-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+}
+
+// ── Responsive ──
+@media (max-width: 1024px) {
+  .kpi-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .page-header-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .kpi-row {
+    grid-template-columns: 1fr;
+  }
+
+  .loading-container .skeleton-grid {
+    grid-template-columns: 1fr;
+  }
+}

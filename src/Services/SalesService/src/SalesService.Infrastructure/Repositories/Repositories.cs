@@ -170,6 +170,8 @@ public class ParkingBookingRepository(SalesDbContext ctx) : IParkingBookingRepos
     { ctx.ParkingBookings.Update(booking); await ctx.SaveChangesAsync(ct); }
     public async Task<IReadOnlyList<ParkingBooking>> GetByCustomerAsync(Guid customerId, int page, int pageSize, CancellationToken ct)
         => await ctx.ParkingBookings.Include(b => b.ParkingSlot).Where(b => b.CustomerId == customerId).OrderByDescending(b => b.BookedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+    public async Task<IReadOnlyList<ParkingBooking>> GetByStationAsync(Guid stationId, int page, int pageSize, CancellationToken ct)
+        => await ctx.ParkingBookings.Include(b => b.ParkingSlot).Where(b => b.StationId == stationId).OrderByDescending(b => b.BookedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
 }
 
 public class WalletPaymentRequestRepository(SalesDbContext ctx) : IWalletPaymentRequestRepository

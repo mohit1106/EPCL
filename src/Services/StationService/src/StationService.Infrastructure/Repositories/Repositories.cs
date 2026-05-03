@@ -70,6 +70,12 @@ public class StationRepository(StationsDbContext context) : IStationRepository
         await context.SaveChangesAsync(ct);
     }
 
+    public async Task DeleteAsync(Station station, CancellationToken ct = default)
+    {
+        context.Stations.Remove(station);
+        await context.SaveChangesAsync(ct);
+    }
+
     public async Task<bool> ExistsByCodeAsync(string stationCode, CancellationToken ct = default)
         => await context.Stations.AnyAsync(s => s.StationCode == stationCode, ct);
 

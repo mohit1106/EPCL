@@ -1,0 +1,120 @@
+<div class="parking-page" [class.animate-in]="!isLoading">
+
+  <!-- Page Header -->
+  <div class="page-header-bar">
+    <div class="page-header-text">
+      <h1 class="page-title">My Parking</h1>
+      <p class="page-subtitle">View your parking bookings across EPCL stations</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary" (click)="goToStations()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Book New Ticket
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-container" *ngIf="isLoading">
+    <div class="skeleton-grid">
+      <div class="skeleton" style="height: 100px;" *ngFor="let i of [1,2,3]"></div>
+    </div>
+    <div class="skeleton" style="height: 300px; margin-top: 20px;"></div>
+  </div>
+
+  <div *ngIf="!isLoading">
+    <!-- KPI Row -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap blue">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="1" y="3" width="22" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 010 6H9"/></svg>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Total Tickets</span>
+          <span class="kpi-value">{{ parkingBookings.length }}</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap green">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Active Bookings</span>
+          <span class="kpi-value kpi-success">{{ activeParkingCount }}</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap purple">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Total Spent</span>
+          <span class="kpi-value">₹{{ totalParkingSpent | number:'1.0-0' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ticket Cards Grid -->
+    <div class="ticket-grid" *ngIf="parkingBookings.length > 0">
+      <div class="ticket-card" *ngFor="let b of parkingBookings">
+        <!-- Ticket Top -->
+        <div class="ticket-card-top">
+          <div class="ticket-card-vehicle">
+            <div class="vehicle-icon-wrap" [ngClass]="{'two-wheeler': b.slotType === 'TwoWheeler', 'four-wheeler': b.slotType === 'FourWheeler', 'hgv': b.slotType === 'HGV'}">
+              <svg *ngIf="b.slotType === 'TwoWheeler'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="5" cy="17" r="3"/><circle cx="19" cy="17" r="3"/><path d="M12 17V5l4 0"/></svg>
+              <svg *ngIf="b.slotType === 'FourWheeler'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M7 17m-2 0a2 2 0 104 0 2 2 0 10-4 0"/><path d="M17 17m-2 0a2 2 0 104 0 2 2 0 10-4 0"/><path d="M5 17H3v-6l2-5h9l4 5h1a2 2 0 012 2v4h-2"/><path d="M9 17h6"/></svg>
+              <svg *ngIf="b.slotType === 'HGV'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/></svg>
+            </div>
+            <div>
+              <p class="ticket-card-type">{{ getVehicleLabel(b.slotType) }}</p>
+              <p class="ticket-card-duration">{{ getDurationLabel(b.durationHours) }}</p>
+            </div>
+          </div>
+          <span class="badge" [ngClass]="getParkingStatusClass(b)">{{ getParkingStatusLabel(b) }}</span>
+        </div>
+
+        <!-- Ticket Dashed Line -->
+        <div class="ticket-card-tear">
+          <div class="mini-circle left"></div>
+          <div class="mini-dash"></div>
+          <div class="mini-circle right"></div>
+        </div>
+
+        <!-- Ticket Bottom -->
+        <div class="ticket-card-bottom">
+          <div class="ticket-card-detail-row">
+            <span class="ticket-card-label">Check In</span>
+            <span class="ticket-card-val">{{ b.bookedAt | date:'dd MMM, hh:mm a' }}</span>
+          </div>
+          <div class="ticket-card-detail-row">
+            <span class="ticket-card-label">Check Out</span>
+            <span class="ticket-card-val">{{ b.expiresAt | date:'dd MMM, hh:mm a' }}</span>
+          </div>
+          <div class="ticket-card-detail-row">
+            <span class="ticket-card-label">Booking</span>
+            <span class="ticket-card-val mono">{{ b.id.substring(0, 8).toUpperCase() }}</span>
+          </div>
+          <div class="ticket-card-amount-row">
+            <span>Paid</span>
+            <span class="ticket-card-amount">₹{{ b.amount | number:'1.0-0' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state-card" *ngIf="parkingBookings.length === 0">
+      <div class="empty-state__icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="22" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 010 6H9"/></svg>
+      </div>
+      <h3 class="empty-state__title">No Parking Tickets Yet</h3>
+      <p class="empty-state__subtitle">Book a parking slot from the Stations page to see your tickets here.</p>
+      <button class="btn btn-primary" (click)="goToStations()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Book Parking
+      </button>
+    </div>
+  </div>
+</div>

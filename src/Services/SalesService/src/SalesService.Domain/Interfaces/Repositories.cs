@@ -109,6 +109,7 @@ public interface IParkingBookingRepository
     Task<ParkingBooking?> GetByRazorpayOrderIdAsync(string orderId, CancellationToken ct = default);
     Task UpdateAsync(ParkingBooking booking, CancellationToken ct = default);
     Task<IReadOnlyList<ParkingBooking>> GetByCustomerAsync(Guid customerId, int page, int pageSize, CancellationToken ct = default);
+    Task<IReadOnlyList<ParkingBooking>> GetByStationAsync(Guid stationId, int page, int pageSize, CancellationToken ct = default);
 }
 
 public interface IWalletPaymentRequestRepository

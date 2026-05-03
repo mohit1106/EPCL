@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { UserDto } from './auth-api.service';
+import { UserDto, RegisterRequest, RegisterResponse } from './auth-api.service';
 import { PaginatedResult } from './stations-api.service';
 
 export interface UserListDto extends UserDto {
@@ -27,6 +27,7 @@ export interface UpdateProfileDto {
 @Injectable({ providedIn: 'root' })
 export class UsersApiService {
   private readonly base = '/gateway/users';
+  private readonly authBase = '/gateway/auth';
 
   constructor(private http: HttpClient) {}
 
@@ -69,6 +70,11 @@ export class UsersApiService {
 
   softDeleteUser(userId: string): Observable<void> {
     return this.http.put<void>(`${this.base}/${userId}`, { isActive: false });
+  }
+
+  /** Admin creates a new user via the auth register endpoint. */
+  createUser(request: RegisterRequest): Observable<RegisterResponse> {
+    return this.http.post<RegisterResponse>(`${this.authBase}/register`, request);
   }
 }
 

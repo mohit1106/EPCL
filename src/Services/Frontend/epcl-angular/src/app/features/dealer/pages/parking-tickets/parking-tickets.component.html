@@ -1,0 +1,143 @@
+<div class="parking-page" [class.animate-in]="!isLoading">
+
+  <!-- Page Header -->
+  <div class="page-header-bar">
+    <div class="page-header-text">
+      <h1 class="page-title">Parking Tickets</h1>
+      <p class="page-subtitle" *ngIf="hasStation">{{ stationName }} — Manage customer parking at your station</p>
+    </div>
+    <div class="header-actions" *ngIf="hasStation">
+      <button
+        class="btn toggle-availability-btn"
+        [class.is-enabled]="isParkingEnabled"
+        [class.is-disabled]="!isParkingEnabled"
+        (click)="toggleAvailability()"
+        [disabled]="isToggling"
+      >
+        <svg *ngIf="isParkingEnabled" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+        <svg *ngIf="!isParkingEnabled" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        {{ isToggling ? 'Updating...' : (isParkingEnabled ? 'Disable All Parking' : 'Enable All Parking') }}
+      </button>
+    </div>
+  </div>
+
+  <!-- No Station State -->
+  <div class="no-station-state" *ngIf="!isLoading && !hasStation">
+    <div class="no-station-icon">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+    </div>
+    <h3>No Station Assigned</h3>
+    <p>You need a station assigned to your account to manage parking tickets. Please contact your administrator.</p>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-container" *ngIf="isLoading">
+    <div class="skeleton-grid">
+      <div class="skeleton" style="height: 100px;" *ngFor="let i of [1,2,3,4]"></div>
+    </div>
+    <div class="skeleton" style="height: 400px; margin-top: 20px;"></div>
+  </div>
+
+  <div *ngIf="!isLoading && hasStation">
+
+    <!-- KPI Stats Row -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap blue">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="1" y="3" width="22" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 010 6H9"/></svg>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Total Bookings</span>
+          <span class="kpi-value">{{ bookings.length }}</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap green">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Active Now</span>
+          <span class="kpi-value kpi-success">{{ activeCount }}</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap amber">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Expired</span>
+          <span class="kpi-value">{{ expiredCount }}</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap purple">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Total Revenue</span>
+          <span class="kpi-value">₹{{ totalRevenue | number:'1.0-0' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Parking Status Indicator -->
+    <div class="parking-status-bar" [class.is-active]="isParkingEnabled" [class.is-inactive]="!isParkingEnabled">
+      <div class="status-dot-wrap">
+        <span class="status-dot"></span>
+      </div>
+      <span class="status-text">
+        Parking is currently <strong>{{ isParkingEnabled ? 'Available' : 'Disabled' }}</strong> for customers at this station
+      </span>
+    </div>
+
+    <!-- Data Table -->
+    <div class="card table-wrapper" *ngIf="bookings.length > 0">
+      <div class="table-header-bar">
+        <h3 class="table-title">All Parking Bookings</h3>
+        <span class="table-count">{{ bookings.length }} records</span>
+      </div>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Booking ID</th>
+              <th>Customer ID</th>
+              <th>Vehicle Type</th>
+              <th>Duration</th>
+              <th>Check-in</th>
+              <th>Check-out</th>
+              <th>Amount</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let b of bookings">
+              <td><span class="mono-text">{{ b.id | slice:0:8 | uppercase }}</span></td>
+              <td><span class="mono-text muted">{{ b.customerId | slice:0:8 }}</span></td>
+              <td>{{ getVehicleLabel(b.slotType) }}</td>
+              <td>{{ getDurationLabel(b.durationHours) }}</td>
+              <td>{{ b.bookedAt | date:'dd MMM, hh:mm a' }}</td>
+              <td>{{ b.expiresAt | date:'dd MMM, hh:mm a' }}</td>
+              <td class="amount-cell">₹{{ b.amount | number:'1.0-0' }}</td>
+              <td>
+                <span class="badge" [ngClass]="getStatusClass(b)">{{ getStatusLabel(b) }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state-card" *ngIf="bookings.length === 0">
+      <div class="empty-state__icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="22" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 010 6H9"/></svg>
+      </div>
+      <h3 class="empty-state__title">No Parking Bookings Yet</h3>
+      <p class="empty-state__subtitle">When customers book parking at your station, their tickets will appear here.</p>
+    </div>
+  </div>
+</div>
