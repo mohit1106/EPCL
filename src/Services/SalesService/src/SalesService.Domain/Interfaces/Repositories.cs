@@ -40,6 +40,8 @@ public interface IShiftRepository
     Task<Shift> AddAsync(Shift shift, CancellationToken ct = default);
     Task UpdateAsync(Shift shift, CancellationToken ct = default);
     Task<IReadOnlyList<Shift>> GetByStationAsync(Guid stationId, int page, int pageSize, CancellationToken ct = default);
+    Task<IReadOnlyList<Shift>> GetByDealerAsync(Guid dealerUserId, int page, int pageSize, CancellationToken ct = default);
+    Task<(IReadOnlyList<Shift> Items, int Total)> GetAllPagedAsync(int page, int pageSize, Guid? stationId = null, CancellationToken ct = default);
 }
 
 public interface IVoidedTransactionRepository

@@ -93,6 +93,34 @@ public class GetActiveShiftHandler(IShiftRepository shiftRepo) : IRequestHandler
     }
 }
 
+public record GetShiftHistoryQuery(Guid StationId, int Page = 1, int PageSize = 50) : IRequest<IReadOnlyList<ShiftDto>>;
+
+public class GetShiftHistoryHandler(IShiftRepository shiftRepo) : IRequestHandler<GetShiftHistoryQuery, IReadOnlyList<ShiftDto>>
+{
+    public async Task<IReadOnlyList<ShiftDto>> Handle(GetShiftHistoryQuery q, CancellationToken ct)
+    {
+        var shifts = await shiftRepo.GetByStationAsync(q.StationId, q.Page, q.PageSize, ct);
+        return shifts.Select(s => new ShiftDto(s.Id, s.DealerUserId, s.StationId, s.StartedAt, s.EndedAt,
+            s.OpeningStockJson, s.ClosingStockJson, s.TotalLitresSold, s.TotalRevenue, s.TotalTransactions, s.DiscrepancyFlagged)).ToList();
+    }
+}
+
+public record GetAllShiftsQuery(int Page = 1, int PageSize = 50, Guid? StationId = null) : IRequest<PagedResult<ShiftDto>>;
+
+public class GetAllShiftsHandler(IShiftRepository shiftRepo) : IRequestHandler<GetAllShiftsQuery, PagedResult<ShiftDto>>
+{
+    public async Task<PagedResult<ShiftDto>> Handle(GetAllShiftsQuery q, CancellationToken ct)
+    {
+        var (items, total) = await shiftRepo.GetAllPagedAsync(q.Page, q.PageSize, q.StationId, ct);
+        return new PagedResult<ShiftDto>
+        {
+            Items = items.Select(s => new ShiftDto(s.Id, s.DealerUserId, s.StationId, s.StartedAt, s.EndedAt,
+                s.OpeningStockJson, s.ClosingStockJson, s.TotalLitresSold, s.TotalRevenue, s.TotalTransactions, s.DiscrepancyFlagged)).ToList(),
+            TotalCount = total, Page = q.Page, PageSize = q.PageSize
+        };
+    }
+}
+
 // ── Vehicles ───────────────────────────────────────────────────────
 public record GetCustomerVehiclesQuery(Guid CustomerId) : IRequest<IReadOnlyList<VehicleDto>>;
 
@@ -159,7 +187,25 @@ public class GetPendingPaymentRequestsHandler(IWalletPaymentRequestRepository re
         var requests = await reqRepo.GetPendingByCustomerAsync(q.CustomerId, ct);
         return requests.Select(r => new WalletPaymentRequestDto(r.Id, r.SaleTransactionId, r.CustomerId,
             r.DealerUserId, r.StationId, r.Amount, r.Status, r.Description,
-            r.VehicleNumber, r.FuelTypeName, r.QuantityLitres, r.CreatedAt, r.ExpiresAt)).ToList();
+            r.VehicleNumber, r.FuelTypeName, r.QuantityLitres, r.PaymentMethod,
+            r.CreatedAt, r.ExpiresAt)).ToList();
+    }
+}
+
+// ── Get Payment Request By Id ──────────────────────────────────────
+public record GetPaymentRequestByIdQuery(Guid CustomerId, Guid RequestId) : IRequest<WalletPaymentRequestDto?>;
+
+public class GetPaymentRequestByIdHandler(IWalletPaymentRequestRepository reqRepo)
+    : IRequestHandler<GetPaymentRequestByIdQuery, WalletPaymentRequestDto?>
+{
+    public async Task<WalletPaymentRequestDto?> Handle(GetPaymentRequestByIdQuery q, CancellationToken ct)
+    {
+        var r = await reqRepo.GetByIdAsync(q.RequestId, ct);
+        if (r == null || r.CustomerId != q.CustomerId) return null;
+        return new WalletPaymentRequestDto(r.Id, r.SaleTransactionId, r.CustomerId,
+            r.DealerUserId, r.StationId, r.Amount, r.Status, r.Description,
+            r.VehicleNumber, r.FuelTypeName, r.QuantityLitres, r.PaymentMethod,
+            r.CreatedAt, r.ExpiresAt);
     }
 }
 
@@ -204,3 +250,4 @@ public class GetCustomerWalletBalanceHandler(ICustomerWalletRepository walletRep
         return w == null ? null : new WalletDto(w.Id, w.CustomerId, w.Balance, w.TotalLoaded, w.IsActive);
     }
 }
+

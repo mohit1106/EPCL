@@ -87,7 +87,32 @@ public class PaymentsController(IMediator mediator) : ControllerBase
         var stationId = user?.StationId ?? Guid.Empty;
         return Ok(await mediator.Send(new CreateWalletPaymentRequestCommand(
             dealerId, stationId, body.SaleTransactionId, body.CustomerId,
-            body.Amount, body.Description, body.VehicleNumber, body.FuelTypeName, body.QuantityLitres)));
+            body.Amount, body.Description, body.VehicleNumber, body.FuelTypeName, body.QuantityLitres,
+            body.PaymentMethod)));
+    }
+
+    /// <summary>Create Razorpay order to pay a pending payment request (for UPI/Bank).</summary>
+    [HttpPost("request/{requestId}/create-order")]
+    [Authorize(Roles = "Customer")]
+    public async Task<IActionResult> CreateRequestPaymentOrder(Guid requestId)
+    {
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        // Reuse wallet order creation with the request amount
+        var request = await mediator.Send(new GetPaymentRequestByIdQuery(userId, requestId));
+        if (request == null) return NotFound(new { message = "Payment request not found." });
+        return Ok(await mediator.Send(new CreateWalletOrderCommand(userId, request.Amount)));
+    }
+
+    /// <summary>Verify Razorpay payment for a pending payment request.</summary>
+    [HttpPost("request/{requestId}/verify")]
+    [Authorize(Roles = "Customer")]
+    public async Task<IActionResult> VerifyRequestPayment(Guid requestId, [FromBody] VerifyWalletPaymentRequest body)
+    {
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        // First verify the Razorpay payment
+        await mediator.Send(new VerifyWalletPaymentCommand(userId, body.OrderId, body.PaymentId, body.Signature));
+        // Then mark the request as Approved and complete the sale
+        return Ok(await mediator.Send(new ApproveRazorpayPaymentRequestCommand(userId, requestId, body.OrderId, body.PaymentId)));
     }
 
     /// <summary>Get customer wallet balance (for dealers during sale).</summary>

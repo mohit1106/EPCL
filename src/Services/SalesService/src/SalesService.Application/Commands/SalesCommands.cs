@@ -30,7 +30,7 @@ public partial class RecordFuelSaleValidator : AbstractValidator<RecordFuelSaleC
     {
         RuleFor(x => x.StationId).NotEmpty();
         RuleFor(x => x.PumpId).NotEmpty();
-        RuleFor(x => x.TankId).NotEmpty();
+        // TankId is optional — backend resolves it from Pump's FuelTypeId if not provided
         RuleFor(x => x.FuelTypeId).NotEmpty();
         RuleFor(x => x.DealerUserId).NotEmpty();
         RuleFor(x => x.VehicleNumber).NotEmpty()
@@ -115,6 +115,7 @@ public class RecordFuelSaleHandler(
             ReceiptNumber = receiptNumber,
             StationId = cmd.StationId,
             PumpId = cmd.PumpId,
+            TankId = cmd.TankId,
             FuelTypeId = cmd.FuelTypeId,
             DealerUserId = cmd.DealerUserId,
             CustomerUserId = cmd.CustomerUserId,
@@ -148,6 +149,16 @@ public class RecordFuelSaleHandler(
         {
             tx.Status = TransactionStatus.Completed;
             await txRepo.UpdateAsync(tx, ct);
+            
+            // Publish SaleCompletedEvent so inventory is deducted immediately
+            await publisher.PublishAsync(new SaleCompletedEvent
+            {
+                EventType = nameof(SaleCompletedEvent),
+                TransactionId = tx.Id, StationId = cmd.StationId,
+                TankId = cmd.TankId, FuelTypeId = cmd.FuelTypeId,
+                QuantityLitres = cmd.QuantityLitres, DealerUserId = cmd.DealerUserId
+            }, "sales.completed", ct);
+            
             logger.LogInformation("Sale completed (instant). Tx: {TxId}, Receipt: {Receipt}, Qty: {Qty}L, Total: ₹{Total}",
                 tx.Id, receiptNumber, cmd.QuantityLitres, totalAmount);
         }
@@ -333,7 +344,7 @@ public class StartShiftHandler(IShiftRepository shiftRepo, ILogger<StartShiftHan
 
 public record EndShiftCommand(Guid DealerUserId, string? Notes) : IRequest<ShiftDto>;
 
-public class EndShiftHandler(IShiftRepository shiftRepo, ILogger<EndShiftHandler> logger) : IRequestHandler<EndShiftCommand, ShiftDto>
+public class EndShiftHandler(IShiftRepository shiftRepo, ITransactionRepository txRepo, ILogger<EndShiftHandler> logger) : IRequestHandler<EndShiftCommand, ShiftDto>
 {
     public async Task<ShiftDto> Handle(EndShiftCommand cmd, CancellationToken ct)
     {
@@ -341,8 +352,18 @@ public class EndShiftHandler(IShiftRepository shiftRepo, ILogger<EndShiftHandler
             ?? throw new DomainException("No active shift found for this dealer.");
         shift.EndedAt = DateTimeOffset.UtcNow;
         shift.ClosingStockJson = "{}";
+
+        // Aggregate all completed transactions during this shift period
+        var (txns, _) = await txRepo.GetPagedAsync(1, 100000, shift.StationId, cmd.DealerUserId,
+            dateFrom: shift.StartedAt, dateTo: shift.EndedAt, ct: ct);
+        var completedTxns = txns.Where(t => t.Status == TransactionStatus.Completed && !t.IsVoided).ToList();
+        shift.TotalTransactions = completedTxns.Count;
+        shift.TotalLitresSold = completedTxns.Sum(t => t.QuantityLitres);
+        shift.TotalRevenue = completedTxns.Sum(t => t.TotalAmount);
+
         await shiftRepo.UpdateAsync(shift, ct);
-        logger.LogInformation("Shift ended. Id: {ShiftId}, Dealer: {DealerId}", shift.Id, cmd.DealerUserId);
+        logger.LogInformation("Shift ended. Id: {ShiftId}, Dealer: {DealerId}, Txns: {TxnCount}, Revenue: ₹{Revenue}",
+            shift.Id, cmd.DealerUserId, shift.TotalTransactions, shift.TotalRevenue);
         return new ShiftDto(shift.Id, shift.DealerUserId, shift.StationId, shift.StartedAt, shift.EndedAt,
             shift.OpeningStockJson, shift.ClosingStockJson, shift.TotalLitresSold, shift.TotalRevenue, shift.TotalTransactions, shift.DiscrepancyFlagged);
     }
@@ -484,7 +505,7 @@ public class VerifyWalletPaymentHandler(
 public record CreateWalletPaymentRequestCommand(
     Guid DealerUserId, Guid StationId, Guid SaleTransactionId, Guid CustomerId,
     decimal Amount, string Description, string? VehicleNumber,
-    string? FuelTypeName, decimal? QuantityLitres) : IRequest<WalletPaymentRequestDto>;
+    string? FuelTypeName, decimal? QuantityLitres, string? PaymentMethod) : IRequest<WalletPaymentRequestDto>;
 
 public class CreateWalletPaymentRequestHandler(
     IWalletPaymentRequestRepository reqRepo, ICustomerWalletRepository walletRepo,
@@ -495,6 +516,8 @@ public class CreateWalletPaymentRequestHandler(
         // Verify customer has a wallet
         var wallet = await walletRepo.GetByCustomerIdAsync(cmd.CustomerId, ct)
             ?? throw new DomainException("Customer does not have a wallet.");
+
+        var paymentMethod = cmd.PaymentMethod ?? "Wallet";
 
         var request = new WalletPaymentRequest
         {
@@ -509,16 +532,18 @@ public class CreateWalletPaymentRequestHandler(
             VehicleNumber = cmd.VehicleNumber,
             FuelTypeName = cmd.FuelTypeName,
             QuantityLitres = cmd.QuantityLitres,
-            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(30), // 30-minute expiry
+            PaymentMethod = paymentMethod,
+            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(30),
         };
 
         await reqRepo.AddAsync(request, ct);
-        logger.LogInformation("Wallet payment request created: {ReqId} for ₹{Amount} from customer {CustId}",
-            request.Id, cmd.Amount, cmd.CustomerId);
+        logger.LogInformation("Payment request created: {ReqId} for ₹{Amount} via {Method} from customer {CustId}",
+            request.Id, cmd.Amount, paymentMethod, cmd.CustomerId);
 
         return new WalletPaymentRequestDto(request.Id, request.SaleTransactionId, request.CustomerId,
             request.DealerUserId, request.StationId, request.Amount, request.Status, request.Description,
-            request.VehicleNumber, request.FuelTypeName, request.QuantityLitres, request.CreatedAt, request.ExpiresAt);
+            request.VehicleNumber, request.FuelTypeName, request.QuantityLitres, request.PaymentMethod,
+            request.CreatedAt, request.ExpiresAt);
     }
 }
 
@@ -527,6 +552,7 @@ public record ApproveWalletPaymentCommand(Guid CustomerId, Guid RequestId) : IRe
 public class ApproveWalletPaymentHandler(
     IWalletPaymentRequestRepository reqRepo, ICustomerWalletRepository walletRepo,
     IWalletTransactionRepository wtRepo, ITransactionRepository txRepo,
+    IRabbitMqPublisher publisher,
     ILogger<ApproveWalletPaymentHandler> logger) : IRequestHandler<ApproveWalletPaymentCommand, MessageResponseDto>
 {
     public async Task<MessageResponseDto> Handle(ApproveWalletPaymentCommand cmd, CancellationToken ct)
@@ -573,6 +599,15 @@ public class ApproveWalletPaymentHandler(
             tx.Status = TransactionStatus.Completed;
             tx.PaymentReferenceId = $"WALLET-{request.Id.ToString()[..8].ToUpper()}";
             await txRepo.UpdateAsync(tx, ct);
+
+            // Publish SaleCompletedEvent so inventory is deducted
+            await publisher.PublishAsync(new SaleCompletedEvent
+            {
+                EventType = nameof(SaleCompletedEvent),
+                TransactionId = tx.Id, StationId = tx.StationId,
+                TankId = tx.TankId, FuelTypeId = tx.FuelTypeId,
+                QuantityLitres = tx.QuantityLitres, DealerUserId = tx.DealerUserId
+            }, "sales.completed", ct);
         }
 
         // Mark request as approved
@@ -615,5 +650,63 @@ public class RejectWalletPaymentHandler(
 
         logger.LogInformation("Wallet payment rejected: {ReqId} by customer {CustId}", request.Id, cmd.CustomerId);
         return new MessageResponseDto("Payment request rejected.");
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// Approve Payment Request via Razorpay (UPI/Bank)
+// ══════════════════════════════════════════════════════════════════
+public record ApproveRazorpayPaymentRequestCommand(
+    Guid CustomerId, Guid RequestId, string OrderId, string PaymentId) : IRequest<MessageResponseDto>;
+
+public class ApproveRazorpayPaymentRequestHandler(
+    IWalletPaymentRequestRepository reqRepo, ITransactionRepository txRepo,
+    IRabbitMqPublisher publisher,
+    ILogger<ApproveRazorpayPaymentRequestHandler> logger) : IRequestHandler<ApproveRazorpayPaymentRequestCommand, MessageResponseDto>
+{
+    public async Task<MessageResponseDto> Handle(ApproveRazorpayPaymentRequestCommand cmd, CancellationToken ct)
+    {
+        var request = await reqRepo.GetByIdAsync(cmd.RequestId, ct)
+            ?? throw new NotFoundException("PaymentRequest", cmd.RequestId);
+
+        if (request.CustomerId != cmd.CustomerId)
+            throw new DomainException("Unauthorized: this request does not belong to you.");
+        if (request.Status != "Pending")
+            throw new DomainException($"Request is already {request.Status}.");
+        if (request.ExpiresAt < DateTimeOffset.UtcNow)
+        {
+            request.Status = "Expired";
+            await reqRepo.UpdateAsync(request, ct);
+            throw new DomainException("Payment request has expired.");
+        }
+
+        // Mark request as approved with Razorpay details
+        request.Status = "Approved";
+        request.RazorpayOrderId = cmd.OrderId;
+        request.RazorpayPaymentId = cmd.PaymentId;
+        await reqRepo.UpdateAsync(request, ct);
+
+        // Complete the sale transaction
+        var tx = await txRepo.GetByIdAsync(request.SaleTransactionId, ct);
+        if (tx != null)
+        {
+            tx.Status = TransactionStatus.Completed;
+            tx.PaymentReferenceId = $"RZP-{cmd.PaymentId[..Math.Min(12, cmd.PaymentId.Length)]}";
+            await txRepo.UpdateAsync(tx, ct);
+
+            // Publish SaleCompletedEvent so inventory deduction happens
+            await publisher.PublishAsync(new SaleCompletedEvent
+            {
+                EventType = nameof(SaleCompletedEvent),
+                TransactionId = tx.Id, StationId = tx.StationId,
+                TankId = tx.TankId, FuelTypeId = tx.FuelTypeId,
+                QuantityLitres = tx.QuantityLitres, DealerUserId = tx.DealerUserId
+            }, "sales.completed", ct);
+        }
+
+        logger.LogInformation("Razorpay payment approved: {ReqId}, Customer: {CustId}, PaymentId: {PayId}",
+            request.Id, cmd.CustomerId, cmd.PaymentId);
+
+        return new MessageResponseDto($"Payment of ₹{request.Amount:F2} completed via Razorpay.");
     }
 }

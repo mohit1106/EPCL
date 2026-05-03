@@ -35,6 +35,25 @@ public class TanksController(IMediator mediator) : ControllerBase
         return CreatedAtAction(nameof(GetTankById), new { tankId = result.Id }, result);
     }
 
+    public record EnsureTankRequest(Guid FuelTypeId);
+
+    /// <summary>Ensure a tank exists for a station and fuel type. Creates a default tank if missing.</summary>
+    [HttpPost("stations/{stationId}/ensure-tank")]
+    [Authorize(Roles = "Dealer,Admin,SuperAdmin")]
+    public async Task<IActionResult> EnsureTank(Guid stationId, [FromBody] EnsureTankRequest body)
+    {
+        var tanks = await mediator.Send(new GetTanksByStationQuery(stationId));
+        var existing = tanks.FirstOrDefault(t => t.FuelTypeId == body.FuelTypeId);
+        if (existing != null) return Ok(existing);
+
+        // Auto-create a tank with default capacity (e.g., 5000L)
+        var result = await mediator.Send(new AddTankCommand(
+            stationId, body.FuelTypeId, $"AUTO-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}",
+            5000, 0, 500));
+            
+        return Ok(result);
+    }
+
     /// <summary>Update tank configuration. Admin only.</summary>
     [HttpPut("tanks/{tankId}")]
     [Authorize(Roles = "Admin,SuperAdmin")]

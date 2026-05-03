@@ -126,6 +126,14 @@ public class SagaConsumerHostedService : BackgroundService
         var publisher = sp.GetRequiredService<IRabbitMqPublisher>();
 
         var tank = await tankRepo.GetByIdAsync(evt.TankId);
+        
+        // Fallback: If TankId was empty (from frontend), find tank by StationId and FuelTypeId
+        if (tank == null)
+        {
+            var stationTanks = await tankRepo.GetByStationIdAsync(evt.StationId);
+            tank = stationTanks.FirstOrDefault(t => t.FuelTypeId == evt.FuelTypeId);
+        }
+
         if (tank == null)
         {
             await publisher.PublishAsync(new StockReservationFailedEvent
@@ -176,7 +184,20 @@ public class SagaConsumerHostedService : BackgroundService
         var publisher = sp.GetRequiredService<IRabbitMqPublisher>();
 
         var tank = await tankRepo.GetByIdAsync(evt.TankId);
-        if (tank == null) return;
+        
+        // Fallback: If TankId was empty (from frontend), find tank by StationId and FuelTypeId
+        if (tank == null)
+        {
+            var stationTanks = await tankRepo.GetByStationIdAsync(evt.StationId);
+            tank = stationTanks.FirstOrDefault(t => t.FuelTypeId == evt.FuelTypeId);
+        }
+
+        if (tank == null) 
+        {
+            sp.GetRequiredService<ILogger<SagaConsumerHostedService>>()
+                .LogWarning("SaleCompletedEvent: Tank not found for StationId: {StationId}, FuelTypeId: {FuelTypeId}", evt.StationId, evt.FuelTypeId);
+            return;
+        }
 
         // Deduct from actual stock and release reservation
         tank.CurrentStockLitres -= evt.QuantityLitres;

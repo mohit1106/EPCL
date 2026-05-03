@@ -1,0 +1,75 @@
+<div class="page-container">
+  <!-- Header -->
+  <div class="page-hdr">
+    <div>
+      <h1 class="page-title">Pending Offloads</h1>
+      <p class="page-sub">Verify and complete tanker fuel deliveries</p>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="loading"><div class="spinner"></div><span>Loading requests...</span></div>
+
+  <div class="content-grid" *ngIf="!isLoading">
+    <!-- List of Offloads -->
+    <div class="card offload-list-card">
+      <div class="card-hdr">
+        <h3 class="card-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/></svg> 
+          Active Deliveries
+          <span class="count-badge" *ngIf="offloadRequests.length">{{ offloadRequests.length }}</span>
+        </h3>
+      </div>
+      
+      <div *ngIf="offloadRequests.length === 0" class="empty-state">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        <p>No pending offloads</p>
+        <span>There are currently no deliveries awaiting verification.</span>
+      </div>
+
+      <div class="offload-grid">
+        <div class="offload-card" *ngFor="let req of offloadRequests">
+          <div class="card-head">
+            <span class="order-id mono">{{ req.orderNumber }}</span>
+            <span class="status-badge offloading">Awaiting Verification</span>
+          </div>
+          <div class="card-body">
+            <div class="detail"><span class="label">Fuel Type:</span> <span class="val">{{ getReqFuelName(req) }}</span></div>
+            <div class="detail"><span class="label">Volume:</span> <span class="val mono accent">{{ req.requestedQuantityLitres | number }} L</span></div>
+            <div class="detail"><span class="label">Target Pump:</span> <span class="val">{{ req.targetPumpName || 'N/A' }}</span></div>
+            <div class="detail"><span class="label">Driver:</span> <span class="val">{{ req.assignedDriverName || 'Unknown' }}</span></div>
+          </div>
+          <div class="card-actions">
+            <button class="btn-verify" (click)="openOffloadModal(req)">Verify Offloading</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Verification Modal -->
+  <div class="modal-overlay" *ngIf="showOffloadModal" (click)="closeOffloadModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <h3>Fuel Offloading Verification</h3>
+      <p class="modal-sub">Enter the Driver Code to verify the delivery for Order <strong>{{ offloadOrderId }}</strong></p>
+
+      <div class="order-details" *ngIf="offloadingRequest">
+        <div class="detail-row"><span>Fuel Type</span><strong>{{ getReqFuelName(offloadingRequest) }}</strong></div>
+        <div class="detail-row"><span>Volume</span><strong class="mono">{{ offloadingRequest.requestedQuantityLitres | number }} L</strong></div>
+        <div class="detail-row"><span>Driver</span><strong>{{ offloadingRequest.assignedDriverName }}</strong></div>
+      </div>
+
+      <div class="form-field" *ngIf="offloadingRequest">
+        <label>Driver Identification Code</label>
+        <input type="text" class="form-input mono" [(ngModel)]="offloadDriverCode" placeholder="Enter driver code" />
+        <span class="form-hint">Ask the driver for their identification code</span>
+      </div>
+
+      <div class="modal-actions" *ngIf="offloadingRequest">
+        <button class="btn-cancel" (click)="closeOffloadModal()">Cancel</button>
+        <button class="btn-verify modal-btn" (click)="verifyOffloading()" [disabled]="isVerifying">
+          {{ isVerifying ? 'Verifying...' : 'Verify & Accept Delivery' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

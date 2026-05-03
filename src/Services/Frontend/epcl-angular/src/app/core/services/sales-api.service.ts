@@ -49,6 +49,7 @@ export interface WalletPaymentRequestDto {
   vehicleNumber?: string;
   fuelTypeName?: string;
   quantityLitres?: number;
+  paymentMethod: string; // Wallet, UPI, Bank
   createdAt: string;
   expiresAt: string;
 }
@@ -258,15 +259,26 @@ export class SalesApiService {
 
   // Shifts
   getActiveShift(): Observable<ShiftDto | null> {
-    return this.http.get<ShiftDto | null>(`${this.base}/shifts/active`);
+    return this.http.get<ShiftDto | null>(`${this.base}/shifts/current`);
   }
 
-  startShift(): Observable<ShiftDto> {
-    return this.http.post<ShiftDto>(`${this.base}/shifts/start`, {});
+  startShift(stationId: string, notes?: string): Observable<ShiftDto> {
+    return this.http.post<ShiftDto>(`${this.base}/shifts/start`, { stationId, notes: notes || '' });
   }
 
-  endShift(): Observable<ShiftDto> {
-    return this.http.post<ShiftDto>(`${this.base}/shifts/end`, {});
+  endShift(notes?: string): Observable<ShiftDto> {
+    return this.http.post<ShiftDto>(`${this.base}/shifts/end`, { notes: notes || '' });
+  }
+
+  getShiftHistory(stationId: string, page = 1, pageSize = 50): Observable<ShiftDto[]> {
+    let params = new HttpParams().set('page', page).set('pageSize', pageSize);
+    return this.http.get<ShiftDto[]>(`${this.base}/shifts/history/${stationId}`, { params });
+  }
+
+  getAllShifts(page = 1, pageSize = 50, stationId?: string): Observable<PaginatedResult<ShiftDto>> {
+    let params = new HttpParams().set('page', page).set('pageSize', pageSize);
+    if (stationId) params = params.set('stationId', stationId);
+    return this.http.get<PaginatedResult<ShiftDto>>(`${this.base}/shifts/all`, { params });
   }
 
   getShiftSummary(): Observable<ShiftSummaryDto> {
@@ -279,10 +291,10 @@ export class SalesApiService {
     });
   }
 
-  // Wallet Payment Requests (dealer-initiated)
   createWalletPaymentRequest(body: {
     saleTransactionId: string; customerId: string; amount: number;
     description: string; vehicleNumber?: string; fuelTypeName?: string; quantityLitres?: number;
+    paymentMethod?: string;
   }): Observable<WalletPaymentRequestDto> {
     return this.http.post<WalletPaymentRequestDto>('/gateway/payments/wallet/request', body);
   }

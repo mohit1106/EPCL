@@ -2,144 +2,127 @@
   <!-- Page Header -->
   <div class="page-hdr">
     <div>
-      <h1 class="page-title">Inventory Matrix</h1>
-      <p class="page-sub">Real-time fuel stock levels and intake operations</p>
+      <h1 class="page-title">Fuel Inventory</h1>
+      <p class="page-sub">Real-time tank levels — auto-refreshes every 15 seconds</p>
     </div>
-    <div class="kpi-row">
-      <div class="kpi-card"><span class="kpi-label">Total Tanks</span><span class="kpi-value">{{ tankCount }}</span></div>
-      <div class="kpi-card"><span class="kpi-label">Total Capacity</span><span class="kpi-value mono">{{ totalCapacity | number }} L</span></div>
-      <div class="kpi-card accent"><span class="kpi-label">Current Loadout</span><span class="kpi-value mono">{{ currentLoadout | number }} L</span></div>
-      <div class="kpi-card"><span class="kpi-label">Utilization</span><span class="kpi-value mono">{{ utilizationPct }}%</span></div>
+    <div class="hdr-actions">
+      <span class="last-sync mono">Last updated: {{ lastRefresh }}</span>
+      <button class="btn-refresh" (click)="loadInventory()" [disabled]="isLoading">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" [class.spinning]="isLoading">
+          <path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+        </svg>
+        Refresh
+      </button>
     </div>
   </div>
 
-  <!-- Offload Alert Banner -->
-  <div class="offload-banner" *ngIf="offloadRequests.length > 0">
-    <div class="banner-left">
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/></svg>
-      <div>
-        <strong>{{ offloadRequests.length }} fuel delivery awaiting offloading verification</strong>
-        <p>Verify with Order ID and Driver ID to complete intake</p>
-      </div>
+  <!-- Summary KPIs -->
+  <div class="kpi-row" *ngIf="!isLoading">
+    <div class="kpi-card">
+      <span class="kpi-label">Tanks</span>
+      <span class="kpi-value">{{ tankCount }}</span>
     </div>
-    <button class="btn-offload" (click)="openOffloadModal()">Verify Offloading</button>
+    <div class="kpi-card">
+      <span class="kpi-label">Total Capacity</span>
+      <span class="kpi-value mono">{{ totalCapacity | number:'1.0-0' }} L</span>
+    </div>
+    <div class="kpi-card highlight">
+      <span class="kpi-label">Total Fuel Available</span>
+      <span class="kpi-value mono">{{ currentLoadout | number:'1.0-0' }} L</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Utilization</span>
+      <span class="kpi-value mono">{{ utilizationPct }}%</span>
+    </div>
   </div>
 
   <!-- Loading -->
-  <div *ngIf="isLoading" class="loading"><div class="spinner"></div><span>Loading inventory...</span></div>
+  <div *ngIf="isLoading && tanks.length === 0" class="loading">
+    <div class="spinner"></div>
+    <span>Loading inventory...</span>
+  </div>
 
-  <!-- Tank Cards -->
-  <div class="tank-grid" *ngIf="!isLoading">
-    <div class="tank-card" *ngFor="let t of tanks" [ngClass]="t.statusClass">
-      <div class="tank-head">
-        <div>
-          <span class="tank-fuel">{{ t.fuelName }}</span>
-          <span class="tank-serial mono">{{ t.serialNumber }}</span>
-        </div>
-        <span class="tank-status" [ngClass]="t.statusClass">{{ t.status }}</span>
-      </div>
-
-      <!-- Gauge -->
-      <div class="gauge-wrap">
-        <div class="gauge-track">
-          <div class="gauge-fill" [style.height.%]="t.pct" [style.background]="t.color"></div>
-        </div>
-        <div class="gauge-info">
-          <span class="gauge-pct mono" [style.color]="t.color">{{ t.pct }}%</span>
-          <span class="gauge-label">FILL LEVEL</span>
-        </div>
-      </div>
-
-      <div class="tank-numbers">
-        <div class="tank-num"><span class="num-label">Current</span><span class="num-value mono">{{ t.current | number }} L</span></div>
-        <div class="tank-num"><span class="num-label">Capacity</span><span class="num-value mono text-muted">{{ t.capacity | number }} L</span></div>
-        <div class="tank-num"><span class="num-label">Available</span><span class="num-value mono">{{ t.available | number }} L</span></div>
-      </div>
-
-      <!-- Connected pumps -->
-      <div class="tank-pumps" *ngIf="t.pumps.length > 0">
-        <span class="pumps-label">Connected Pumps</span>
-        <div class="pump-chips">
-          <span class="pump-chip mono" *ngFor="let p of t.pumps">{{ p.pumpName }}</span>
-        </div>
-      </div>
+  <!-- Tank Table -->
+  <div class="tanks-section" *ngIf="!isLoading || tanks.length > 0">
+    <div class="section-header">
+      <h2 class="section-title">Tank Status</h2>
     </div>
 
-    <div *ngIf="tanks.length === 0" class="empty-state full-width">
-      <p>No tanks registered for this station</p>
+    <div class="tank-table-wrap" *ngIf="tanks.length > 0">
+      <table class="tank-table">
+        <thead>
+          <tr>
+            <th>Fuel Type</th>
+            <th>Tank ID</th>
+            <th>Status</th>
+            <th class="num-col">Current Stock</th>
+            <th class="num-col">Capacity</th>
+            <th class="num-col">Available</th>
+            <th class="num-col">Fill %</th>
+            <th>Connected Pumps</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of tanks" [class]="'row-' + t.statusClass">
+            <td class="fuel-name">
+              <span class="fuel-dot" [style.background]="t.color"></span>
+              {{ t.fuelName }}
+            </td>
+            <td class="mono serial">{{ t.serialNumber }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="t.statusClass">{{ t.status }}</span>
+            </td>
+            <td class="num-col mono bold">{{ t.current | number:'1.0-0' }} L</td>
+            <td class="num-col mono muted">{{ t.capacity | number:'1.0-0' }} L</td>
+            <td class="num-col mono">{{ t.available | number:'1.0-0' }} L</td>
+            <td class="num-col">
+              <div class="fill-bar-wrap">
+                <div class="fill-bar" [style.width.%]="t.pct" [style.background]="t.color"></div>
+              </div>
+              <span class="fill-pct mono" [style.color]="t.color">{{ t.pct }}%</span>
+            </td>
+            <td>
+              <div class="pump-chips" *ngIf="t.pumps.length > 0">
+                <span class="pump-chip mono" *ngFor="let p of t.pumps">{{ p.pumpName }}</span>
+              </div>
+              <span class="no-pumps" *ngIf="t.pumps.length === 0">—</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="tanks.length === 0" class="empty-state">
+      <p>No tanks registered for this station. Add a pump from your Dashboard and a tank will be auto-created.</p>
     </div>
   </div>
 
-  <!-- Bottom: Offloads + Loading Log -->
-  <div class="bottom-grid" *ngIf="!isLoading">
-    <div class="card">
-      <div class="card-hdr"><h3 class="card-title"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/></svg> Pending Offloads</h3></div>
-      <div *ngIf="offloadRequests.length === 0" class="empty-mini"><p>No pending offloads</p></div>
-      <div class="offload-list">
-        <div class="offload-item" *ngFor="let req of offloadRequests">
-          <div class="offload-meta">
-            <span class="order-id mono">{{ req.orderNumber }}</span>
-            <span>{{ getReqFuelName(req) }}</span>
-            <span class="mono accent-text">{{ req.requestedQuantityLitres | number }} L</span>
-          </div>
-          <button class="btn-sm" (click)="openOffloadModal(req)">Verify</button>
-        </div>
-      </div>
+  <!-- Recent Stock Loadings -->
+  <div class="section" *ngIf="!isLoading && loadingLog.length > 0">
+    <div class="section-header">
+      <h2 class="section-title">Recent Stock Loadings</h2>
     </div>
-
-    <div class="card">
-      <div class="card-hdr"><h3 class="card-title"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg> Recent Stock Loadings</h3></div>
-      <div class="table-wrap">
-        <table *ngIf="loadingLog.length > 0">
-          <thead><tr><th>Time</th><th>Invoice</th><th>Qty</th><th>Before</th><th>After</th></tr></thead>
-          <tbody>
-            <tr *ngFor="let l of loadingLog">
-              <td class="mono text-muted">{{ l.timestamp | date:'short' }}</td>
-              <td class="mono">{{ l.invoiceNumber }}</td>
-              <td class="mono accent-text">+{{ l.quantityLoadedLitres | number }} L</td>
-              <td class="mono text-muted">{{ l.stockBefore | number }} L</td>
-              <td class="mono">{{ l.stockAfter | number }} L</td>
-            </tr>
-          </tbody>
-        </table>
-        <div *ngIf="loadingLog.length === 0" class="empty-mini"><p>No loading records yet</p></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Verification Modal -->
-  <div class="modal-overlay" *ngIf="showOffloadModal" (click)="closeOffloadModal()">
-    <div class="modal-dialog" (click)="$event.stopPropagation()">
-      <h3>Fuel Offloading Verification</h3>
-      <p class="modal-sub">Enter the Order ID and Driver Code to verify the delivery</p>
-
-      <div class="form-field">
-        <label>Order ID</label>
-        <div class="input-row">
-          <input type="text" class="form-input mono" [(ngModel)]="offloadOrderId" placeholder="ORD-XXXXXX" />
-          <button class="btn-lookup" (click)="lookupOrder()" *ngIf="!offloadingRequest">Lookup</button>
-        </div>
-      </div>
-
-      <div class="order-details" *ngIf="offloadingRequest">
-        <div class="detail-row"><span>Fuel Type</span><strong>{{ getReqFuelName(offloadingRequest) }}</strong></div>
-        <div class="detail-row"><span>Volume</span><strong class="mono">{{ offloadingRequest.requestedQuantityLitres | number }} L</strong></div>
-        <div class="detail-row"><span>Target Pump</span><strong>{{ offloadingRequest.targetPumpName || 'N/A' }}</strong></div>
-        <div class="detail-row"><span>Driver</span><strong>{{ offloadingRequest.assignedDriverName }}</strong></div>
-      </div>
-
-      <div class="form-field" *ngIf="offloadingRequest">
-        <label>Driver Identification Code</label>
-        <input type="text" class="form-input mono" [(ngModel)]="offloadDriverCode" placeholder="Enter driver code" />
-        <span class="form-hint">Ask the driver for their identification code</span>
-      </div>
-
-      <div class="modal-actions" *ngIf="offloadingRequest">
-        <button class="btn-cancel" (click)="closeOffloadModal()">Cancel</button>
-        <button class="btn-verify" (click)="verifyOffloading()" [disabled]="isVerifying">
-          {{ isVerifying ? 'Verifying...' : 'Verify & Accept Delivery' }}
-        </button>
-      </div>
+    <div class="tank-table-wrap">
+      <table class="tank-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Invoice</th>
+            <th class="num-col">Loaded</th>
+            <th class="num-col">Before</th>
+            <th class="num-col">After</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let l of loadingLog">
+            <td class="mono muted">{{ l.timestamp | date:'short' }}</td>
+            <td class="mono">{{ l.invoiceNumber }}</td>
+            <td class="num-col mono accent">+{{ l.quantityLoadedLitres | number:'1.0-0' }} L</td>
+            <td class="num-col mono muted">{{ l.stockBefore | number:'1.0-0' }} L</td>
+            <td class="num-col mono">{{ l.stockAfter | number:'1.0-0' }} L</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>

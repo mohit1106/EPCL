@@ -40,10 +40,6 @@ export class WalletComponent implements OnInit, OnDestroy, AfterViewInit {
   amountPresets = [500, 1000, 2000, 5000];
   showAddFundsPanel = false;
 
-  // Auto Top-up
-  autoTopUp = false;
-  autoTopUpAmount = 5000;
-  autoTopUpThreshold = 1000;
 
   // Saved Cards (localStorage)
   savedCards: SavedCard[] = [];
@@ -289,12 +285,6 @@ export class WalletComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
-  // ─── Auto Top-up ───
-
-  toggleAutoTopUp(): void {
-    this.autoTopUp = !this.autoTopUp;
-    this.toast.info(this.autoTopUp ? 'Auto top-up enabled' : 'Auto top-up disabled');
-  }
 
   // ─── Saved Cards (localStorage) ───
 

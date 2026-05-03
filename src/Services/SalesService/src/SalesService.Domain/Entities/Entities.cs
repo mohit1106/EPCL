@@ -38,6 +38,7 @@ public class Transaction
     public string ReceiptNumber { get; set; } = string.Empty;
     public Guid StationId { get; set; }
     public Guid PumpId { get; set; }
+    public Guid TankId { get; set; }
     public Guid FuelTypeId { get; set; }
     public Guid DealerUserId { get; set; }
     public Guid? CustomerUserId { get; set; }
@@ -215,6 +216,9 @@ public class WalletPaymentRequest
     public string? VehicleNumber { get; set; }
     public string? FuelTypeName { get; set; }
     public decimal? QuantityLitres { get; set; }
+    public string PaymentMethod { get; set; } = "Wallet"; // Wallet, UPI, Bank
+    public string? RazorpayOrderId { get; set; }
+    public string? RazorpayPaymentId { get; set; }
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset ExpiresAt { get; set; }
 }

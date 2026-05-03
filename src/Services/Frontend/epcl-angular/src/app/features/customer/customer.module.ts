@@ -11,10 +11,12 @@ import { StationsComponent } from './pages/stations/stations.component';
 import { LoyaltyComponent } from './pages/loyalty/loyalty.component';
 import { VehiclesComponent } from './pages/vehicles/vehicles.component';
 import { ReferralComponent } from './pages/referral/referral.component';
+import { PaymentRequestsComponent } from './pages/payment-requests/payment-requests.component';
 
 const routes: Routes = [
   { path: 'dashboard', component: DashboardComponent },
   { path: 'wallet', component: WalletComponent },
+  { path: 'payment-requests', component: PaymentRequestsComponent },
   { path: 'prices', component: PricesComponent },
   { path: 'transactions', component: TransactionsComponent },
   { path: 'stations', component: StationsComponent },
@@ -34,6 +36,7 @@ const routes: Routes = [
     LoyaltyComponent,
     VehiclesComponent,
     ReferralComponent,
+    PaymentRequestsComponent,
   ],
   imports: [
     SharedModule,

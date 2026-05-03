@@ -222,7 +222,12 @@ export class AdminStationsComponent implements OnInit, OnDestroy {
     this.stationsApi.deactivateStation(station.id).pipe(takeUntil(this.destroy$)).subscribe({
       next: () => {
         this.toast.success(`Station "${station.name}" has been permanently removed.`);
-        this.loadStations();
+        // Remove from local list immediately so it disappears from UI
+        this.stations = this.stations.filter(s => s.id !== station.id);
+        this.totalCount = Math.max(0, this.totalCount - 1);
+        this.activeCount = this.stations.filter(s => s.isActive).length;
+        this.offlineCount = this.stations.filter(s => !s.isActive).length;
+        this.totalPumps = this.stations.reduce((sum, s) => sum + s.pumpCount, 0);
       },
       error: (err) => this.toast.error(err?.error?.message || 'Failed to remove station.'),
     });

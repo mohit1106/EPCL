@@ -66,4 +66,13 @@ export class PaymentsApiService {
   rejectPaymentRequest(requestId: string): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(`${this.base}/wallet/reject/${requestId}`, {});
   }
+
+  // Razorpay payment for UPI/Bank payment requests
+  createRequestPaymentOrder(requestId: string): Observable<CreateOrderResponse> {
+    return this.http.post<CreateOrderResponse>(`${this.base}/request/${requestId}/create-order`, {});
+  }
+
+  verifyRequestPayment(requestId: string, orderId: string, paymentId: string, signature: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/request/${requestId}/verify`, { orderId, paymentId, signature });
+  }
 }

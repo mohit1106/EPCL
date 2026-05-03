@@ -65,51 +65,19 @@
     </div>
   </div>
 
-  <!-- ═══ Pending Payment Requests ═══ -->
-  <div class="section-block" *ngIf="pendingRequests.length > 0">
-    <div class="section-header">
-      <h2 class="section-title">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        Pending Payment Requests
-        <span class="pending-badge">{{ pendingRequests.length }}</span>
-      </h2>
-    </div>
-    <div class="pending-requests-grid">
-      <div class="pending-request-card" *ngFor="let req of pendingRequests">
-        <div class="pr-header">
-          <div class="pr-amount">₹{{ req.amount | number:'1.2-2' }}</div>
-          <span class="pr-timer">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-            {{ getTimeRemaining(req.expiresAt) }}
-          </span>
-        </div>
-        <div class="pr-details">
-          <div class="pr-detail-row" *ngIf="req.fuelTypeName">
-            <span class="pr-label">Fuel</span>
-            <span class="pr-value">{{ req.fuelTypeName }} — {{ req.quantityLitres | number:'1.2-2' }}L</span>
-          </div>
-          <div class="pr-detail-row" *ngIf="req.vehicleNumber">
-            <span class="pr-label">Vehicle</span>
-            <span class="pr-value">{{ req.vehicleNumber }}</span>
-          </div>
-          <div class="pr-detail-row">
-            <span class="pr-label">Description</span>
-            <span class="pr-value">{{ req.description }}</span>
-          </div>
-        </div>
-        <div class="pr-actions">
-          <button class="btn-approve" (click)="approveRequest(req.id)" [disabled]="processingRequestId === req.id">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>
-            {{ processingRequestId === req.id ? 'Processing...' : 'Approve' }}
-          </button>
-          <button class="btn-reject" (click)="rejectRequest(req.id)" [disabled]="processingRequestId === req.id">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 18L18 6M6 6l12 12"/></svg>
-            Reject
-          </button>
-        </div>
+  <!-- ═══ Pending Requests Banner ═══ -->
+  <a class="pending-banner" *ngIf="pendingRequests.length > 0" routerLink="/customer/payment-requests">
+    <div class="pending-banner-left">
+      <div class="pending-banner-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <div>
+        <span class="pending-banner-title">{{ pendingRequests.length }} pending payment request{{ pendingRequests.length > 1 ? 's' : '' }}</span>
+        <span class="pending-banner-sub">Tap to view and pay</span>
       </div>
     </div>
-  </div>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+  </a>
 
   <!-- ═══ Saved Payment Methods (PVC Cards) ═══ -->
   <div class="section-block">
@@ -230,46 +198,30 @@
       </div>
     </div>
 
-    <!-- Auto Top-up -->
-    <div class="autotopup-card">
-      <div class="autotopup-header">
-        <h3 class="section-title-sm">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-          Auto Top-up
-        </h3>
-        <button class="toggle-switch" [class.active]="autoTopUp" (click)="toggleAutoTopUp()">
-          <span class="toggle-knob"></span>
-        </button>
+    <!-- Spending Insights (replacing Auto Top-up) -->
+    <div class="insights-card">
+      <h3 class="section-title-sm">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+        Spending Insights
+      </h3>
+      <div class="insight-stat">
+        <span class="insight-label">Total Spent</span>
+        <span class="insight-value">₹{{ totalSpend | number:'1.0-0' }}</span>
       </div>
-
-      <p class="autotopup-desc" [class.dimmed]="!autoTopUp">
-        Automatically recharge
-        <strong>₹{{ autoTopUpAmount | number }}</strong>
-        when balance drops below
-        <strong>₹{{ autoTopUpThreshold | number }}</strong>.
-      </p>
-
-      <div class="autotopup-config" *ngIf="autoTopUp">
-        <div class="config-row">
-          <span class="config-label">Recharge Amount</span>
-          <div class="config-input-wrap">
-            <span>₹</span>
-            <input type="number" [(ngModel)]="autoTopUpAmount" min="100" />
-          </div>
-        </div>
-        <div class="config-row">
-          <span class="config-label">When Below</span>
-          <div class="config-input-wrap">
-            <span>₹</span>
-            <input type="number" [(ngModel)]="autoTopUpThreshold" min="100" />
-          </div>
-        </div>
+      <div class="insight-stat">
+        <span class="insight-label">Avg / Month</span>
+        <span class="insight-value">₹{{ avgMonthlySpend | number:'1.0-0' }}</span>
       </div>
-
-      <div class="autotopup-status" [class.enabled]="autoTopUp">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path *ngIf="autoTopUp" d="M9 12l2 2 4-4"/><path *ngIf="!autoTopUp" d="M15 9l-6 6M9 9l6 6"/></svg>
-        {{ autoTopUp ? 'Active — will trigger automatically' : 'Disabled — manual top-up only' }}
+      <div class="insight-stat">
+        <span class="insight-label">Trend</span>
+        <span class="insight-value" [class.trend-up]="spendTrend > 0" [class.trend-down]="spendTrend <= 0">
+          {{ spendTrend > 0 ? '+' : '' }}{{ spendTrend | number:'1.1-1' }}%
+        </span>
       </div>
+      <a class="insight-link" routerLink="/customer/payment-requests">
+        View Payment Requests
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
     </div>
   </div>
 

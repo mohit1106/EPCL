@@ -12,6 +12,7 @@ import { ShiftComponent } from './pages/shift/shift.component';
 import { ReplenishmentComponent } from './pages/replenishment/replenishment.component';
 import { DealerReportsComponent } from './pages/reports/reports.component';
 import { DealerContactAdminComponent } from './pages/contact-admin/contact-admin.component';
+import { PendingOffloadsComponent } from './pages/pending-offloads/pending-offloads.component';
 
 const routes: Routes = [
   { path: 'dashboard', component: DealerDashboardComponent },
@@ -21,6 +22,7 @@ const routes: Routes = [
   { path: 'inventory', component: InventoryComponent },
   { path: 'shift', component: ShiftComponent },
   { path: 'replenishment', component: ReplenishmentComponent },
+  { path: 'pending-offloads', component: PendingOffloadsComponent },
   { path: 'reports', component: DealerReportsComponent },
   { path: 'contact-admin', component: DealerContactAdminComponent },
 ];
@@ -36,6 +38,7 @@ const routes: Routes = [
     ReplenishmentComponent,
     DealerReportsComponent,
     DealerContactAdminComponent,
+    PendingOffloadsComponent,
   ],
   imports: [SharedModule, FormsModule, RouterModule.forChild(routes)],
 })

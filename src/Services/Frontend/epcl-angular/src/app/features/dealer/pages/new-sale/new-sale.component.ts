@@ -54,11 +54,16 @@ export class NewSaleComponent implements OnInit, OnDestroy {
 
   paymentMethods = [
     { name: 'Cash', icon: 'cash', selected: true, requiresRegistered: false },
-    { name: 'UPI', icon: 'upi', selected: false, requiresRegistered: true },
+    { name: 'UPI', icon: 'upi', selected: false, requiresRegistered: false },
     { name: 'Card', icon: 'card', selected: false, requiresRegistered: true },
     { name: 'Wallet', icon: 'wallet', selected: false, requiresRegistered: true },
   ];
   selectedPayment = 'Cash';
+
+  // QR code modal for unregistered UPI
+  showQrModal = false;
+  qrSaleId = '';
+  qrAmount = 0;
 
   // Barcode decoration
   barcodeLines = Array.from({ length: 24 }, () => ({
@@ -422,10 +427,20 @@ export class NewSaleComponent implements OnInit, OnDestroy {
 
     this.salesApi.recordSale(command).pipe(takeUntil(this.destroy$)).subscribe({
       next: (txn) => {
-        // If wallet payment, create a wallet payment request
-        if (this.selectedPayment === 'Wallet' && this.linkedVehicle?.customerId) {
-          this.createWalletPaymentRequest(txn.id, this.linkedVehicle.customerId, txn.totalAmount);
+        // UPI for UNREGISTERED vehicle → show QR code modal
+        if (this.selectedPayment === 'UPI' && !this.linkedVehicle) {
+          this.qrSaleId = txn.id;
+          this.qrAmount = txn.totalAmount;
+          this.showQrModal = true;
+          this.isSubmitting = false;
+          return;
+        }
+
+        // Wallet/UPI/Bank for REGISTERED vehicle → create payment request
+        if ((this.selectedPayment === 'Wallet' || this.selectedPayment === 'UPI' || this.selectedPayment === 'Card') && this.linkedVehicle?.customerId) {
+          this.createPaymentRequest(txn.id, this.linkedVehicle.customerId, txn.totalAmount);
         } else {
+          // Cash → auto-complete
           this.toast.success(`Sale recorded! Receipt: ${txn.receiptNumber}`);
           this.isSubmitting = false;
           this.router.navigate(['/dealer/sales/confirmation', txn.id]);
@@ -441,8 +456,21 @@ export class NewSaleComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Create a wallet payment request after recording sale */
-  private createWalletPaymentRequest(saleId: string, customerId: string, amount: number): void {
+  /** Dealer confirms QR payment received (unregistered UPI) */
+  confirmQrPayment(): void {
+    this.showQrModal = false;
+    this.toast.success('UPI payment confirmed! Sale completed.');
+    this.router.navigate(['/dealer/sales/confirmation', this.qrSaleId]);
+  }
+
+  closeQrModal(): void {
+    this.showQrModal = false;
+    // Sale was already recorded, just navigate
+    this.router.navigate(['/dealer/sales/confirmation', this.qrSaleId]);
+  }
+
+  /** Create a payment request after recording sale (Wallet/UPI/Bank) */
+  private createPaymentRequest(saleId: string, customerId: string, amount: number): void {
     this.salesApi.createWalletPaymentRequest({
       saleTransactionId: saleId,
       customerId,
@@ -451,17 +479,17 @@ export class NewSaleComponent implements OnInit, OnDestroy {
       vehicleNumber: this.vehicleNumber,
       fuelTypeName: this.selectedPump?.type || 'Fuel',
       quantityLitres: this.volume,
+      paymentMethod: this.selectedPayment,
     }).pipe(takeUntil(this.destroy$)).subscribe({
       next: () => {
-        this.toast.success('Sale recorded! Wallet payment request sent to customer for approval.');
+        const methodLabel = this.selectedPayment === 'Wallet' ? 'Wallet payment' : `${this.selectedPayment} payment`;
+        this.toast.success(`Sale recorded! ${methodLabel} request sent to customer for approval.`);
         this.isSubmitting = false;
-        // Do NOT cancel. Redirect to confirmation page.
         this.router.navigate(['/dealer/sales/confirmation', saleId]);
       },
       error: (err) => {
-        this.toast.error(err?.error?.message || 'Failed to send wallet request.');
+        this.toast.error(err?.error?.message || 'Failed to send payment request.');
         this.isSubmitting = false;
-        // Still navigate so they see the Failed/Initiated state
         this.router.navigate(['/dealer/sales/confirmation', saleId]);
       }
     });

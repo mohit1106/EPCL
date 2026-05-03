@@ -112,6 +112,10 @@ export class InventoryApiService {
     return this.http.get<TankDto[]>(`${this.base}/stations/${stationId}/tanks`);
   }
 
+  ensureTankExists(stationId: string, fuelTypeId: string): Observable<TankDto> {
+    return this.http.post<TankDto>(`${this.base}/stations/${stationId}/ensure-tank`, { fuelTypeId });
+  }
+
   recordDipReading(reading: DipReadingDto): Observable<DipReadingResultDto> {
     return this.http.post<DipReadingResultDto>(`${this.base}/tanks/${reading.tankId}/dip-reading`, reading);
   }

@@ -25,7 +25,7 @@ export class ReplenishmentComponent implements OnInit, OnDestroy {
   fuelTypes: { id: string; name: string }[] = [];
   selectedFuelType = '';
   selectedPumpId = '';
-  requestVolume = 20000;
+  requestVolume = 100;
   requestWindow = 'Next 24 hours';
   priority = 'Standard';
   windowOptions = ['Next 24 hours', 'Next 48 hours', 'Next Week', 'Scheduled'];
@@ -151,7 +151,7 @@ export class ReplenishmentComponent implements OnInit, OnDestroy {
   submitRequest(): void {
     if (!this.selectedFuelType) { this.toast.error('Please select a fuel type.'); return; }
     if (!this.selectedPumpId) { this.toast.error('Please select a target pump.'); return; }
-    if (this.requestVolume < 1000) { this.toast.error('Minimum request volume is 1,000 litres.'); return; }
+    if (this.requestVolume < 10) { this.toast.error('Minimum request volume is 10 litres.'); return; }
 
     this.isSubmitting = true;
 
@@ -176,7 +176,7 @@ export class ReplenishmentComponent implements OnInit, OnDestroy {
       next: () => {
         this.toast.success('Replenishment request submitted successfully!');
         this.isSubmitting = false;
-        this.requestVolume = 20000;
+        this.requestVolume = 100;
         this.fetchRequests().subscribe();
       },
       error: (err) => {

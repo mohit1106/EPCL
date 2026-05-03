@@ -58,10 +58,11 @@ public class FuelPricesController(IMediator mediator) : ControllerBase
 /// <summary>Shift management.</summary>
 [ApiController]
 [Route("api/sales/shifts")]
-[Authorize(Roles = "Dealer")]
+[Authorize]
 public class ShiftsController(IMediator mediator) : ControllerBase
 {
     [HttpPost("start")]
+    [Authorize(Roles = "Dealer")]
     public async Task<IActionResult> StartShift([FromBody] StartShiftRequest body)
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -69,6 +70,7 @@ public class ShiftsController(IMediator mediator) : ControllerBase
     }
 
     [HttpPost("end")]
+    [Authorize(Roles = "Dealer")]
     public async Task<IActionResult> EndShift([FromBody] EndShiftRequest body)
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -76,10 +78,25 @@ public class ShiftsController(IMediator mediator) : ControllerBase
     }
 
     [HttpGet("current")]
+    [Authorize(Roles = "Dealer")]
     public async Task<IActionResult> GetCurrent()
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var shift = await mediator.Send(new GetActiveShiftQuery(userId));
         return shift == null ? NotFound(new { message = "No active shift." }) : Ok(shift);
+    }
+
+    [HttpGet("history/{stationId}")]
+    [Authorize(Roles = "Dealer,Admin,SuperAdmin")]
+    public async Task<IActionResult> GetHistory(Guid stationId, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
+    {
+        return Ok(await mediator.Send(new GetShiftHistoryQuery(stationId, page, pageSize)));
+    }
+
+    [HttpGet("all")]
+    [Authorize(Roles = "Admin,SuperAdmin")]
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 50, [FromQuery] Guid? stationId = null)
+    {
+        return Ok(await mediator.Send(new GetAllShiftsQuery(page, pageSize, stationId)));
     }
 }

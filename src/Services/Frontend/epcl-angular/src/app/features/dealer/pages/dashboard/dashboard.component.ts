@@ -211,11 +211,20 @@ export class DealerDashboardComponent implements OnInit, OnDestroy {
       catchError(err => { this.toast.error(err?.error?.message || 'Failed to create pump.'); this.isAddingPump = false; return of(null); })
     ).subscribe(result => {
       if (result) {
-        this.toast.success(`Pump "${this.newPumpName}" created successfully!`);
-        this.showAddPump = false;
-        this.loadPumps();
+        // Automatically ensure a tank exists for this fuel type
+        this.inventoryApi.ensureTankExists(this.stationId, this.newPumpFuelTypeId).pipe(
+            catchError(() => of(null))
+        ).subscribe(() => {
+            this.toast.success(`Pump "${this.newPumpName}" created successfully!`);
+            this.showAddPump = false;
+            this.isAddingPump = false;
+            this.loadPumps();
+            // Also reload tanks so the new tank shows up in dashboard
+            this.loadTanks();
+        });
+      } else {
+        this.isAddingPump = false;
       }
-      this.isAddingPump = false;
     });
   }
 

@@ -77,6 +77,16 @@ public class ShiftRepository(SalesDbContext ctx) : IShiftRepository
     public async Task UpdateAsync(Shift shift, CancellationToken ct) { ctx.Shifts.Update(shift); await ctx.SaveChangesAsync(ct); }
     public async Task<IReadOnlyList<Shift>> GetByStationAsync(Guid stationId, int page, int pageSize, CancellationToken ct)
         => await ctx.Shifts.Where(s => s.StationId == stationId).OrderByDescending(s => s.StartedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+    public async Task<IReadOnlyList<Shift>> GetByDealerAsync(Guid dealerUserId, int page, int pageSize, CancellationToken ct)
+        => await ctx.Shifts.Where(s => s.DealerUserId == dealerUserId).OrderByDescending(s => s.StartedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+    public async Task<(IReadOnlyList<Shift> Items, int Total)> GetAllPagedAsync(int page, int pageSize, Guid? stationId, CancellationToken ct)
+    {
+        var q = ctx.Shifts.AsQueryable();
+        if (stationId.HasValue) q = q.Where(s => s.StationId == stationId.Value);
+        var total = await q.CountAsync(ct);
+        var items = await q.OrderByDescending(s => s.StartedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+        return (items, total);
+    }
 }
 
 public class VoidedTransactionRepository(SalesDbContext ctx) : IVoidedTransactionRepository

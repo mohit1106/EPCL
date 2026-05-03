@@ -87,11 +87,12 @@ public record WalletPaymentRequestDto(
     Guid Id, Guid SaleTransactionId, Guid CustomerId, Guid DealerUserId,
     Guid StationId, decimal Amount, string Status, string Description,
     string? VehicleNumber, string? FuelTypeName, decimal? QuantityLitres,
-    DateTimeOffset CreatedAt, DateTimeOffset ExpiresAt);
+    string PaymentMethod, DateTimeOffset CreatedAt, DateTimeOffset ExpiresAt);
 
 public record CreateWalletPaymentRequestDto(
     Guid SaleTransactionId, Guid CustomerId, decimal Amount,
-    string Description, string? VehicleNumber, string? FuelTypeName, decimal? QuantityLitres);
+    string Description, string? VehicleNumber, string? FuelTypeName, decimal? QuantityLitres,
+    string? PaymentMethod);
 
 // ── Daily Summary DTO ──────────────────────────────────────────────
 public record DailySummaryDto(

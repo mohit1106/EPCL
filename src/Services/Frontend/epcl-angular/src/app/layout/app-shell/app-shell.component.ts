@@ -58,6 +58,7 @@ export class AppShellComponent implements OnInit {
     // Customer
     { label: 'Dashboard', icon: ICONS.dashboard, route: '/customer/dashboard', roles: ['Customer'] },
     { label: 'Wallet', icon: ICONS.wallet, route: '/customer/wallet', roles: ['Customer'] },
+    { label: 'Payments', icon: ICONS.transactions, route: '/customer/payment-requests', roles: ['Customer'] },
     { label: 'Fuel Prices', icon: ICONS.fuel, route: '/customer/prices', roles: ['Customer'] },
     { label: 'Transactions', icon: ICONS.transactions, route: '/customer/transactions', roles: ['Customer'] },
     { label: 'Stations', icon: ICONS.stations, route: '/customer/stations', roles: ['Customer'] },
@@ -70,6 +71,7 @@ export class AppShellComponent implements OnInit {
     { label: 'New Sale', icon: ICONS.newSale, route: '/dealer/sales/new', roles: ['Dealer'] },
     { label: 'Transactions', icon: ICONS.transactions, route: '/dealer/transactions', roles: ['Dealer'] },
     { label: 'Inventory', icon: ICONS.inventory, route: '/dealer/inventory', roles: ['Dealer'] },
+    { label: 'Pending Offloads', icon: ICONS.vehicles, route: '/dealer/pending-offloads', roles: ['Dealer'] },
     { label: 'Shifts', icon: ICONS.shifts, route: '/dealer/shift', roles: ['Dealer'] },
     { label: 'Replenishment', icon: ICONS.replenishment, route: '/dealer/replenishment', roles: ['Dealer'] },
     { label: 'Reports', icon: ICONS.reports, route: '/dealer/reports', roles: ['Dealer'] },
@@ -88,6 +90,7 @@ export class AppShellComponent implements OnInit {
     { label: 'Help Requests', icon: ICONS.helpRequests, route: '/admin/help-requests', roles: ['Admin', 'SuperAdmin'] },
     { label: 'Replenishment', icon: ICONS.replenishment, route: '/admin/replenishment-requests', roles: ['Admin', 'SuperAdmin'] },
     { label: 'Drivers', icon: ICONS.vehicles, route: '/admin/drivers', roles: ['Admin', 'SuperAdmin'] },
+    { label: 'Shift History', icon: ICONS.shifts, route: '/admin/shift-history', roles: ['Admin', 'SuperAdmin'] },
   ];
 
   filteredNavItems: NavItem[] = [];

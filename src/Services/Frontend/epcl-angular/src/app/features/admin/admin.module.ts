@@ -16,6 +16,7 @@ import { AdminDocumentsComponent } from './pages/documents/documents.component';
 import { AdminHelpRequestsComponent } from './pages/help-requests/help-requests.component';
 import { AdminReplenishmentRequestsComponent } from './pages/replenishment-requests/replenishment-requests.component';
 import { AdminDriversComponent } from './pages/drivers/drivers.component';
+import { AdminShiftHistoryComponent } from './pages/shift-history/shift-history.component';
 
 const routes: Routes = [
   { path: 'dashboard', component: AdminDashboardComponent },
@@ -30,6 +31,7 @@ const routes: Routes = [
   { path: 'help-requests', component: AdminHelpRequestsComponent },
   { path: 'replenishment-requests', component: AdminReplenishmentRequestsComponent },
   { path: 'drivers', component: AdminDriversComponent },
+  { path: 'shift-history', component: AdminShiftHistoryComponent },
 ];
 
 @NgModule({
@@ -46,6 +48,7 @@ const routes: Routes = [
     AdminHelpRequestsComponent,
     AdminReplenishmentRequestsComponent,
     AdminDriversComponent,
+    AdminShiftHistoryComponent,
   ],
   imports: [SharedModule, FormsModule, BaseChartDirective, RouterModule.forChild(routes)],
 })

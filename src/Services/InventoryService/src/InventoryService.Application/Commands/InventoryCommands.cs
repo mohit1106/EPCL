@@ -250,8 +250,11 @@ public class SubmitReplenishmentHandler(
 {
     public async Task<ReplenishmentRequestDto> Handle(SubmitReplenishmentCommand cmd, CancellationToken ct)
     {
-        _ = await tankRepo.GetByIdAsync(cmd.TankId, ct)
+        var tank = await tankRepo.GetByIdAsync(cmd.TankId, ct)
             ?? throw new NotFoundException("Tank", cmd.TankId);
+
+        if (tank.CurrentStockLitres + cmd.RequestedQuantityLitres > tank.CapacityLitres)
+            throw new DomainException($"Cannot request {cmd.RequestedQuantityLitres}L. Exceeds tank capacity of {tank.CapacityLitres}L (Current stock: {tank.CurrentStockLitres}L).");
 
         Enum.TryParse<UrgencyLevel>(cmd.UrgencyLevel, out var urgency);
 

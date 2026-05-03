@@ -32,6 +32,10 @@ export class ErrorInterceptor implements HttpInterceptor {
             message = 'You do not have permission to perform this action.';
             break;
           case 404:
+            // "No active shift" is a normal response, don't show toast for it
+            if (request.url.includes('/shifts/current')) {
+              return throwError(() => error);
+            }
             message = 'The requested resource was not found.';
             break;
           case 409:
