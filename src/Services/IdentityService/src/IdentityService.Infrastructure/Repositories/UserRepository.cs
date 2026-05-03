@@ -90,4 +90,24 @@ public class UserRepository(IdentityDbContext context) : IUserRepository
     {
         return await context.Users.AnyAsync(u => u.PhoneNumber == phoneNumber, ct);
     }
+
+    public async Task<UserStatsResult> GetUserStatsAsync(CancellationToken ct = default)
+    {
+        var users = context.Users.AsQueryable();
+
+        var totalCount = await users.CountAsync(ct);
+        var activeCount = await users.CountAsync(u => u.IsActive && u.IsEmailVerified, ct);
+        var lockedCount = await users.CountAsync(u => !u.IsActive, ct);
+        var pendingCount = await users.CountAsync(u => u.IsActive && !u.IsEmailVerified, ct);
+
+        var customerCount = await users.CountAsync(u => u.Role == UserRole.Customer, ct);
+        var dealerCount = await users.CountAsync(u => u.Role == UserRole.Dealer, ct);
+        var adminCount = await users.CountAsync(u => u.Role == UserRole.Admin, ct);
+        var superAdminCount = await users.CountAsync(u => u.Role == UserRole.SuperAdmin, ct);
+
+        return new UserStatsResult(
+            totalCount, activeCount, lockedCount, pendingCount,
+            customerCount, dealerCount, adminCount, superAdminCount
+        );
+    }
 }

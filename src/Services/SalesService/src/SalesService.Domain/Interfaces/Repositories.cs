@@ -30,6 +30,7 @@ public interface IFuelPriceRepository
 {
     Task<FuelPrice?> GetActivePriceAsync(Guid fuelTypeId, CancellationToken ct = default);
     Task<IReadOnlyList<FuelPrice>> GetAllActiveAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<FuelPrice>> GetAllAsync(CancellationToken ct = default);
     Task<FuelPrice> AddAsync(FuelPrice price, CancellationToken ct = default);
     Task DeactivateAsync(Guid fuelTypeId, CancellationToken ct = default);
 }

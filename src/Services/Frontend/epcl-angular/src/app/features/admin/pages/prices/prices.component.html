@@ -1,32 +1,222 @@
-<div class="page-content">
-  <div class="page-top"><div><h1 class="page-title">Price Control Center</h1><p class="page-subtitle mono">ACTIVE FISCAL CYCLE: 2024-Q3 // AUTH LEVEL: LEVEL 5 - SYSTEM ADMIN</p></div>
-    <div class="top-actions"><button class="btn-export mono">↓ EXPORT PRICING LEDGER</button><button class="btn-update mono">⊕ UPDATE GLOBAL PRICE</button></div></div>
+<div class="prices-page" [class.animate-in]="!isLoading">
 
-  <div class="price-grid">
-    <div class="price-card" *ngFor="let p of fuelPrices">
-      <div class="price-header"><span class="price-name mono">{{ p.name }}</span><span class="price-icon">📈</span></div>
-      <div class="price-value mono">${{ p.price | number:'1.3-3' }} <small [ngClass]="p.changeClass">{{ p.change }}</small></div>
-      <div class="price-bar" [style.background]="p.color"></div>
-      <span class="price-updated mono">LAST UPDATE: {{ p.lastUpdate }}</span>
+  <!-- Page Header -->
+  <div class="page-header-bar">
+    <div class="page-header-text">
+      <h1 class="page-title">Fuel Pricing</h1>
+      <p class="page-subtitle">Manage global fuel prices across all EPCL stations</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" id="btn-export" (click)="exportPricingLedger()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export Ledger
+      </button>
+      <button class="btn btn-primary" id="btn-scroll-update" (click)="priceCards.length > 0 ? prefillUpdateForm(priceCards[0]) : null">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Update Price
+      </button>
     </div>
   </div>
 
-  <div class="analytics-grid">
-    <div class="card"><div class="card-header-row"><h3 class="card-title mono">HISTORICAL DELTA ANALYSIS</h3><div class="tab-chips mono"><button class="tab active">PETROL</button><button class="tab">DIESEL</button><button class="tab">CNG</button></div></div>
-      <p class="chart-hint">Market fluctuations vs Regional Ceiling (30D)</p>
-      <div class="chart-area"><div class="chart-bars"><div class="chart-bar" *ngFor="let h of chartBars" [style.height.%]="h"></div></div></div>
+  <!-- Loading -->
+  <div class="loading-container" *ngIf="isLoading">
+    <div class="skeleton-grid">
+      <div class="skeleton" style="height: 90px;" *ngFor="let i of [1,2,3]"></div>
     </div>
-    <div class="card adjust-card"><h3 class="card-title">PRICE ADJUSTMENT MODULE</h3>
-      <div class="form-field"><label class="form-label mono">SELECT FUEL VARIANT</label><select class="form-input mono"><option>{{ selectedFuel }}</option></select></div>
-      <div class="form-field"><label class="form-label mono">NEW GLOBAL BASE PRICE ($)</label><div class="price-input"><input type="number" class="form-input mono big" [(ngModel)]="newPrice" /><div class="price-btns"><button>−</button><button>+</button></div></div></div>
-      <div class="impact-row"><span>Projected Revenue Impact</span><span class="mono text-success">{{ projectedImpact }} <small>/Day</small></span></div>
-      <div class="impact-row"><span>Regional Compliance Shift</span><span class="mono text-danger">{{ complianceShift }} <small>Deviation</small></span></div>
-      <button class="btn-apply mono">APPLY CHANGE GLOBALLY</button>
-    </div>
+    <div class="skeleton" style="height: 350px; margin-top: 20px;"></div>
   </div>
 
-  <div class="card"><div class="card-header-row"><h3 class="card-title mono">AUDIT TRAIL: PRICING COMMANDS</h3><span class="mono text-muted">VIEWING LATEST 150 EVENTS</span></div>
-    <table><thead><tr><th>TIMESTAMP (UTC)</th><th>FUEL ID</th><th>CHANGE TYPE</th><th>ADJUSTMENT</th><th>OPERATOR</th><th>STATUS</th></tr></thead>
-      <tbody><tr *ngFor="let a of auditTrail"><td class="mono">{{ a.timestamp }}</td><td><span class="fuel-tag mono">{{ a.fuelId }}</span></td><td>{{ a.changeType }}</td><td class="mono">{{ a.adjustment }}</td><td class="mono">{{ a.operator }}</td><td><span class="status-pill" [ngClass]="getStatusClass(a.status)">{{ a.status }}</span></td></tr></tbody></table>
+  <div *ngIf="!isLoading">
+
+    <!-- KPI Row -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap blue">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">Fuel Types</span>
+          <span class="kpi-value">{{ totalFuelTypes }}</span>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap green">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">Average Price</span>
+          <span class="kpi-value">₹{{ averagePrice | number:'1.2-2' }}<small>/L</small></span>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap amber">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">Last Updated</span>
+          <span class="kpi-value kpi-value-sm">{{ lastUpdated }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Price Cards Grid -->
+    <div class="price-cards-grid">
+      <div class="price-card" *ngFor="let card of priceCards" (click)="selectChartFuel(card.fuelTypeId)" [class.selected]="card.fuelTypeId === selectedChartFuelId">
+        <div class="price-card-accent" [style.background]="card.color"></div>
+        <div class="price-card-body">
+          <div class="price-card-header">
+            <span class="fuel-name">{{ card.fuelTypeName }}</span>
+            <button class="btn-edit" (click)="prefillUpdateForm(card); $event.stopPropagation()" title="Edit price">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+          </div>
+          <div class="price-amount">
+            <span class="price-rupee">₹</span>
+            <span class="price-number">{{ card.pricePerLitre | number:'1.2-2' }}</span>
+            <span class="price-unit">/L</span>
+          </div>
+          <div class="price-meta">
+            <span *ngIf="card.effectiveFrom">Effective {{ formatDate(card.effectiveFrom) }}</span>
+            <span *ngIf="!card.effectiveFrom" class="no-price">No price set</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty state if no fuel types -->
+      <div class="empty-card" *ngIf="priceCards.length === 0">
+        <p>No fuel types found. Add fuel types in Station Management first.</p>
+      </div>
+    </div>
+
+    <!-- Analytics Section -->
+    <div class="analytics-row">
+      <!-- Historical Chart -->
+      <div class="card chart-card">
+        <div class="chart-header">
+          <div>
+            <h3 class="card-section-title">Price History</h3>
+            <p class="chart-subtitle">{{ getSelectedFuelName() }} — Last 30 days</p>
+          </div>
+          <div class="fuel-tabs">
+            <button *ngFor="let card of priceCards"
+              class="fuel-tab"
+              [class.active]="card.fuelTypeId === selectedChartFuelId"
+              (click)="selectChartFuel(card.fuelTypeId)">
+              {{ card.fuelTypeName }}
+            </button>
+          </div>
+        </div>
+
+        <div class="chart-area" *ngIf="chartBars.length > 0">
+          <div class="chart-y-axis">
+            <span>₹{{ chartMaxPrice | number:'1.0-0' }}</span>
+            <span>₹{{ ((chartMaxPrice + chartMinPrice) / 2) | number:'1.0-0' }}</span>
+            <span>₹{{ chartMinPrice | number:'1.0-0' }}</span>
+          </div>
+          <div class="chart-bars-container">
+            <div class="chart-bar-wrap" *ngFor="let bar of chartBars; let i = index">
+              <div class="chart-bar" [style.height.%]="bar.height" [title]="'₹' + bar.value">
+                <span class="chart-bar-tooltip">₹{{ bar.value | number:'1.2-2' }}</span>
+              </div>
+              <span class="chart-bar-label" *ngIf="i % 3 === 0">{{ bar.label }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="chart-empty" *ngIf="chartBars.length === 0">
+          <p>Select a fuel type to view price history</p>
+        </div>
+      </div>
+
+      <!-- Update Price Form -->
+      <div class="card update-card">
+        <h3 class="card-section-title">Update Price</h3>
+        <p class="update-subtitle">Set new global base price for any fuel type</p>
+
+        <div class="form-group">
+          <label class="form-label">Fuel Type</label>
+          <select class="form-input" [(ngModel)]="updateFuelTypeId">
+            <option value="" disabled>Select fuel type</option>
+            <option *ngFor="let ft of fuelTypes" [value]="ft.id">{{ ft.name }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">New Price (₹ per Litre)</label>
+          <div class="price-input-wrap">
+            <span class="price-input-prefix">₹</span>
+            <input type="number" class="form-input price-field" [(ngModel)]="updatePrice" placeholder="0.00" step="0.01" min="0" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Effective From</label>
+          <div class="effective-toggle">
+            <button class="eff-btn" [class.active]="useImmediateEffective" (click)="setImmediate()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              Immediately
+            </button>
+            <button class="eff-btn" [class.active]="!useImmediateEffective" (click)="clearImmediate()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Schedule Date
+            </button>
+          </div>
+          <input type="date" class="form-input" [(ngModel)]="updateEffectiveFrom" *ngIf="!useImmediateEffective" style="margin-top: 8px;" />
+          <div class="immediate-badge" *ngIf="useImmediateEffective">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Will take effect right now
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-full" [disabled]="isUpdating || !updateFuelTypeId || !updatePrice" (click)="submitPriceUpdate()">
+          <span *ngIf="!isUpdating">Apply Price Change</span>
+          <span *ngIf="isUpdating">Updating...</span>
+        </button>
+
+        <p class="update-note">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          Price changes are applied globally across all stations immediately.
+        </p>
+      </div>
+    </div>
+
+    <!-- Audit Trail -->
+    <div class="card audit-card">
+      <div class="audit-header">
+        <h3 class="card-section-title">Pricing Audit Trail</h3>
+        <span class="audit-count">{{ auditEntries.length }} records</span>
+      </div>
+
+      <table class="data-table" *ngIf="auditEntries.length > 0">
+        <thead>
+          <tr>
+            <th>Fuel Type</th>
+            <th>Price</th>
+            <th>Effective From</th>
+            <th>Set On</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let entry of auditEntries">
+            <td><span class="fuel-tag">{{ entry.fuelName }}</span></td>
+            <td class="mono">{{ entry.price }}</td>
+            <td>{{ entry.effectiveFrom }}</td>
+            <td class="text-muted">{{ entry.createdAt }}</td>
+            <td>
+              <span class="status-badge" [class.active]="entry.isActive" [class.inactive]="!entry.isActive">
+                {{ entry.isActive ? 'Active' : 'Superseded' }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="empty-state" *ngIf="auditEntries.length === 0">
+        <div class="empty-state__icon">📋</div>
+        <div class="empty-state__title">No Price Records</div>
+        <div class="empty-state__subtitle">Price changes will appear here once you set fuel prices</div>
+      </div>
+    </div>
+
   </div>
 </div>

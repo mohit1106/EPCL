@@ -2,7 +2,6 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { SharedModule } from '../../shared/shared.module';
 import { FormsModule } from '@angular/forms';
-import { BaseChartDirective } from 'ng2-charts';
 
 import { AdminDashboardComponent } from './pages/dashboard/dashboard.component';
 import { AdminUsersComponent } from './pages/users/users.component';
@@ -50,6 +49,6 @@ const routes: Routes = [
     AdminDriversComponent,
     AdminShiftHistoryComponent,
   ],
-  imports: [SharedModule, FormsModule, BaseChartDirective, RouterModule.forChild(routes)],
+  imports: [SharedModule, FormsModule, RouterModule.forChild(routes)],
 })
 export class AdminModule {}

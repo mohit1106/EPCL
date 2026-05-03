@@ -16,4 +16,17 @@ public interface IUserRepository
     Task UpdateAsync(User user, CancellationToken ct = default);
     Task<bool> ExistsByEmailAsync(string email, CancellationToken ct = default);
     Task<bool> ExistsByPhoneAsync(string phoneNumber, CancellationToken ct = default);
+    Task<UserStatsResult> GetUserStatsAsync(CancellationToken ct = default);
 }
+
+/// <summary>Aggregate user statistics returned by GetUserStatsAsync.</summary>
+public record UserStatsResult(
+    int TotalCount,
+    int ActiveCount,
+    int LockedCount,
+    int PendingCount,
+    int CustomerCount,
+    int DealerCount,
+    int AdminCount,
+    int SuperAdminCount
+);

@@ -79,6 +79,18 @@ public class GetActiveFuelPricesHandler(IFuelPriceRepository priceRepo) : IReque
     }
 }
 
+public record GetAllFuelPricesQuery() : IRequest<IReadOnlyList<FuelPriceDto>>;
+
+public class GetAllFuelPricesHandler(IFuelPriceRepository priceRepo) : IRequestHandler<GetAllFuelPricesQuery, IReadOnlyList<FuelPriceDto>>
+{
+    public async Task<IReadOnlyList<FuelPriceDto>> Handle(GetAllFuelPricesQuery q, CancellationToken ct)
+    {
+        var prices = await priceRepo.GetAllAsync(ct);
+        return prices.Select(p => new FuelPriceDto(p.Id, p.FuelTypeId, p.PricePerLitre,
+            p.EffectiveFrom, p.IsActive, p.SetByUserId, p.CreatedAt)).ToList();
+    }
+}
+
 // ── Shifts ─────────────────────────────────────────────────────────
 public record GetActiveShiftQuery(Guid DealerUserId) : IRequest<ShiftDto?>;
 

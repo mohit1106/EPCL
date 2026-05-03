@@ -7,7 +7,9 @@ using IdentityService.Application.Commands.UpdateUserRole;
 using IdentityService.Application.DTOs;
 using IdentityService.Application.Queries.GetAllUsers;
 using IdentityService.Application.Queries.GetCurrentUser;
+using IdentityService.Application.Queries.GetUserStats;
 using IdentityService.Domain.Enums;
+using IdentityService.Domain.Interfaces;
 
 namespace IdentityService.API.Controllers;
 
@@ -41,6 +43,16 @@ public class UsersController(IMediator mediator) : ControllerBase
             .Select(u => new AdminSummaryDto(u.Id, u.FullName, u.Email))
             .ToList();
         return Ok(all);
+    }
+
+    /// <summary>Get aggregate user statistics (Admin only).</summary>
+    [HttpGet("stats")]
+    [Authorize(Roles = "Admin,SuperAdmin")]
+    [ProducesResponseType(typeof(UserStatsResult), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetUserStats()
+    {
+        var stats = await mediator.Send(new GetUserStatsQuery());
+        return Ok(stats);
     }
 
     /// <summary>Get all users (Admin only, paginated).</summary>

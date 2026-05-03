@@ -46,6 +46,10 @@ public class FuelPricesController(IMediator mediator) : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> GetAll() => Ok(await mediator.Send(new GetActiveFuelPricesQuery()));
 
+    [HttpGet("all")]
+    [Authorize(Roles = "Admin,SuperAdmin")]
+    public async Task<IActionResult> GetAllHistory() => Ok(await mediator.Send(new GetAllFuelPricesQuery()));
+
     [HttpPost]
     [Authorize(Roles = "Admin,SuperAdmin")]
     public async Task<IActionResult> SetPrice([FromBody] SetFuelPriceRequest body)

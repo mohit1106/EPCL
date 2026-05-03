@@ -60,6 +60,8 @@ public class FuelPriceRepository(SalesDbContext ctx) : IFuelPriceRepository
         => await ctx.FuelPrices.Where(p => p.FuelTypeId == fuelTypeId && p.IsActive).OrderByDescending(p => p.EffectiveFrom).FirstOrDefaultAsync(ct);
     public async Task<IReadOnlyList<FuelPrice>> GetAllActiveAsync(CancellationToken ct)
         => await ctx.FuelPrices.Where(p => p.IsActive).ToListAsync(ct);
+    public async Task<IReadOnlyList<FuelPrice>> GetAllAsync(CancellationToken ct)
+        => await ctx.FuelPrices.OrderByDescending(p => p.CreatedAt).ToListAsync(ct);
     public async Task<FuelPrice> AddAsync(FuelPrice price, CancellationToken ct) { await ctx.FuelPrices.AddAsync(price, ct); await ctx.SaveChangesAsync(ct); return price; }
     public async Task DeactivateAsync(Guid fuelTypeId, CancellationToken ct)
     {

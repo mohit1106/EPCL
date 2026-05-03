@@ -39,6 +39,10 @@ export class UsersApiService {
     return this.http.get<PaginatedResult<UserListDto>>(this.base, { params });
   }
 
+  getUserStats(): Observable<UserStatsDto> {
+    return this.http.get<UserStatsDto>(`${this.base}/stats`);
+  }
+
   /** Get admin users list — accessible by ALL authenticated users (including dealers). */
   getAdmins(): Observable<AdminSummaryDto[]> {
     return this.http.get<AdminSummaryDto[]>(`${this.base}/admins`);
@@ -82,4 +86,15 @@ export interface AdminSummaryDto {
   id: string;
   fullName: string;
   email: string;
+}
+
+export interface UserStatsDto {
+  totalCount: number;
+  activeCount: number;
+  lockedCount: number;
+  pendingCount: number;
+  customerCount: number;
+  dealerCount: number;
+  adminCount: number;
+  superAdminCount: number;
 }

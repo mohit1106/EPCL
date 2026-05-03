@@ -138,14 +138,6 @@ export interface TransactionFilters {
   status?: string;
 }
 
-export interface FuelPriceDto {
-  id: string;
-  fuelTypeId: string;
-  pricePerLitre: number;
-  effectiveFrom: string;
-  isActive: boolean;
-}
-
 @Injectable({ providedIn: 'root' })
 export class SalesApiService {
   private readonly base = '/gateway/sales';
@@ -212,6 +204,12 @@ export class SalesApiService {
   getFuelPrices(): Observable<FuelPriceDto[]> {
     return this.http.get<any>(`${this.base}/fuel-prices`).pipe(
       map(res => res.value ? res.value : res)
+    );
+  }
+
+  getAllFuelPrices(): Observable<FuelPriceDto[]> {
+    return this.http.get<any>(`${this.base}/fuel-prices/all`).pipe(
+      map(res => Array.isArray(res) ? res : (res?.value ?? res?.$values ?? []))
     );
   }
 

@@ -179,22 +179,23 @@
         </div>
       </div>
 
-      <!-- Role Distribution Chart -->
+      <!-- Role Distribution -->
       <div class="card chart-card">
         <h3 class="card-section-title">Role Distribution</h3>
-        <div class="chart-container">
-          <canvas baseChart
-            [data]="pieChartData"
-            [options]="pieChartOptions"
-            [type]="pieChartType">
-          </canvas>
-        </div>
-        <div class="chart-legend-extra">
-          <div class="legend-row" *ngFor="let item of chartLegendItems">
-            <span class="legend-dot" [style.background]="item.color"></span>
-            <span class="legend-label">{{ item.label }}</span>
-            <span class="legend-val">{{ item.value }}</span>
+        <div class="role-bars">
+          <div class="role-bar-item" *ngFor="let item of chartLegendItems">
+            <div class="role-bar-header">
+              <span class="role-bar-label">{{ item.label }}</span>
+              <span class="role-bar-count">{{ item.value }}</span>
+            </div>
+            <div class="role-bar-track">
+              <div class="role-bar-fill" [style.width.%]="totalCount > 0 ? (item.value / totalCount * 100) : 0" [style.background]="item.color"></div>
+            </div>
           </div>
+        </div>
+        <div class="role-total">
+          <span>Total</span>
+          <span class="role-total-val">{{ totalCount | number }}</span>
         </div>
       </div>
     </div>

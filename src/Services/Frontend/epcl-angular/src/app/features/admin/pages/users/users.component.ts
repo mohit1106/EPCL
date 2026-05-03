@@ -1,10 +1,7 @@
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
-import { UsersApiService, UserListDto, UserFilters } from '../../../../core/services/users-api.service';
+import { UsersApiService, UserListDto, UserFilters, UserStatsDto } from '../../../../core/services/users-api.service';
 import { ToastService } from '../../../../shared/services/toast.service';
-import { Chart, registerables, ChartData, ChartType } from 'chart.js';
-
-Chart.register(...registerables);
 
 interface DisplayUser {
   id: string;
@@ -70,46 +67,13 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   selectedRole = '';
   selectedStatus = '';
 
-  // Chart — Role Distribution
-  public pieChartOptions: any = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'bottom',
-        labels: {
-          color: '#475569',
-          font: { family: "'Inter', sans-serif", size: 12, weight: 500 },
-          padding: 16,
-          usePointStyle: true,
-          pointStyle: 'circle',
-        },
-      },
-      tooltip: {
-        backgroundColor: '#FFFFFF',
-        titleColor: '#1E293B',
-        bodyColor: '#475569',
-        borderColor: '#E2E8F0',
-        borderWidth: 1,
-        padding: 12,
-        cornerRadius: 8,
-        titleFont: { family: "'Inter', sans-serif", weight: 'bold' as const },
-        bodyFont: { family: "'Inter', sans-serif" },
-      },
-    },
-    cutout: '68%',
-  };
-
-  public pieChartData: ChartData<'doughnut', number[], string | string[]> = {
-    labels: ['Customer', 'Dealer', 'Admin', 'SuperAdmin'],
-    datasets: [{
-      data: [0, 0, 0, 0],
-      backgroundColor: ['#3B82F6', '#F59E0B', '#8B5CF6', '#10B981'],
-      borderWidth: 0,
-      hoverOffset: 6,
-    }],
-  };
-  public pieChartType: ChartType = 'doughnut';
+  // Role Distribution (CSS-based, no Chart.js)
+  roleDistribution: { label: string; value: number; color: string }[] = [
+    { label: 'Customer', value: 0, color: '#3B82F6' },
+    { label: 'Dealer', value: 0, color: '#F59E0B' },
+    { label: 'Admin', value: 0, color: '#8B5CF6' },
+    { label: 'SuperAdmin', value: 0, color: '#10B981' },
+  ];
 
   constructor(
     private usersApi: UsersApiService,
@@ -117,6 +81,7 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    this.loadStats();
     this.loadUsers();
   }
 
@@ -146,12 +111,6 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
           rawDto: u,
         }));
         this.totalCount = result.totalCount;
-
-        // Compute KPIs
-        this.activeCount = result.items.filter(u => u.isActive && u.isEmailVerified).length;
-        this.lockedCount = result.items.filter(u => !u.isActive).length;
-        this.pendingCount = result.items.filter(u => u.isActive && !u.isEmailVerified).length;
-        this.updateRoleDistribution(result.items);
         this.isLoading = false;
       },
       error: () => {
@@ -245,6 +204,7 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
         this.toast.success('User created successfully!');
         this.isCreating = false;
         this.showCreateModal = false;
+        this.loadStats();
         this.loadUsers();
       },
       error: (err) => {
@@ -273,6 +233,7 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
       next: () => {
         this.toast.success(`Role changed to ${this.newRole}.`);
         this.showRoleModal = false;
+        this.loadStats();
         this.loadUsers();
       },
       error: () => this.toast.error('Failed to update role.'),
@@ -285,7 +246,7 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
     if (!reason) return;
     this.closeActionMenu();
     this.usersApi.lockUser(userId, reason).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.toast.success('User locked.'); this.loadUsers(); },
+      next: () => { this.toast.success('User locked.'); this.loadStats(); this.loadUsers(); },
       error: () => this.toast.error('Failed to lock user.'),
     });
   }
@@ -293,7 +254,7 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   unlockUser(userId: string): void {
     this.closeActionMenu();
     this.usersApi.unlockUser(userId).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.toast.success('User unlocked.'); this.loadUsers(); },
+      next: () => { this.toast.success('User unlocked.'); this.loadStats(); this.loadUsers(); },
       error: () => this.toast.error('Failed to unlock user.'),
     });
   }
@@ -302,7 +263,7 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
     if (!confirm('Deactivate this user? They will no longer be able to log in.')) return;
     this.closeActionMenu();
     this.usersApi.softDeleteUser(userId).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.toast.success('User deactivated.'); this.loadUsers(); },
+      next: () => { this.toast.success('User deactivated.'); this.loadStats(); this.loadUsers(); },
       error: () => this.toast.error('Failed to deactivate user.'),
     });
   }
@@ -338,33 +299,26 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   }
 
   get chartLegendItems(): { label: string; color: string; value: number }[] {
-    const labels = this.pieChartData.labels as string[] || [];
-    const colors = this.pieChartData.datasets[0].backgroundColor as string[] || [];
-    const data = this.pieChartData.datasets[0].data;
-    return labels.map((label, i) => ({
-      label,
-      color: colors[i] || '#94A3B8',
-      value: data[i] || 0,
-    }));
+    return this.roleDistribution;
   }
 
-  private updateRoleDistribution(users: UserListDto[]): void {
-    const roles = { Customer: 0, Dealer: 0, Admin: 0, SuperAdmin: 0 };
-    users.forEach(u => {
-      const r = u.role || 'Customer';
-      if (roles[r as keyof typeof roles] !== undefined) {
-        roles[r as keyof typeof roles]++;
-      } else {
-        roles.Customer++;
-      }
+  private loadStats(): void {
+    this.usersApi.getUserStats().pipe(takeUntil(this.destroy$)).subscribe({
+      next: (stats) => {
+        this.totalCount = stats.totalCount;
+        this.activeCount = stats.activeCount;
+        this.lockedCount = stats.lockedCount;
+        this.pendingCount = stats.pendingCount;
+        this.roleDistribution = [
+          { label: 'Customer', value: stats.customerCount, color: '#3B82F6' },
+          { label: 'Dealer', value: stats.dealerCount, color: '#F59E0B' },
+          { label: 'Admin', value: stats.adminCount, color: '#8B5CF6' },
+          { label: 'SuperAdmin', value: stats.superAdminCount, color: '#10B981' },
+        ];
+      },
+      error: () => {
+        // Stats failed — KPIs will show 0, non-critical
+      },
     });
-
-    this.pieChartData = {
-      ...this.pieChartData,
-      datasets: [{
-        ...this.pieChartData.datasets[0],
-        data: [roles.Customer || 0, roles.Dealer || 0, roles.Admin || 0, roles.SuperAdmin || 0],
-      }],
-    };
   }
 }
