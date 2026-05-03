@@ -182,6 +182,8 @@ public class WalletPaymentRequestRepository(SalesDbContext ctx) : IWalletPayment
     { ctx.WalletPaymentRequests.Update(request); await ctx.SaveChangesAsync(ct); }
     public async Task<IReadOnlyList<WalletPaymentRequest>> GetPendingByCustomerAsync(Guid customerId, CancellationToken ct)
         => await ctx.WalletPaymentRequests.Where(r => r.CustomerId == customerId && r.Status == "Pending" && r.ExpiresAt > DateTimeOffset.UtcNow).OrderByDescending(r => r.CreatedAt).ToListAsync(ct);
+    public async Task<IReadOnlyList<WalletPaymentRequest>> GetAllByCustomerAsync(Guid customerId, CancellationToken ct)
+        => await ctx.WalletPaymentRequests.Where(r => r.CustomerId == customerId).OrderByDescending(r => r.CreatedAt).ToListAsync(ct);
     public async Task<WalletPaymentRequest?> GetBySaleTransactionIdAsync(Guid saleTransactionId, CancellationToken ct)
         => await ctx.WalletPaymentRequests.FirstOrDefaultAsync(r => r.SaleTransactionId == saleTransactionId, ct);
 }

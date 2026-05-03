@@ -192,6 +192,22 @@ public class GetPendingPaymentRequestsHandler(IWalletPaymentRequestRepository re
     }
 }
 
+// ── All Payment Requests (including history) ───────────────────────
+public record GetAllPaymentRequestsQuery(Guid CustomerId) : IRequest<IReadOnlyList<WalletPaymentRequestDto>>;
+
+public class GetAllPaymentRequestsHandler(IWalletPaymentRequestRepository reqRepo)
+    : IRequestHandler<GetAllPaymentRequestsQuery, IReadOnlyList<WalletPaymentRequestDto>>
+{
+    public async Task<IReadOnlyList<WalletPaymentRequestDto>> Handle(GetAllPaymentRequestsQuery q, CancellationToken ct)
+    {
+        var requests = await reqRepo.GetAllByCustomerAsync(q.CustomerId, ct);
+        return requests.Select(r => new WalletPaymentRequestDto(r.Id, r.SaleTransactionId, r.CustomerId,
+            r.DealerUserId, r.StationId, r.Amount, r.Status, r.Description,
+            r.VehicleNumber, r.FuelTypeName, r.QuantityLitres, r.PaymentMethod,
+            r.CreatedAt, r.ExpiresAt)).ToList();
+    }
+}
+
 // ── Get Payment Request By Id ──────────────────────────────────────
 public record GetPaymentRequestByIdQuery(Guid CustomerId, Guid RequestId) : IRequest<WalletPaymentRequestDto?>;
 

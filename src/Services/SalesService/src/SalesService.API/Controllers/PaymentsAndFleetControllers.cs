@@ -59,6 +59,15 @@ public class PaymentsController(IMediator mediator) : ControllerBase
         return Ok(await mediator.Send(new GetPendingPaymentRequestsQuery(userId)));
     }
 
+    /// <summary>Get all payment requests including history (customer).</summary>
+    [HttpGet("wallet/all-requests")]
+    [Authorize(Roles = "Customer")]
+    public async Task<IActionResult> GetAllRequests()
+    {
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        return Ok(await mediator.Send(new GetAllPaymentRequestsQuery(userId)));
+    }
+
     /// <summary>Approve a wallet payment request (customer).</summary>
     [HttpPost("wallet/approve/{requestId}")]
     [Authorize(Roles = "Customer")]
@@ -97,10 +106,7 @@ public class PaymentsController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> CreateRequestPaymentOrder(Guid requestId)
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        // Reuse wallet order creation with the request amount
-        var request = await mediator.Send(new GetPaymentRequestByIdQuery(userId, requestId));
-        if (request == null) return NotFound(new { message = "Payment request not found." });
-        return Ok(await mediator.Send(new CreateWalletOrderCommand(userId, request.Amount)));
+        return Ok(await mediator.Send(new CreatePaymentRequestOrderCommand(userId, requestId)));
     }
 
     /// <summary>Verify Razorpay payment for a pending payment request.</summary>
@@ -109,10 +115,8 @@ public class PaymentsController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> VerifyRequestPayment(Guid requestId, [FromBody] VerifyWalletPaymentRequest body)
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        // First verify the Razorpay payment
-        await mediator.Send(new VerifyWalletPaymentCommand(userId, body.OrderId, body.PaymentId, body.Signature));
-        // Then mark the request as Approved and complete the sale
-        return Ok(await mediator.Send(new ApproveRazorpayPaymentRequestCommand(userId, requestId, body.OrderId, body.PaymentId)));
+        return Ok(await mediator.Send(new VerifyPaymentRequestCommand(
+            userId, requestId, body.OrderId, body.PaymentId, body.Signature)));
     }
 
     /// <summary>Get customer wallet balance (for dealers during sale).</summary>

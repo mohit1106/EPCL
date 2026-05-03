@@ -38,7 +38,7 @@ export class PaymentRequestsComponent implements OnInit, OnDestroy {
   }
 
   loadRequests(): void {
-    this.paymentsApi.getPendingPaymentRequests().pipe(takeUntil(this.destroy$)).subscribe({
+    this.paymentsApi.getAllPaymentRequests().pipe(takeUntil(this.destroy$)).subscribe({
       next: (r) => { this.requests = r; this.isLoading = false; },
       error: () => { this.isLoading = false; },
     });

@@ -142,10 +142,15 @@ public class RecordFuelSaleHandler(
             }
         }
         // ── Saga & Auto-Completion Logic ──
-        // Cash, UPI, Card: Instant payment at the pump → mark Completed immediately.
-        // Wallet: Needs customer approval → stays Initiated until approved via WalletPaymentRequest.
+        // Cash: Always instant.
+        // UPI/Card for UNREGISTERED (no customer account): Instant payment at the pump.
+        // UPI/Card for REGISTERED (has customer account): Stays Initiated → payment request flow.
+        // Wallet: Always stays Initiated → customer approval via payment request.
         // FleetCard: Has pre-auth saga flow → publish SaleInitiatedEvent for inventory reservation.
-        if (paymentMethod == PaymentMethod.Cash || paymentMethod == PaymentMethod.UPI || paymentMethod == PaymentMethod.Card)
+        var isRegisteredCustomer = cmd.CustomerUserId.HasValue && cmd.CustomerUserId.Value != Guid.Empty;
+
+        if (paymentMethod == PaymentMethod.Cash ||
+            ((paymentMethod == PaymentMethod.UPI || paymentMethod == PaymentMethod.Card) && !isRegisteredCustomer))
         {
             tx.Status = TransactionStatus.Completed;
             await txRepo.UpdateAsync(tx, ct);
@@ -176,9 +181,9 @@ public class RecordFuelSaleHandler(
         }
         else
         {
-            // Wallet: stays Initiated — completed when customer approves
-            logger.LogInformation("Sale initiated (Wallet pending). Tx: {TxId}, Receipt: {Receipt}, Qty: {Qty}L, Total: ₹{Total}",
-                tx.Id, receiptNumber, cmd.QuantityLitres, totalAmount);
+            // Wallet / UPI / Card for registered customers: stays Initiated — completed when customer approves
+            logger.LogInformation("Sale initiated (pending approval). Tx: {TxId}, Receipt: {Receipt}, Method: {Method}, Qty: {Qty}L, Total: ₹{Total}",
+                tx.Id, receiptNumber, paymentMethod, cmd.QuantityLitres, totalAmount);
         }
 
         return MapToDto(tx);
@@ -654,17 +659,17 @@ public class RejectWalletPaymentHandler(
 }
 
 // ══════════════════════════════════════════════════════════════════
-// Approve Payment Request via Razorpay (UPI/Bank)
+// Payment Request — Razorpay Order & Verify (Direct payment, NOT wallet top-up)
 // ══════════════════════════════════════════════════════════════════
-public record ApproveRazorpayPaymentRequestCommand(
-    Guid CustomerId, Guid RequestId, string OrderId, string PaymentId) : IRequest<MessageResponseDto>;
+public record CreatePaymentRequestOrderCommand(
+    Guid CustomerId, Guid RequestId) : IRequest<CreateOrderResponseDto>;
 
-public class ApproveRazorpayPaymentRequestHandler(
-    IWalletPaymentRequestRepository reqRepo, ITransactionRepository txRepo,
-    IRabbitMqPublisher publisher,
-    ILogger<ApproveRazorpayPaymentRequestHandler> logger) : IRequestHandler<ApproveRazorpayPaymentRequestCommand, MessageResponseDto>
+public class CreatePaymentRequestOrderHandler(
+    IWalletPaymentRequestRepository reqRepo,
+    IRazorpayService razorpay,
+    ILogger<CreatePaymentRequestOrderHandler> logger) : IRequestHandler<CreatePaymentRequestOrderCommand, CreateOrderResponseDto>
 {
-    public async Task<MessageResponseDto> Handle(ApproveRazorpayPaymentRequestCommand cmd, CancellationToken ct)
+    public async Task<CreateOrderResponseDto> Handle(CreatePaymentRequestOrderCommand cmd, CancellationToken ct)
     {
         var request = await reqRepo.GetByIdAsync(cmd.RequestId, ct)
             ?? throw new NotFoundException("PaymentRequest", cmd.RequestId);
@@ -679,6 +684,47 @@ public class ApproveRazorpayPaymentRequestHandler(
             await reqRepo.UpdateAsync(request, ct);
             throw new DomainException("Payment request has expired.");
         }
+
+        var order = await razorpay.CreateOrderAsync(request.Amount);
+
+        // Store orderId on the request itself (no wallet transaction)
+        request.RazorpayOrderId = order.OrderId;
+        await reqRepo.UpdateAsync(request, ct);
+
+        logger.LogInformation("Razorpay order created for payment request. Req: {ReqId}, Amount: ₹{Amt}, Order: {OrderId}",
+            request.Id, request.Amount, order.OrderId);
+
+        return new CreateOrderResponseDto(order.OrderId, order.Amount, order.Currency, order.KeyId);
+    }
+}
+
+public record VerifyPaymentRequestCommand(
+    Guid CustomerId, Guid RequestId, string OrderId, string PaymentId, string Signature) : IRequest<MessageResponseDto>;
+
+public class VerifyPaymentRequestHandler(
+    IWalletPaymentRequestRepository reqRepo, ITransactionRepository txRepo,
+    IRazorpayService razorpay, IRabbitMqPublisher publisher,
+    ILogger<VerifyPaymentRequestHandler> logger) : IRequestHandler<VerifyPaymentRequestCommand, MessageResponseDto>
+{
+    public async Task<MessageResponseDto> Handle(VerifyPaymentRequestCommand cmd, CancellationToken ct)
+    {
+        var request = await reqRepo.GetByIdAsync(cmd.RequestId, ct)
+            ?? throw new NotFoundException("PaymentRequest", cmd.RequestId);
+
+        if (request.CustomerId != cmd.CustomerId)
+            throw new DomainException("Unauthorized: this request does not belong to you.");
+        if (request.Status != "Pending")
+            throw new DomainException($"Request is already {request.Status}.");
+        if (request.ExpiresAt < DateTimeOffset.UtcNow)
+        {
+            request.Status = "Expired";
+            await reqRepo.UpdateAsync(request, ct);
+            throw new DomainException("Payment request has expired.");
+        }
+
+        // Verify Razorpay signature
+        if (!razorpay.VerifyPaymentSignature(cmd.OrderId, cmd.PaymentId, cmd.Signature))
+            throw new DomainException("Payment signature verification failed.");
 
         // Mark request as approved with Razorpay details
         request.Status = "Approved";
@@ -704,7 +750,7 @@ public class ApproveRazorpayPaymentRequestHandler(
             }, "sales.completed", ct);
         }
 
-        logger.LogInformation("Razorpay payment approved: {ReqId}, Customer: {CustId}, PaymentId: {PayId}",
+        logger.LogInformation("Razorpay payment verified and approved: Req: {ReqId}, Customer: {CustId}, PaymentId: {PayId}",
             request.Id, cmd.CustomerId, cmd.PaymentId);
 
         return new MessageResponseDto($"Payment of ₹{request.Amount:F2} completed via Razorpay.");

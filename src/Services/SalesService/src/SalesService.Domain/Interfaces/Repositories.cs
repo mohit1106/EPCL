@@ -117,5 +117,6 @@ public interface IWalletPaymentRequestRepository
     Task<WalletPaymentRequest?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task UpdateAsync(WalletPaymentRequest request, CancellationToken ct = default);
     Task<IReadOnlyList<WalletPaymentRequest>> GetPendingByCustomerAsync(Guid customerId, CancellationToken ct = default);
+    Task<IReadOnlyList<WalletPaymentRequest>> GetAllByCustomerAsync(Guid customerId, CancellationToken ct = default);
     Task<WalletPaymentRequest?> GetBySaleTransactionIdAsync(Guid saleTransactionId, CancellationToken ct = default);
 }
