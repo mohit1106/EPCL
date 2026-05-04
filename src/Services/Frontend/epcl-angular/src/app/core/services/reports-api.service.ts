@@ -20,8 +20,21 @@ export interface DealerKpiDto {
   revenueThisMonth: number;
 }
 
+// Raw backend response — DailySalesSummaryDto
+export interface RawSalesSummaryItem {
+  id: string;
+  stationId: string;
+  fuelTypeId: string;
+  date: string;
+  totalTransactions: number;
+  totalLitresSold: number;
+  totalRevenue: number;
+}
+
+// Transformed for frontend charts/tables
 export interface SalesSummaryDto {
   data: { label: string; value: number; litres: number }[];
+  byFuelType: { fuelTypeId: string; litres: number; revenue: number; transactions: number }[];
   totalRevenue: number;
   totalLitres: number;
   totalTransactions: number;
@@ -54,89 +67,108 @@ export class ReportsApiService {
   getAdminKpi(): Observable<AdminKpiDto> {
     return this.http.get<AdminKpiDto>(`${this.base}/kpi/admin`).pipe(
       catchError(err => {
-        console.error('getAdminKpi failed, returning mock data', err);
+        console.error('getAdminKpi failed', err);
         return of({
-          totalStations: 42,
-          totalTransactionsToday: 1250,
-          totalRevenueToday: 45000,
-          totalLitresToday: 15400,
-          fraudAlertsToday: 2,
-          activeDealers: 18
+          totalStations: 0, totalTransactionsToday: 0, totalRevenueToday: 0,
+          totalLitresToday: 0, fraudAlertsToday: 0, activeDealers: 0
         });
       })
     );
   }
 
   getDealerKpi(stationId: string): Observable<DealerKpiDto> {
-    return this.http.get<DealerKpiDto>(`${this.base}/kpi/dealer/${stationId}`);
-  }
-
-  getSalesSummary(params: { stationId?: string; dateFrom?: string; dateTo?: string; groupBy?: string }): Observable<SalesSummaryDto> {
-    let httpParams = new HttpParams();
-    if (params.stationId) httpParams = httpParams.set('stationId', params.stationId);
-    if (params.dateFrom) httpParams = httpParams.set('dateFrom', params.dateFrom);
-    if (params.dateTo) httpParams = httpParams.set('dateTo', params.dateTo);
-    if (params.groupBy) httpParams = httpParams.set('groupBy', params.groupBy);
-    return this.http.get<any[]>(`${this.base}/sales-summary`, { params: httpParams }).pipe(
-      map(response => {
-        // The backend returns an array of DailySalesSummaryDto.
-        // We need to map this into SalesSummaryDto expected by the frontend.
-        let totalRevenue = 0;
-        let totalLitres = 0;
-        let totalTransactions = 0;
-
-        if (Array.isArray(response)) {
-          response.forEach(item => {
-            totalRevenue += item.totalRevenue || 0;
-            totalLitres += item.totalLitres || 0;
-            totalTransactions += item.totalTransactions || 0;
-          });
-        }
-
-        // Create 12-hour mock distribution
-        const hourlyData = [];
-        const baseLitres = totalLitres > 0 ? (totalLitres / 12) : 500;
-        
-        for (let i = 0; i < 12; i++) {
-          const randomizedLitres = baseLitres * (0.8 + Math.random() * 0.4); // +/- 20%
-          hourlyData.push({
-            label: `${i + 6}h`,
-            value: randomizedLitres,
-            litres: randomizedLitres
-          });
-        }
-
-        return {
-          data: hourlyData,
-          totalRevenue,
-          totalLitres,
-          totalTransactions
-        };
-      }),
+    return this.http.get<DealerKpiDto>(`${this.base}/kpi/dealer/${stationId}`).pipe(
       catchError(err => {
-        console.error('getSalesSummary failed, returning mock data:', err);
-        const hourlyData = [];
-        const baseLitres = 500;
-        for (let i = 0; i < 12; i++) {
-          const randomizedLitres = baseLitres * (0.8 + Math.random() * 0.4);
-          hourlyData.push({ label: `${i + 6}h`, value: randomizedLitres, litres: randomizedLitres });
-        }
+        console.error('getDealerKpi failed', err);
         return of({
-          data: hourlyData,
-          totalRevenue: 50000,
-          totalLitres: 6000,
-          totalTransactions: 120
+          stationId, transactionsToday: 0, revenueToday: 0,
+          litresToday: 0, transactionsThisMonth: 0, revenueThisMonth: 0,
         });
       })
     );
   }
 
+  getSalesSummary(params: { stationId?: string; dateFrom?: string; dateTo?: string }): Observable<SalesSummaryDto> {
+    let httpParams = new HttpParams();
+    if (params.stationId) httpParams = httpParams.set('stationId', params.stationId);
+    if (params.dateFrom) httpParams = httpParams.set('dateFrom', params.dateFrom);
+    if (params.dateTo) httpParams = httpParams.set('dateTo', params.dateTo);
+
+    return this.http.get<RawSalesSummaryItem[]>(`${this.base}/sales-summary`, { params: httpParams }).pipe(
+      map(response => {
+        const items = Array.isArray(response) ? response : [];
+
+        let totalRevenue = 0;
+        let totalLitres = 0;
+        let totalTransactions = 0;
+
+        items.forEach(item => {
+          totalRevenue += item.totalRevenue || 0;
+          totalLitres += item.totalLitresSold || 0;
+          totalTransactions += item.totalTransactions || 0;
+        });
+
+        // Group by date for daily chart
+        const byDate = new Map<string, { litres: number; revenue: number }>();
+        items.forEach(item => {
+          const dateKey = item.date || 'unknown';
+          const existing = byDate.get(dateKey) || { litres: 0, revenue: 0 };
+          existing.litres += item.totalLitresSold || 0;
+          existing.revenue += item.totalRevenue || 0;
+          byDate.set(dateKey, existing);
+        });
+
+        const data = Array.from(byDate.entries())
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .map(([date, vals]) => ({
+            label: this.formatDateLabel(date),
+            value: vals.revenue,
+            litres: vals.litres,
+          }));
+
+        // Group by fuelTypeId for fuel grade breakdown
+        const byFuelMap = new Map<string, { litres: number; revenue: number; transactions: number }>();
+        items.forEach(item => {
+          const fuelId = item.fuelTypeId || 'unknown';
+          const existing = byFuelMap.get(fuelId) || { litres: 0, revenue: 0, transactions: 0 };
+          existing.litres += item.totalLitresSold || 0;
+          existing.revenue += item.totalRevenue || 0;
+          existing.transactions += item.totalTransactions || 0;
+          byFuelMap.set(fuelId, existing);
+        });
+
+        const byFuelType = Array.from(byFuelMap.entries())
+          .map(([fuelTypeId, vals]) => ({ fuelTypeId, ...vals }))
+          .sort((a, b) => b.litres - a.litres);
+
+        return { data, byFuelType, totalRevenue, totalLitres, totalTransactions };
+      }),
+      catchError(err => {
+        console.error('getSalesSummary failed:', err);
+        return of({ data: [], byFuelType: [], totalRevenue: 0, totalLitres: 0, totalTransactions: 0 });
+      })
+    );
+  }
+
+  // ═══ Exports — fixed to match backend ExportReportRequest DTO ═══
   exportPdf(reportType: string, filters: Record<string, string>): Observable<GeneratedReportDto> {
-    return this.http.post<GeneratedReportDto>(`${this.base}/export/pdf`, { reportType, filters });
+    const body = {
+      reportType,
+      dateFrom: filters['dateFrom'] || null,
+      dateTo: filters['dateTo'] || null,
+      stationId: filters['stationId'] || null,
+    };
+    return this.http.post<GeneratedReportDto>(`${this.base}/export/pdf`, body);
   }
 
   exportExcel(reportType: string, filters: Record<string, string>): Observable<GeneratedReportDto> {
-    return this.http.post<GeneratedReportDto>(`${this.base}/export/excel`, { reportType, filters });
+    const body = {
+      reportType,
+      dateFrom: filters['dateFrom'] || null,
+      dateTo: filters['dateTo'] || null,
+      stationId: filters['stationId'] || null,
+    };
+    return this.http.post<GeneratedReportDto>(`${this.base}/export/excel`, body);
   }
 
   getExportStatus(reportId: string): Observable<GeneratedReportDto> {
@@ -169,6 +201,17 @@ export class ReportsApiService {
     let params = new HttpParams().set('daysThreshold', daysThreshold.toString());
     if (stationId) params = params.set('stationId', stationId);
     return this.http.get<StockPredictionDto[]>(`${this.base}/stock-predictions/at-risk`, { params });
+  }
+
+  // ═══ Helpers ═══
+  private formatDateLabel(dateStr: string): string {
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+    } catch {
+      return dateStr;
+    }
   }
 }
 

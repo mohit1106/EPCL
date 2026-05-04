@@ -159,9 +159,12 @@ public class RecordFuelSaleHandler(
             await publisher.PublishAsync(new SaleCompletedEvent
             {
                 EventType = nameof(SaleCompletedEvent),
-                TransactionId = tx.Id, StationId = cmd.StationId,
+                TransactionId = tx.Id, StationId = cmd.StationId, PumpId = tx.PumpId,
                 TankId = cmd.TankId, FuelTypeId = cmd.FuelTypeId,
-                QuantityLitres = cmd.QuantityLitres, DealerUserId = cmd.DealerUserId
+                DealerUserId = cmd.DealerUserId, CustomerUserId = tx.CustomerUserId,
+                VehicleNumber = tx.VehicleNumber, QuantityLitres = tx.QuantityLitres,
+                PricePerLitre = tx.PricePerLitre, TotalAmount = tx.TotalAmount,
+                PaymentMethod = tx.PaymentMethod.ToString()
             }, "sales.completed", ct);
             
             logger.LogInformation("Sale completed (instant). Tx: {TxId}, Receipt: {Receipt}, Qty: {Qty}L, Total: ₹{Total}",
@@ -609,9 +612,12 @@ public class ApproveWalletPaymentHandler(
             await publisher.PublishAsync(new SaleCompletedEvent
             {
                 EventType = nameof(SaleCompletedEvent),
-                TransactionId = tx.Id, StationId = tx.StationId,
+                TransactionId = tx.Id, StationId = tx.StationId, PumpId = tx.PumpId,
                 TankId = tx.TankId, FuelTypeId = tx.FuelTypeId,
-                QuantityLitres = tx.QuantityLitres, DealerUserId = tx.DealerUserId
+                DealerUserId = tx.DealerUserId, CustomerUserId = tx.CustomerUserId,
+                VehicleNumber = tx.VehicleNumber, QuantityLitres = tx.QuantityLitres,
+                PricePerLitre = tx.PricePerLitre, TotalAmount = tx.TotalAmount,
+                PaymentMethod = tx.PaymentMethod.ToString()
             }, "sales.completed", ct);
         }
 
@@ -744,9 +750,12 @@ public class VerifyPaymentRequestHandler(
             await publisher.PublishAsync(new SaleCompletedEvent
             {
                 EventType = nameof(SaleCompletedEvent),
-                TransactionId = tx.Id, StationId = tx.StationId,
+                TransactionId = tx.Id, StationId = tx.StationId, PumpId = tx.PumpId,
                 TankId = tx.TankId, FuelTypeId = tx.FuelTypeId,
-                QuantityLitres = tx.QuantityLitres, DealerUserId = tx.DealerUserId
+                DealerUserId = tx.DealerUserId, CustomerUserId = tx.CustomerUserId,
+                VehicleNumber = tx.VehicleNumber, QuantityLitres = tx.QuantityLitres,
+                PricePerLitre = tx.PricePerLitre, TotalAmount = tx.TotalAmount,
+                PaymentMethod = tx.PaymentMethod.ToString()
             }, "sales.completed", ct);
         }
 

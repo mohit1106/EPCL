@@ -1,68 +1,236 @@
-<div class="page-content">
-  <div class="page-top">
-    <div><h1 class="page-title">Dealer Analytics</h1><p class="page-subtitle">Real-time performance metrics for Station 082 • Last sync: <span class="text-primary">{{ lastSync }}</span></p></div>
-    <div class="period-tabs"><button class="period-tab mono" *ngFor="let p of periods" [class.active]="p === period" (click)="period = p">{{ p }}</button></div>
-  </div>
+<div class="reports-page">
 
-  <!-- KPI Cards -->
-  <div class="kpi-grid">
-    <div class="kpi-card" *ngFor="let k of kpis">
-      <div class="kpi-top"><span class="kpi-label mono">{{ k.label }}</span><span class="kpi-icon">{{ k.icon }}</span></div>
-      <div class="kpi-value mono">{{ k.value }}</div>
-      <div class="kpi-trend" [ngClass]="k.trendClass"><span>{{ k.trend }}</span> <small>{{ k.trendLabel }}</small></div>
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Station Reports</h1>
+      <p class="page-subtitle">Performance metrics & analytics • Last sync: <span class="text-accent">{{ lastSync }}</span></p>
+    </div>
+    <div class="period-tabs">
+      <button class="period-tab" *ngFor="let p of periods" [class.active]="p === period" (click)="onPeriodChange(p)">{{ p }}</button>
     </div>
   </div>
 
-  <!-- Revenue Chart + Volume by Grade -->
-  <div class="analytics-grid">
-    <div class="card">
-      <div class="card-header-row"><h3 class="card-title">Revenue Trends</h3><div class="legend"><span class="legend-dot oct"></span> OCT 2023 <span class="legend-dot sep"></span> SEP 2023</div></div>
-      <p class="chart-sub">Net sales consolidated across all pump clusters</p>
-      <div class="chart-area">
-        <div class="chart-bars"><div class="chart-bar" *ngFor="let h of revenueChartBars" [style.height.%]="h"></div></div>
-        <div class="chart-labels mono"><span *ngFor="let l of chartLabels">{{ l }}</span></div>
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="isLoading">
+    <div class="kpi-grid">
+      <div class="skeleton" style="height: 110px;" *ngFor="let i of [1,2,3,4]"></div>
+    </div>
+    <div class="skeleton" style="height: 300px; margin-top: 20px;"></div>
+  </div>
+
+  <div *ngIf="!isLoading">
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">Gross Revenue</span>
+          <div class="kpi-icon-wrap blue">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value">{{ formatCurrency(grossRevenue) }}</div>
+        <div class="kpi-trend up" *ngIf="grossRevenue > 0">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
+          Today's total
+        </div>
+        <div class="kpi-trend" *ngIf="grossRevenue === 0">No sales yet today</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">Transactions</span>
+          <div class="kpi-icon-wrap green">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value">{{ transactionsCount }}</div>
+        <div class="kpi-trend">Processed today</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">Litres Sold</span>
+          <div class="kpi-icon-wrap amber">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value">{{ litresSold | number:'1.0-0' }}<small>L</small></div>
+        <div class="kpi-trend">Total volume</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">Monthly Revenue</span>
+          <div class="kpi-icon-wrap purple">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value">{{ formatCurrency(monthlyRevenue) }}</div>
+        <div class="kpi-trend up" *ngIf="monthlyRevenue > 0">This month total</div>
+        <div class="kpi-trend" *ngIf="monthlyRevenue === 0">No data</div>
       </div>
     </div>
-    <div class="card">
-      <h3 class="card-title">Volume by Grade</h3>
-      <div class="grade-bars">
-        <div class="grade-item" *ngFor="let g of volumeByGrade">
-          <div class="grade-top"><span>{{ g.name }}</span><span class="mono">{{ g.value }}</span></div>
-          <div class="grade-bar"><div class="grade-fill" [style.width.%]="g.pct" [style.background]="g.color"></div></div>
+
+    <!-- Analytics Row: Chart + Volume -->
+    <div class="analytics-row">
+      <!-- Revenue Chart -->
+      <div class="card chart-card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title">Revenue Trends</h3>
+            <p class="card-subtitle">Daily sales volume (Litres)</p>
+          </div>
+          <span class="record-count" *ngIf="revenueChartBars.length > 0">{{ revenueChartBars.length }} days</span>
+        </div>
+        <div class="chart-area" *ngIf="revenueChartBars.length > 0">
+          <div class="chart-bars">
+            <div class="chart-bar-wrap" *ngFor="let bar of revenueChartBars; let i = index">
+              <div class="chart-bar" [style.height.%]="bar.height" [title]="bar.value | number:'1.0-0'">
+                <span class="bar-tooltip">{{ bar.value | number:'1.0-0' }}L</span>
+              </div>
+              <span class="chart-label">{{ bar.label }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="chart-empty" *ngIf="revenueChartBars.length === 0">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+          <p>No chart data available for this period</p>
         </div>
       </div>
-      <div class="top-grade"><span class="top-label mono">TOP PERFORMING GRADE</span><h4>{{ topGrade }}</h4></div>
-    </div>
-  </div>
 
-  <!-- Transaction Log + Export Engine -->
-  <div class="analytics-grid">
-    <div class="card">
-      <div class="card-header-row"><h3 class="card-title">Transaction Log</h3><button class="btn-outline-sm mono">▼ Filter</button></div>
-      <table>
-        <thead><tr><th>DATE/TIME</th><th>REFERENCE ID</th><th>PUMP #</th><th>VOLUME</th><th>AMOUNT</th><th>STATUS</th></tr></thead>
-        <tbody>
-          <tr *ngFor="let t of transactions">
-            <td class="mono">{{ t.date }}</td><td class="mono text-primary">{{ t.ref }}</td><td>{{ t.pump }}</td>
-            <td class="mono">{{ t.volume }}</td><td class="mono">{{ t.amount }}</td>
-            <td><span class="status-pill" [ngClass]="getStatusClass(t.status)">{{ t.status }}</span></td>
-          </tr>
-        </tbody>
-      </table>
+      <!-- Volume by Grade -->
+      <div class="card volume-card">
+        <div class="card-header">
+          <h3 class="card-title">Volume by Grade</h3>
+          <span class="record-count" *ngIf="volumeByGrade.length > 0">{{ volumeByGrade.length }} types</span>
+        </div>
+
+        <!-- Donut Summary -->
+        <div class="donut-row" *ngIf="volumeByGrade.length > 0">
+          <div class="donut-chart">
+            <svg viewBox="0 0 36 36" class="donut-svg">
+              <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e2e8f0" stroke-width="3"/>
+              <ng-container *ngFor="let g of volumeByGrade; let i = index">
+                <circle cx="18" cy="18" r="15.9155" fill="none"
+                  [attr.stroke]="g.color" stroke-width="3"
+                  [attr.stroke-dasharray]="g.pct + ' ' + (100 - g.pct)"
+                  [attr.stroke-dashoffset]="getDonutOffset(i)"
+                  stroke-linecap="round"/>
+              </ng-container>
+            </svg>
+            <div class="donut-center">
+              <span class="donut-total">{{ litresSold | number:'1.0-0' }}</span>
+              <span class="donut-unit">Litres</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grade-list" *ngIf="volumeByGrade.length > 0">
+          <div class="grade-item" *ngFor="let g of volumeByGrade">
+            <div class="grade-header">
+              <span class="grade-dot" [style.background]="g.color"></span>
+              <span class="grade-name">{{ g.name }}</span>
+              <span class="grade-pct">{{ g.pct }}%</span>
+              <span class="grade-value">{{ g.value }}</span>
+            </div>
+            <div class="grade-bar-track">
+              <div class="grade-bar-fill" [style.width.%]="g.pct" [style.background]="g.color"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="top-grade" *ngIf="topGrade && topGrade !== '—'">
+          <span class="top-label">Top Performing</span>
+          <span class="top-value">{{ topGrade }}</span>
+        </div>
+        <div class="chart-empty" *ngIf="volumeByGrade.length === 0">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0110 10"/></svg>
+          <p>No grade data available</p>
+        </div>
+      </div>
     </div>
-    <div class="export-panel">
+
+    <!-- Transaction Log + Export -->
+    <div class="analytics-row">
+      <!-- Transaction Log -->
       <div class="card">
-        <h3 class="card-title">☁ Export Engine</h3>
-        <p class="export-desc">Generated reports are encrypted and include digital watermarks for security audit compliance.</p>
-        <div class="export-list">
-          <div class="export-item" *ngFor="let e of exports"><span class="export-icon">{{ e.icon }}</span><div class="export-info"><strong>{{ e.name }}</strong><small class="mono">{{ e.format }}</small></div><button class="btn-download">↓</button></div>
+        <div class="card-header">
+          <h3 class="card-title">Transaction Log</h3>
+          <span class="record-count">{{ transactions.length }} records</span>
         </div>
-        <div class="auto-report"><span class="auto-label mono">SCHEDULE AUTO-REPORT</span><div class="auto-value mono">Every Monday, 06:00 📅</div></div>
+        <div class="table-wrap" *ngIf="transactions.length > 0">
+          <table>
+            <thead>
+              <tr>
+                <th>Date/Time</th>
+                <th>Reference</th>
+                <th>Pump</th>
+                <th>Fuel Type</th>
+                <th>Volume</th>
+                <th>Amount</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let t of transactions">
+                <td>{{ t.date }}</td>
+                <td class="mono text-accent">{{ t.ref }}</td>
+                <td><span class="pump-tag">{{ t.pump }}</span></td>
+                <td><span class="fuel-tag">{{ t.fuelType }}</span></td>
+                <td class="mono">{{ t.volume }}</td>
+                <td class="mono">{{ t.amount }}</td>
+                <td><span class="status-pill" [ngClass]="getStatusClass(t.status)">{{ t.status }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="chart-empty" *ngIf="transactions.length === 0">
+          <p>No transactions found</p>
+        </div>
       </div>
-      <div class="card ai-card">
-        <h3 class="card-title">💡 AI Intelligence Insight</h3>
-        <p class="ai-text">{{ aiInsight }}</p>
+
+      <!-- Export Panel -->
+      <div class="card export-card">
+        <h3 class="card-title">Export Reports</h3>
+        <p class="card-subtitle">Download station reports in CSV format</p>
+        <div class="export-list">
+          <button class="export-item" (click)="exportDailySales()">
+            <div class="export-icon-wrap">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <div class="export-info">
+              <strong>Daily Sales Report</strong>
+              <small>Transaction log export</small>
+            </div>
+            <svg class="export-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </button>
+
+          <button class="export-item" (click)="exportRevenueAnalysis()">
+            <div class="export-icon-wrap green">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            </div>
+            <div class="export-info">
+              <strong>Revenue Analysis</strong>
+              <small>KPIs & grade breakdown</small>
+            </div>
+            <svg class="export-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </button>
+
+          <button class="export-item" (click)="exportInventoryReport()">
+            <div class="export-icon-wrap amber">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            </div>
+            <div class="export-info">
+              <strong>Fuel Grade Report</strong>
+              <small>Volume by fuel type</small>
+            </div>
+            <svg class="export-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </button>
+        </div>
       </div>
     </div>
+
   </div>
 </div>

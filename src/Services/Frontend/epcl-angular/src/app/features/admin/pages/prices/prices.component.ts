@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Subject, takeUntil, forkJoin, of, catchError } from 'rxjs';
+import { Subject, takeUntil, of, catchError, timeout } from 'rxjs';
 import { SalesApiService, FuelPriceDto, FuelPriceHistoryPoint } from '../../../../core/services/sales-api.service';
 import { StationsApiService, FuelTypeDto } from '../../../../core/services/stations-api.service';
 import { ToastService } from '../../../../shared/services/toast.service';
@@ -24,7 +24,7 @@ export class AdminPricesComponent implements OnInit, OnDestroy {
 
   // Raw data
   prices: FuelPriceDto[] = [];
-  allPrices: FuelPriceDto[] = [];  // All records (active + superseded) for audit trail
+  allPrices: FuelPriceDto[] = [];
   fuelTypes: FuelTypeDto[] = [];
   priceHistory: FuelPriceHistoryPoint[] = [];
 
@@ -42,7 +42,7 @@ export class AdminPricesComponent implements OnInit, OnDestroy {
   chartMaxPrice = 0;
   chartMinPrice = 0;
 
-  // Update form (inline)
+  // Update form
   updateFuelTypeId = '';
   updatePrice: number | null = null;
   updateEffectiveFrom = '';
@@ -59,6 +59,9 @@ export class AdminPricesComponent implements OnInit, OnDestroy {
     'EV Charging': '#06B6D4',
   };
 
+  // Track how many loads are pending
+  private pendingLoads = 0;
+
   constructor(
     private salesApi: SalesApiService,
     private stationsApi: StationsApiService,
@@ -74,38 +77,51 @@ export class AdminPricesComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  // ═══ Data Loading ═══
+  // ═══ Data Loading — each source loads independently, no forkJoin ═══
   private loadData(): void {
     this.isLoading = true;
+    this.pendingLoads = 2; // prices + fuelTypes (allPrices is bonus, non-blocking)
 
-    // Load both independently with error fallbacks — if one fails, the other still works
-    forkJoin({
-      prices: this.salesApi.getFuelPrices().pipe(catchError(() => of([] as FuelPriceDto[]))),
-      allPrices: this.salesApi.getAllFuelPrices().pipe(catchError(() => of([] as FuelPriceDto[]))),
-      fuelTypes: this.stationsApi.getFuelTypes().pipe(catchError(() => of([] as FuelTypeDto[]))),
-    }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: ({ prices, allPrices, fuelTypes }) => {
-        this.prices = Array.isArray(prices) ? prices : [];
-        this.allPrices = Array.isArray(allPrices) ? allPrices : [];
-        this.fuelTypes = Array.isArray(fuelTypes) ? fuelTypes : [];
-        this.buildPriceCards();
-        this.computeKPIs();
-
-        // Select first fuel type for chart
-        if (this.priceCards.length > 0 && !this.selectedChartFuelId) {
-          this.selectChartFuel(this.priceCards[0].fuelTypeId);
-        }
-        this.isLoading = false;
-
-        if (this.prices.length === 0 && this.fuelTypes.length === 0) {
-          this.toast.error('Could not load pricing data. Check if services are running.');
-        }
-      },
-      error: () => {
-        this.isLoading = false;
-        this.toast.error('Failed to load pricing data.');
-      },
+    // 1. Load active prices
+    this.salesApi.getFuelPrices().pipe(
+      timeout(8000),
+      catchError(() => of([] as FuelPriceDto[])),
+      takeUntil(this.destroy$),
+    ).subscribe(prices => {
+      this.prices = Array.isArray(prices) ? prices : [];
+      this.onLoadComplete();
     });
+
+    // 2. Load fuel types
+    this.stationsApi.getFuelTypes().pipe(
+      timeout(8000),
+      catchError(() => of([] as FuelTypeDto[])),
+      takeUntil(this.destroy$),
+    ).subscribe(fuelTypes => {
+      this.fuelTypes = Array.isArray(fuelTypes) ? fuelTypes : [];
+      this.onLoadComplete();
+    });
+
+    // 3. Load ALL prices for audit trail (non-blocking — page works without it)
+    this.salesApi.getAllFuelPrices().pipe(
+      timeout(8000),
+      catchError(() => of([] as FuelPriceDto[])),
+      takeUntil(this.destroy$),
+    ).subscribe(allPrices => {
+      this.allPrices = Array.isArray(allPrices) ? allPrices : [];
+    });
+  }
+
+  private onLoadComplete(): void {
+    this.pendingLoads--;
+    if (this.pendingLoads <= 0) {
+      this.buildPriceCards();
+      this.computeKPIs();
+      if (this.priceCards.length > 0 && !this.selectedChartFuelId) {
+        this.selectChartFuel(this.priceCards[0].fuelTypeId);
+      }
+      this.isLoading = false;
+    }
   }
 
   private buildPriceCards(): void {
@@ -168,7 +184,7 @@ export class AdminPricesComponent implements OnInit, OnDestroy {
     this.chartBars = this.priceHistory.map(h => ({
       label: new Date(h.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }),
       value: h.price,
-      height: ((h.price - this.chartMinPrice) / range) * 80 + 15, // 15-95% range
+      height: ((h.price - this.chartMinPrice) / range) * 80 + 15,
     }));
   }
 
@@ -199,24 +215,37 @@ export class AdminPricesComponent implements OnInit, OnDestroy {
     if (!this.updatePrice || this.updatePrice <= 0) { this.toast.error('Price must be positive.'); return; }
     if (!this.useImmediateEffective && !this.updateEffectiveFrom) { this.toast.error('Set an effective date or choose Apply Immediately.'); return; }
 
-    const effectiveDate = this.useImmediateEffective ? new Date().toISOString() : this.updateEffectiveFrom;
+    // Always send a full ISO datetime string
+    let effectiveDate: string;
+    if (this.useImmediateEffective) {
+      effectiveDate = new Date().toISOString();
+    } else {
+      // Convert date-only to full ISO datetime (noon UTC to avoid timezone issues)
+      effectiveDate = new Date(this.updateEffectiveFrom + 'T12:00:00Z').toISOString();
+    }
+
     const effectiveLabel = this.useImmediateEffective ? 'immediately' : this.updateEffectiveFrom;
     const fuelName = this.fuelTypes.find(f => f.id === this.updateFuelTypeId)?.name || 'fuel';
     if (!confirm(`Update ${fuelName} to ₹${this.updatePrice}/L effective ${effectiveLabel}? This will apply across all stations.`)) return;
 
     this.isUpdating = true;
     this.salesApi.setFuelPrice(this.updateFuelTypeId, this.updatePrice, effectiveDate)
-      .pipe(takeUntil(this.destroy$))
+      .pipe(
+        timeout(10000),
+        takeUntil(this.destroy$),
+      )
       .subscribe({
-        next: () => {
+        next: (result) => {
           this.toast.success(`${fuelName} price updated to ₹${this.updatePrice}/L ${this.useImmediateEffective ? '(effective immediately)' : ''}`);
           this.isUpdating = false;
           this.updatePrice = null;
           this.useImmediateEffective = false;
+          // Reload data to reflect changes
           this.loadData();
         },
-        error: () => {
-          this.toast.error('Failed to update price.');
+        error: (err) => {
+          const msg = err?.error?.message || err?.error?.title || 'Failed to update price. Check if SalesService is running.';
+          this.toast.error(msg);
           this.isUpdating = false;
         },
       });
@@ -250,17 +279,21 @@ export class AdminPricesComponent implements OnInit, OnDestroy {
 
   // ═══ Audit Trail ═══
   get auditEntries(): { fuelName: string; price: string; effectiveFrom: string; createdAt: string; isActive: boolean }[] {
-    // Use allPrices (includes superseded records) for full audit trail
     const source = this.allPrices.length > 0 ? this.allPrices : this.prices;
+    if (!source || source.length === 0) return [];
     return source
       .map(p => ({
-        fuelName: this.fuelTypes.find(f => f.id === p.fuelTypeId)?.name || p.fuelTypeId.substring(0, 8),
-        price: '₹' + p.pricePerLitre.toFixed(2),
+        fuelName: this.fuelTypes.find(f => f.id === p.fuelTypeId)?.name || (p.fuelTypeId ? p.fuelTypeId.substring(0, 8) : 'Unknown'),
+        price: '₹' + (p.pricePerLitre ?? 0).toFixed(2),
         effectiveFrom: p.effectiveFrom ? new Date(p.effectiveFrom).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—',
         createdAt: p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + new Date(p.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—',
-        isActive: p.isActive,
+        isActive: p.isActive ?? false,
       }))
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      .sort((a, b) => {
+        const dateA = new Date(b.createdAt).getTime();
+        const dateB = new Date(a.createdAt).getTime();
+        return (isNaN(dateA) ? 0 : dateA) - (isNaN(dateB) ? 0 : dateB);
+      });
   }
 
   // ═══ Helpers ═══

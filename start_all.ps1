@@ -9,8 +9,7 @@ $services = @(
     "src/Services/ReportingService/src/ReportingService.API",
     "src/Services/AuditService/src/AuditService.API",
     "src/Services/LoyaltyService/src/LoyaltyService.API",
-    "src/Services/AIAnalyticsService/src/AIAnalyticsService.API",
-    "src/Services/DocumentService/src/DocumentService.API"
+    "src/Services/AIAnalyticsService/src/AIAnalyticsService.API"
 )
 
 # Load .env variables into process

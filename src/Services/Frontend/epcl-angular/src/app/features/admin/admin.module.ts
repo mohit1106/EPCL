@@ -11,7 +11,6 @@ import { AdminFraudComponent } from './pages/fraud/fraud.component';
 import { AdminAuditComponent } from './pages/audit/audit.component';
 import { AdminReportsComponent } from './pages/reports/reports.component';
 import { SystemHealthComponent } from './pages/system-health/system-health.component';
-import { AdminDocumentsComponent } from './pages/documents/documents.component';
 import { AdminHelpRequestsComponent } from './pages/help-requests/help-requests.component';
 import { AdminReplenishmentRequestsComponent } from './pages/replenishment-requests/replenishment-requests.component';
 import { AdminDriversComponent } from './pages/drivers/drivers.component';
@@ -26,7 +25,6 @@ const routes: Routes = [
   { path: 'audit', component: AdminAuditComponent },
   { path: 'reports', component: AdminReportsComponent },
   { path: 'system-health', component: SystemHealthComponent },
-  { path: 'documents', component: AdminDocumentsComponent },
   { path: 'help-requests', component: AdminHelpRequestsComponent },
   { path: 'replenishment-requests', component: AdminReplenishmentRequestsComponent },
   { path: 'drivers', component: AdminDriversComponent },
@@ -43,7 +41,6 @@ const routes: Routes = [
     AdminAuditComponent,
     AdminReportsComponent,
     SystemHealthComponent,
-    AdminDocumentsComponent,
     AdminHelpRequestsComponent,
     AdminReplenishmentRequestsComponent,
     AdminDriversComponent,

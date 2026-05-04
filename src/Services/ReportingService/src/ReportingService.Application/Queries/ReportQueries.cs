@@ -70,14 +70,18 @@ public class GetAdminKpiHandler(IDailySalesSummaryRepository repo)
     public async Task<AdminKpiDto> Handle(GetAdminKpiQuery q, CancellationToken ct)
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var items = await repo.GetAsync(null, null, today, today, ct);
+        var monthStart = new DateOnly(today.Year, today.Month, 1);
+        var todayItems = await repo.GetAsync(null, null, today, today, ct);
+        // Count distinct stations with any activity this month as proxy for active dealers
+        var monthItems = await repo.GetAsync(null, null, monthStart, today, ct);
+        var activeDealers = monthItems.Select(i => i.StationId).Distinct().Count();
         return new AdminKpiDto(
-            TotalStations: items.Select(i => i.StationId).Distinct().Count(),
-            TotalTransactionsToday: items.Sum(i => i.TotalTransactions),
-            TotalRevenueToday: items.Sum(i => i.TotalRevenue),
-            TotalLitresToday: items.Sum(i => i.TotalLitresSold),
+            TotalStations: todayItems.Select(i => i.StationId).Distinct().Count(),
+            TotalTransactionsToday: todayItems.Sum(i => i.TotalTransactions),
+            TotalRevenueToday: todayItems.Sum(i => i.TotalRevenue),
+            TotalLitresToday: todayItems.Sum(i => i.TotalLitresSold),
             FraudAlertsToday: 0, // cross-service data; populated via API composition
-            ActiveDealers: 0);
+            ActiveDealers: activeDealers);
     }
 }
 

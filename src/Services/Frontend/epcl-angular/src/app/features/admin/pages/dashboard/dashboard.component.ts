@@ -103,7 +103,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
     // Load sales summary for chart
     const today = new Date().toISOString().split('T')[0];
-    this.reportsApi.getSalesSummary({ dateFrom: today, dateTo: today, groupBy: 'hour' })
+    this.reportsApi.getSalesSummary({ dateFrom: today, dateTo: today })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (s) => {

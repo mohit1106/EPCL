@@ -22,8 +22,7 @@ $services = @(
     @{ Name = "ReportingService";   Path = "$root\src\Services\ReportingService\src\ReportingService.Api";                 Port = 5062 },
     @{ Name = "AuditService";       Path = "$root\src\Services\AuditService\src\AuditService.Api";                         Port = 5268 },
     @{ Name = "LoyaltyService";     Path = "$root\src\Services\LoyaltyService\src\LoyaltyService.Api";                     Port = 5192 },
-    @{ Name = "AIAnalyticsService"; Path = "$root\src\Services\AIAnalyticsService\src\AIAnalyticsService.Api";             Port = 5010 },
-    @{ Name = "DocumentService";    Path = "$root\src\Services\DocumentService\src\DocumentService.Api";                   Port = 5180 }
+    @{ Name = "AIAnalyticsService"; Path = "$root\src\Services\AIAnalyticsService\src\AIAnalyticsService.Api";             Port = 5010 }
 )
 
 $jobs = @()

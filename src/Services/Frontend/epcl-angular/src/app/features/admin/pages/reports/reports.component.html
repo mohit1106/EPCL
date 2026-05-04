@@ -1,28 +1,265 @@
-<div class="page-content">
-  <div class="page-top"><div><h1 class="page-title">Report Engine</h1><p class="page-subtitle">Assemble complex petroleum intelligence datasets using multi-dimensional filters. Precision analysis for station velocity and fuel logistics.</p></div>
-    <div class="top-actions"><button class="btn-save mono"><app-icon name="save" [size]="14"></app-icon> SAVE CONFIGURATION</button><button class="btn-execute mono"><app-icon name="zap" [size]="14"></app-icon> EXECUTE ENGINE</button></div></div>
+<div class="reports-page">
 
-  <div class="engine-grid">
-    <!-- Parameter Matrix -->
-    <div class="card"><h3 class="card-title"><app-icon name="menu" [size]="16"></app-icon> Parameter Matrix</h3>
-      <div class="param-section"><h4 class="param-label mono">TEMPORAL BOUND</h4><div class="date-row"><div class="date-field"><span class="date-label mono">START DATE</span><span class="date-value mono">{{ startDate }}</span></div><div class="date-field end"><span class="date-label mono">END DATE</span><span class="date-value mono">{{ endDate }}</span></div></div></div>
-      <div class="param-section"><h4 class="param-label mono">STATION CLUSTERS</h4><div class="cluster-chips"><span class="cluster-chip mono" *ngFor="let c of clusters">{{ c }} ✕</span><button class="add-chip mono">+ Add Cluster</button></div></div>
-      <div class="param-section"><h4 class="param-label mono">FUEL CLASSIFICATION</h4><div class="fuel-checks"><div class="fuel-check" *ngFor="let f of fuelTypes"><span class="fuel-dot" [style.background]="f.color"></span><span>{{ f.name }}</span><input type="checkbox" [checked]="f.selected" /></div></div></div>
-      <div class="param-section"><h4 class="param-label mono">OPERATOR COHORT</h4><select class="form-input mono"><option>{{ operatorCohort }}</option></select></div>
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Platform Reports</h1>
+      <p class="page-subtitle">Revenue analytics & report generation across all EPCL stations</p>
     </div>
-
-    <!-- Live Preview -->
-    <div class="card preview-card"><div class="card-header-row"><h3 class="card-title">Live Preview</h3><span class="mono text-muted">{{ queryId }}</span><div class="export-icons"><button class="icon-btn"><app-icon name="bar-chart" [size]="16"></app-icon></button><button class="icon-btn"><app-icon name="table" [size]="16"></app-icon></button><button class="icon-btn"><app-icon name="refresh-cw" [size]="16"></app-icon></button></div></div>
-      <table><thead><tr><th>TIMESTAMP</th><th>STATION ID</th><th>PRODUCT</th><th>VOLUME (L)</th><th>YIELD (NET)</th><th>STATUS</th></tr></thead>
-        <tbody><tr *ngFor="let r of results"><td class="mono">{{ r.timestamp }}</td><td class="mono">{{ r.stationId }}</td><td><span class="product-tag" [ngClass]="r.productClass">{{ r.product }}</span></td><td class="mono">{{ r.volume | number:'1.2-2' }}</td><td class="mono" [class.text-success]="r.yield.startsWith('+')" [class.text-danger]="r.yield.startsWith('-')">{{ r.yield }}</td><td><span class="status-dot" [ngClass]="getStatusClass(r.status)">●</span></td></tr></tbody></table>
-      <div class="pagination"><span class="mono">PAGE 1 OF {{ totalPages }} ({{ totalRecords | number }} RECORDS)</span><div class="page-btns"><button class="page-btn">‹</button><button class="page-btn">›</button></div></div>
+    <div class="period-tabs">
+      <button class="period-tab" *ngFor="let p of periods" [class.active]="p === selectedPeriod" (click)="onPeriodChange(p)">
+        {{ p === 'today' ? 'Today' : p === 'week' ? '7 Days' : '30 Days' }}
+      </button>
     </div>
   </div>
 
-  <!-- Bottom Row -->
-  <div class="bottom-grid">
-    <div class="card config-health"><h4 class="mono">CONFIGURATION HEALTH <span class="badge-validated mono">VALIDATED</span></h4><div class="health-stats"><div><span class="health-label mono">COMPLEXITY</span><span class="health-value mono">{{ complexity }} <small>/10</small></span></div><div><span class="health-label mono">EST. ROWS</span><span class="health-value mono">{{ estRows }}</span></div></div></div>
-    <div class="card"><h4 class="mono">VELOCITY DISTRIBUTION</h4><div class="vel-chart"><div class="vel-bar" *ngFor="let b of velocityBars" [style.height.%]="b"></div></div></div>
-    <div class="card integrity-card"><div class="integrity-ring"><span class="integrity-pct mono">{{ networkIntegrity }}</span></div><h4>NETWORK INTEGRITY</h4><span class="integrity-label mono">Stable</span><p class="integrity-desc">All 42 station nodes in NORTH_HUB are transmitting telemetry within expected latency thresholds.</p></div>
+  <!-- Loading -->
+  <div class="loading-container" *ngIf="isLoading">
+    <div class="kpi-grid six"><div class="skeleton" style="height: 110px;" *ngFor="let i of [1,2,3,4,5,6]"></div></div>
+    <div class="skeleton" style="height: 300px; margin-top: 20px;"></div>
+  </div>
+
+  <div *ngIf="!isLoading">
+
+    <!-- KPI Row -->
+    <div class="kpi-grid six">
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">Total Revenue</span>
+          <div class="kpi-icon-wrap blue">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value">{{ formatCurrency(totalRevenue) }}</div>
+        <div class="kpi-trend">{{ getPeriodLabel() }}</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">Transactions</span>
+          <div class="kpi-icon-wrap green">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value">{{ totalTransactions | number }}</div>
+        <div class="kpi-trend">Processed</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">Litres Dispensed</span>
+          <div class="kpi-icon-wrap amber">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value">{{ totalLitres | number:'1.0-0' }}<small>L</small></div>
+        <div class="kpi-trend">Volume</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">Active Stations</span>
+          <div class="kpi-icon-wrap purple">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value">{{ totalStations }}</div>
+        <div class="kpi-trend">Online</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">Active Dealers</span>
+          <div class="kpi-icon-wrap teal">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value">{{ activeDealers }}</div>
+        <div class="kpi-trend">This month</div>
+      </div>
+
+      <div class="kpi-card" [class.alert-card]="fraudAlerts > 0">
+        <div class="kpi-header">
+          <span class="kpi-label">Fraud Alerts</span>
+          <div class="kpi-icon-wrap red">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value">{{ fraudAlerts }}</div>
+        <div class="kpi-trend">{{ getPeriodLabel() }}</div>
+      </div>
+    </div>
+
+    <!-- Chart + Report Generator -->
+    <div class="main-row">
+      <!-- Daily Revenue Chart -->
+      <div class="card chart-card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title">Daily Sales Volume</h3>
+            <p class="card-subtitle">Litres dispensed — {{ getPeriodLabel() }}</p>
+          </div>
+          <span class="record-count" *ngIf="chartBars.length > 0">{{ chartBars.length }} days</span>
+        </div>
+        <div class="chart-area" *ngIf="chartBars.length > 0">
+          <div class="chart-bars">
+            <div class="chart-bar-wrap" *ngFor="let bar of chartBars">
+              <div class="chart-bar" [style.height.%]="bar.height">
+                <span class="bar-tooltip">{{ bar.value | number:'1.0-0' }}L</span>
+              </div>
+              <span class="chart-label">{{ bar.label }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="chart-empty" *ngIf="chartBars.length === 0">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+          <p>No sales data available for this period</p>
+        </div>
+      </div>
+
+      <!-- Report Generator -->
+      <div class="card generator-card">
+        <h3 class="card-title">Generate Report</h3>
+        <p class="card-subtitle">Download reports in PDF or Excel</p>
+
+        <div class="form-group">
+          <label class="form-label">Report Type</label>
+          <select class="form-input" [(ngModel)]="reportType">
+            <option *ngFor="let rt of reportTypes" [value]="rt.value">{{ rt.label }}</option>
+          </select>
+        </div>
+
+        <div class="date-row">
+          <div class="form-group">
+            <label class="form-label">From</label>
+            <input type="date" class="form-input" [(ngModel)]="reportDateFrom" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">To</label>
+            <input type="date" class="form-input" [(ngModel)]="reportDateTo" />
+          </div>
+        </div>
+
+        <div class="export-buttons">
+          <button class="btn btn-primary" [disabled]="isExporting" (click)="exportPdf()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            {{ isExporting ? 'Exporting...' : 'Export PDF' }}
+          </button>
+          <button class="btn btn-secondary" [disabled]="isExporting" (click)="exportExcel()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+            {{ isExporting ? 'Exporting...' : 'Export Excel' }}
+          </button>
+        </div>
+
+        <p class="export-hint" *ngIf="!isExporting">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          Reports are generated as CSV if server export is unavailable
+        </p>
+      </div>
+    </div>
+
+    <!-- Fuel Distribution + Computed Metrics -->
+    <div class="main-row">
+      <!-- Fuel Distribution -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title">Fuel Distribution</h3>
+            <p class="card-subtitle">Volume breakdown by fuel type</p>
+          </div>
+          <span class="record-count" *ngIf="fuelDistribution.length > 0">{{ fuelDistribution.length }} types</span>
+        </div>
+
+        <div class="fuel-dist-content" *ngIf="fuelDistribution.length > 0">
+          <!-- Donut Chart -->
+          <div class="donut-row">
+            <div class="donut-chart">
+              <svg viewBox="0 0 36 36" class="donut-svg">
+                <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e2e8f0" stroke-width="3"/>
+                <ng-container *ngFor="let f of fuelDistribution; let i = index">
+                  <circle cx="18" cy="18" r="15.9155" fill="none"
+                    [attr.stroke]="f.color" stroke-width="3"
+                    [attr.stroke-dasharray]="f.pct + ' ' + (100 - f.pct)"
+                    [attr.stroke-dashoffset]="getDonutOffset(i)"
+                    stroke-linecap="round"/>
+                </ng-container>
+              </svg>
+              <div class="donut-center">
+                <span class="donut-total">{{ totalLitres | number:'1.0-0' }}</span>
+                <span class="donut-unit">Total L</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fuel Grade Bars -->
+          <div class="fuel-grade-list">
+            <div class="fuel-grade-item" *ngFor="let f of fuelDistribution">
+              <div class="fuel-grade-header">
+                <span class="fuel-grade-dot" [style.background]="f.color"></span>
+                <span class="fuel-grade-name">{{ f.name }}</span>
+                <span class="fuel-grade-pct">{{ f.pct }}%</span>
+                <span class="fuel-grade-val">{{ f.litres | number:'1.0-0' }}L</span>
+              </div>
+              <div class="fuel-grade-bar-track">
+                <div class="fuel-grade-bar-fill" [style.width.%]="f.pct" [style.background]="f.color"></div>
+              </div>
+              <div class="fuel-grade-meta">
+                <span>{{ f.transactions }} txns</span>
+                <span>{{ formatCurrency(f.revenue) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-empty" *ngIf="fuelDistribution.length === 0">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0110 10"/></svg>
+          <p>No fuel distribution data available</p>
+        </div>
+      </div>
+
+      <!-- Computed Summary Metrics -->
+      <div class="metrics-column">
+        <div class="metric-card">
+          <div class="metric-icon blue">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+          </div>
+          <div class="metric-content">
+            <span class="metric-label">Avg Revenue / Transaction</span>
+            <span class="metric-value">{{ totalTransactions > 0 ? formatCurrency(totalRevenue / totalTransactions) : '—' }}</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon amber">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg>
+          </div>
+          <div class="metric-content">
+            <span class="metric-label">Avg Litres / Transaction</span>
+            <span class="metric-value">{{ totalTransactions > 0 ? (totalLitres / totalTransactions | number:'1.1-1') + 'L' : '—' }}</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon green">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div class="metric-content">
+            <span class="metric-label">Revenue / Litre</span>
+            <span class="metric-value">{{ totalLitres > 0 ? formatCurrency(totalRevenue / totalLitres) + '/L' : '—' }}</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon purple">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </div>
+          <div class="metric-content">
+            <span class="metric-label">Avg Volume / Day</span>
+            <span class="metric-value">{{ chartBars.length > 0 ? (totalLitres / chartBars.length | number:'1.0-0') + 'L' : '—' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
